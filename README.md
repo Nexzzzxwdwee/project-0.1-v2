@@ -74,3 +74,4 @@ This project is configured for Vercel deployment. No `vercel.json` is needed for
 - ✅ Migration structure prepared
 
 No UI features, product pages, or database schema have been created yet.
+# project-0.1-v2

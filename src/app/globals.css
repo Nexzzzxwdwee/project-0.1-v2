@@ -1,0 +1,25 @@
+/* Global styles - minimal Phase 2 scaffolding */
+:root {
+  --neon-green: #22c55e;
+  --gold: #eab308;
+  --bg-dark: #0c0a09;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+

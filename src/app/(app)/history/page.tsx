@@ -1,22 +1,8 @@
-import { mockHistory } from '@/lib/mock/history';
-
 export default function HistoryPage() {
   return (
-    <main>
-      <h1>History</h1>
-      <p>History page placeholder - Phase 2 UI only</p>
-      <section style={{ marginTop: '2rem' }}>
-        <h2>Recent Activity</h2>
-        <ul>
-          {mockHistory.map((entry) => (
-            <li key={entry.id} style={{ marginBottom: '1rem' }}>
-              <strong>{entry.date}</strong> - Habits: {entry.habitsCompleted}/{entry.totalHabits},
-              Tasks: {entry.tasksCompleted}/{entry.totalTasks}
-            </li>
-          ))}
-        </ul>
-      </section>
-    </main>
+    <div style={{ maxWidth: '56rem', margin: '0 auto', padding: '3rem 1.5rem' }}>
+      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>History</h1>
+      <p style={{ color: '#a8a29e' }}>History page placeholder - Phase 2 UI only</p>
+    </div>
   );
 }
-

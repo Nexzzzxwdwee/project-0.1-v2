@@ -1,9 +1,10 @@
+import styles from './rank.module.css';
+
 export default function RankPage() {
   return (
-    <div style={{ maxWidth: '56rem', margin: '0 auto', padding: '3rem 1.5rem' }}>
-      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>Rank</h1>
-      <p style={{ color: '#a8a29e' }}>Rank page placeholder - Phase 2 UI only</p>
+    <div className={styles.page}>
+      <h1>Rank</h1>
+      <p>Rank page placeholder - Phase 2 UI only</p>
     </div>
   );
 }
-

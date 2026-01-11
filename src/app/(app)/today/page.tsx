@@ -76,7 +76,7 @@ export default function TodayPage() {
   };
 
   return (
-    <div className={styles.content}>
+    <div className={styles.page}>
       {/* Header Section */}
       <header className={styles.header}>
         <div>

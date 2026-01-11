@@ -1,9 +1,10 @@
+import styles from './goals.module.css';
+
 export default function GoalsPage() {
   return (
-    <div style={{ maxWidth: '56rem', margin: '0 auto', padding: '3rem 1.5rem' }}>
-      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>Goals</h1>
-      <p style={{ color: '#a8a29e' }}>Goals page placeholder - Phase 2 UI only</p>
+    <div className={styles.page}>
+      <h1>Goals</h1>
+      <p>Goals page placeholder - Phase 2 UI only</p>
     </div>
   );
 }
-

@@ -1,9 +1,10 @@
+import styles from './journal.module.css';
+
 export default function JournalPage() {
   return (
-    <div style={{ maxWidth: '56rem', margin: '0 auto', padding: '3rem 1.5rem' }}>
-      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>Journal</h1>
-      <p style={{ color: '#a8a29e' }}>Journal page placeholder - Phase 2 UI only</p>
+    <div className={styles.page}>
+      <h1>Journal</h1>
+      <p>Journal page placeholder - Phase 2 UI only</p>
     </div>
   );
 }
-

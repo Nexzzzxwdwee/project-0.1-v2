@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import styles from './app-shell.module.css';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const navItems = [
     { href: '/today', label: 'Today', icon: 'calendar-day' },
@@ -33,9 +35,120 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return icons[iconName] || '';
   };
 
+  const closeDrawer = () => setIsDrawerOpen(false);
+
+  useEffect(() => {
+    closeDrawer();
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isDrawerOpen) {
+        closeDrawer();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isDrawerOpen]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const isMobile = window.innerWidth < 768;
+    if (isMobile && isDrawerOpen) {
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = previousOverflow;
+      };
+    }
+  }, [isDrawerOpen]);
+
+  const renderNavItems = () => (
+    <>
+      {navItems.map((item) => {
+        const isActive = pathname === item.href;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
+            onClick={closeDrawer}
+          >
+            <svg className={styles.navIcon} viewBox="0 0 512 512" fill="currentColor">
+              <path d={getIconSVG(item.icon)} />
+            </svg>
+            <span className={styles.navLabel}>{item.label}</span>
+            {isActive && <div className={styles.navActiveDot}></div>}
+          </Link>
+        );
+      })}
+    </>
+  );
+
   return (
     <div className={styles.mainContainer}>
-      {/* Sidebar Navigation */}
+      {/* Mobile Top Bar */}
+      <div className={styles.mobileTopBar}>
+        <button
+          type="button"
+          className={styles.mobileMenuButton}
+          onClick={() => setIsDrawerOpen(true)}
+          aria-label="Open navigation menu"
+        >
+          <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
+            <path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z" />
+          </svg>
+        </button>
+        <span className={styles.mobileTitle}>Project 0.1</span>
+      </div>
+
+      {/* Mobile Drawer Overlay */}
+      {isDrawerOpen && (
+        <div className={styles.drawerOverlay} onClick={closeDrawer} aria-hidden="true"></div>
+      )}
+
+      {/* Mobile Drawer */}
+      <aside className={`${styles.mobileDrawer} ${isDrawerOpen ? styles.mobileDrawerOpen : ''}`}>
+        <div className={styles.mobileDrawerHeader}>
+          <div className={styles.mobileDrawerBrand}>
+            <div className={styles.brandIcon}>
+              <span className={styles.brandText}>0.1</span>
+            </div>
+            <span className={styles.brandLabel}>Project 0.1</span>
+          </div>
+          <button
+            type="button"
+            className={styles.mobileDrawerClose}
+            onClick={closeDrawer}
+            aria-label="Close navigation menu"
+          >
+            <svg className={styles.icon} viewBox="0 0 384 512" fill="currentColor">
+              <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
+            </svg>
+          </button>
+        </div>
+
+        <nav className={styles.nav}>
+          {renderNavItems()}
+        </nav>
+
+        <div className={styles.sidebarFooter}>
+          <Link
+            href="/settings"
+            className={`${styles.navItem} ${pathname === '/settings' ? styles.navItemActive : ''}`}
+            onClick={closeDrawer}
+          >
+            <svg className={styles.navIcon} viewBox="0 0 512 512" fill="currentColor">
+              <path d={getIconSVG('gear')} />
+            </svg>
+            <span className={styles.navLabel}>Settings</span>
+            {pathname === '/settings' && <div className={styles.navActiveDot}></div>}
+          </Link>
+        </div>
+      </aside>
+
+      {/* Desktop Sidebar Navigation */}
       <aside className={styles.sidebar}>
         <div>
           <div className={styles.sidebarBrand}>
@@ -46,22 +159,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className={styles.nav}>
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
-                >
-                  <svg className={styles.navIcon} viewBox="0 0 512 512" fill="currentColor">
-                    <path d={getIconSVG(item.icon)} />
-                  </svg>
-                  <span className={styles.navLabel}>{item.label}</span>
-                  {isActive && <div className={styles.navActiveDot}></div>}
-                </Link>
-              );
-            })}
+            {renderNavItems()}
           </nav>
         </div>
 
@@ -80,7 +178,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main className={styles.mainContent}>
         {/* Background Grid Effect */}
         <div className={styles.bgGrid}></div>
-        {children}
+        <div className={styles.contentInner}>
+          {children}
+        </div>
       </main>
     </div>
   );

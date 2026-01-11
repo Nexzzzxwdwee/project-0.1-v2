@@ -3,12 +3,144 @@
 .mainContainer {
   display: flex;
   height: 100vh;
+  max-height: 100vh;
   overflow: hidden;
+  position: relative;
 }
 
 .mainContainer ::selection {
   background: rgba(20, 83, 45, 0.5);
   color: #bbf7d0;
+}
+
+/* Mobile Top Bar */
+.mobileTopBar {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rem;
+  background: #0c0a09;
+  border-bottom: 1px solid #292520;
+  padding: 0 1rem;
+  align-items: center;
+  gap: 1rem;
+  z-index: 100;
+}
+
+@media (max-width: 767px) {
+  .mobileTopBar {
+    display: flex;
+  }
+}
+
+.mobileMenuButton {
+  background: none;
+  border: none;
+  color: #e7e5e4;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.mobileMenuButton:hover {
+  color: #a8a29e;
+}
+
+.mobileMenuButton .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.mobileTitle {
+  font-size: 1.25rem;
+  font-weight: bold;
+  letter-spacing: -0.025em;
+  color: white;
+  font-family: var(--font-space), sans-serif;
+}
+
+/* Mobile Drawer Overlay */
+.drawerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 150;
+  backdrop-filter: blur(4px);
+}
+
+@media (min-width: 768px) {
+  .drawerOverlay {
+    display: none;
+  }
+}
+
+/* Mobile Drawer */
+.mobileDrawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 16rem;
+  height: 100vh;
+  background: #0c0a09;
+  border-right: 1px solid #292520;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2rem 1rem;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-out;
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  .mobileDrawer {
+    display: none;
+  }
+}
+
+.mobileDrawerOpen {
+  transform: translateX(0);
+}
+
+.mobileDrawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  padding: 0 1rem;
+}
+
+.mobileDrawerBrand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mobileDrawerClose {
+  background: none;
+  border: none;
+  color: #a8a29e;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.mobileDrawerClose:hover {
+  color: #e7e5e4;
+}
+
+.mobileDrawerClose .icon {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 /* Sidebar */
@@ -120,9 +252,34 @@
 /* Main Content */
 .mainContent {
   flex: 1;
+  width: 100%;
+  min-width: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
   background: #0c0a09;
+  /* CRITICAL: Remove ALL centering from scroll container */
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (max-width: 767px) {
+  .mainContent {
+    padding-top: 4rem;
+  }
+}
+
+/* Inner content wrapper for padding only - pages control their own max-width */
+.contentInner {
+  width: 100%;
+  padding: 2.5rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .contentInner {
+    padding: 3.5rem 3rem;
+  }
 }
 
 .mainContent::-webkit-scrollbar {
@@ -152,3 +309,8 @@
   background-size: 40px 40px;
 }
 
+.icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+}

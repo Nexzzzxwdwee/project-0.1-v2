@@ -42,6 +42,15 @@ export interface DayPlan {
   isSealed: boolean;
 }
 
+export interface DaySummary {
+  date: string; // YYYY-MM-DD
+  operatorPct: number;
+  operatorTotal: number;
+  operatorDone: number;
+  isSealed: boolean;
+  sealedAt: number | null;
+}
+
 /**
  * Generate a stable ID
  */
@@ -394,5 +403,67 @@ export function mergePresetIntoDayPlan(
     items: newItems,
     archived,
   };
+}
+
+/**
+ * Add or subtract days from a YYYY-MM-DD date string
+ */
+function addDays(dateStr: string, delta: number): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + delta);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Get day summary for a specific date
+ */
+export function getDaySummary(date: string): DaySummary | null {
+  return getJSON<DaySummary | null>(`${P01_PREFIX}daySummary:${date}`, null);
+}
+
+/**
+ * Save day summary to localStorage
+ */
+export function saveDaySummary(summary: DaySummary): void {
+  setJSON(`${P01_PREFIX}daySummary:${summary.date}`, summary);
+}
+
+/**
+ * Calculate streak of consecutive sealed days with 100% operator score
+ * Scans backward from today (or provided date)
+ */
+export function getStreak(today?: string): number {
+  if (typeof window === 'undefined') return 0;
+  
+  const todayDate = today || (() => {
+    const date = new Date();
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  })();
+  
+  let streak = 0;
+  let currentDate = todayDate;
+  
+  while (true) {
+    const summary = getDaySummary(currentDate);
+    
+    if (
+      summary &&
+      summary.isSealed &&
+      summary.operatorTotal > 0 &&
+      summary.operatorPct === 100
+    ) {
+      streak++;
+      // Move to previous day
+      currentDate = addDays(currentDate, -1);
+    } else {
+      break;
+    }
+  }
+  
+  return streak;
 }
 

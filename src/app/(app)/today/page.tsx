@@ -10,10 +10,14 @@ import {
   getPresets,
   mergePresetIntoDayPlan,
   generateId,
+  getStreak,
+  saveDaySummary,
   type DayPlan,
   type DayPlanItem,
   type PresetId,
+  type DaySummary,
 } from '@/lib/presets';
+import SealDayModal from '@/components/ui/SealDayModal';
 
 function formatTime(time: string | undefined): string {
   if (!time) return '--:--';
@@ -48,6 +52,8 @@ export default function TodayPage() {
   const [editTime, setEditTime] = useState('');
   const [taskTime, setTaskTime] = useState('');
   const [taskText, setTaskText] = useState('');
+  const [sealModalOpen, setSealModalOpen] = useState(false);
+  const [streak, setStreak] = useState(0);
 
   // Mark as mounted to avoid hydration mismatch
   useEffect(() => {
@@ -99,6 +105,10 @@ export default function TodayPage() {
       // Plan exists with items, just load it
       setDayPlan(plan);
     }
+    
+    // Calculate streak
+    const currentStreak = getStreak();
+    setStreak(currentStreak);
   }, [mounted]);
 
   // Save day plan whenever it changes
@@ -114,16 +124,52 @@ export default function TodayPage() {
   const tasks = dayPlan.items.filter((item) => item.kind === 'task');
   const activeHabits = habits.filter((h) => !h.completed).length;
 
-  // Calculate operator score (preset-sourced items only)
+  // Calculate operator score (preset-sourced habits only)
   const operatorItems = useMemo(() => {
     return dayPlan.items.filter(
-      (item) => item.source === 'preset' && (item.kind === 'habit' || item.kind === 'task')
+      (item) => item.source === 'preset' && item.kind === 'habit'
     );
   }, [dayPlan.items]);
 
   const operatorTotal = operatorItems.length;
   const operatorDone = operatorItems.filter((item) => item.completed).length;
   const operatorPct = operatorTotal === 0 ? 0 : Math.round((operatorDone / operatorTotal) * 100);
+
+  // Calculate dynamic status
+  const status = useMemo(() => {
+    if (operatorPct === 0) {
+      return {
+        label: 'Building',
+        subtitle: 'Foundation phase. Start executing.',
+        color: '#a8a29e',
+      };
+    } else if (operatorPct >= 1 && operatorPct <= 69) {
+      return {
+        label: 'Strong',
+        subtitle: 'Good progress. Keep momentum.',
+        color: '#3b82f6',
+      };
+    } else if (operatorPct >= 70 && operatorPct <= 99) {
+      return {
+        label: 'Elite',
+        subtitle: 'Execution is optimal. Maintain trajectory.',
+        color: '#22c55e',
+      };
+    } else if (operatorPct === 100 && dayPlan.isSealed) {
+      return {
+        label: 'Unbroken',
+        subtitle: 'Perfect execution. Day sealed.',
+        color: '#eab308',
+      };
+    } else {
+      // 100% but not sealed
+      return {
+        label: 'Elite',
+        subtitle: 'Perfect execution. Seal to lock it in.',
+        color: '#22c55e',
+      };
+    }
+  }, [operatorPct, dayPlan.isSealed]);
 
   const getCurrentDate = () => {
     const date = new Date();
@@ -261,6 +307,49 @@ export default function TodayPage() {
     }));
   };
 
+  const handleSealDay = () => {
+    if (dayPlan.isSealed) return;
+    setSealModalOpen(true);
+  };
+
+  const handleSealConfirm = () => {
+    if (dayPlan.isSealed) return;
+    
+    const today = getTodayDateString();
+    const updatedPlan: DayPlan = {
+      ...dayPlan,
+      isSealed: true,
+    };
+    
+    // Compute operator metrics from current dayPlan using same habits-only logic
+    const operatorHabits = dayPlan.items.filter(
+      (item) => item.source === 'preset' && item.kind === 'habit'
+    );
+    const sealOperatorTotal = operatorHabits.length;
+    const sealOperatorDone = operatorHabits.filter((item) => item.completed).length;
+    const sealOperatorPct = sealOperatorTotal === 0 ? 0 : Math.round((sealOperatorDone / sealOperatorTotal) * 100);
+    
+    // Create and save DaySummary
+    const summary: DaySummary = {
+      date: today,
+      operatorPct: sealOperatorPct,
+      operatorTotal: sealOperatorTotal,
+      operatorDone: sealOperatorDone,
+      isSealed: true,
+      sealedAt: Date.now(),
+    };
+    
+    saveDaySummary(summary);
+    setDayPlan(updatedPlan);
+    saveDayPlan(updatedPlan);
+    
+    // Recalculate streak
+    const newStreak = getStreak();
+    setStreak(newStreak);
+    
+    setSealModalOpen(false);
+  };
+
   // Get active preset for display (only after mount to avoid hydration mismatch)
   const activePreset = mounted && dayPlan.activePresetId ? presets[dayPlan.activePresetId] : null;
   const pendingPreset = mounted && pendingPresetId ? presets[pendingPresetId] : null;
@@ -322,22 +411,31 @@ export default function TodayPage() {
 
       {/* Daily Status Card */}
       <section className={styles.statusSection}>
-        <div className={styles.statusCard}>
+        <div className={styles.statusCard} style={{ '--status-color': status.color } as React.CSSProperties}>
           <div className={styles.statusGlow}></div>
           <div className={styles.statusHeader}>
             <div>
               <div className={styles.statusBadge}>
                 <div className={styles.statusDot}></div>
-                <span className={styles.statusText}>Status: Elite Day</span>
+                <span className={styles.statusText}>Status: {status.label}</span>
               </div>
-              <p className={styles.statusSubtext}>Execution is optimal. Maintain trajectory.</p>
+              <p className={styles.statusSubtext}>{status.subtitle}</p>
             </div>
-            <div className={styles.sealBadge}>
-              <div className={styles.sealDot}></div>
-              <span className={styles.sealText}>
-                {dayPlan.isSealed ? 'Day Sealed' : 'Day Not Sealed'}
-              </span>
-            </div>
+            {dayPlan.isSealed ? (
+              <div className={styles.sealBadge}>
+                <div className={styles.sealDot}></div>
+                <span className={styles.sealText}>Day Sealed</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className={styles.sealButton}
+                onClick={handleSealDay}
+                aria-label="Seal this day"
+              >
+                Seal Day
+              </button>
+            )}
           </div>
 
           <div className={styles.statsGrid}>
@@ -357,15 +455,21 @@ export default function TodayPage() {
             <div className={styles.statBox}>
               <span className={styles.statLabel}>Streak</span>
               <div className={styles.statValueRow}>
-                <span className={styles.statValue}>12</span>
+                <span className={styles.statValue}>{streak}</span>
                 <span className={styles.statUnit}>Days</span>
               </div>
-              <div className={styles.streakRow}>
-                <svg className={styles.icon} viewBox="0 0 384 512" fill="currentColor" style={{ color: '#eab308' }}>
-                  <path d="M153.6 29.9l16-21.3C173.6 3.2 180 0 186.7 0C198.4 0 208 9.6 208 21.3V43.5c0 8.7 3.5 17 9.7 23.1L278.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L350.3 66.6c6.2-6.1 9.7-14.4 9.7-23.1V21.3C360 9.6 369.6 0 381.3 0c6.7 0 13.1 3.2 17.1 8.6l16 21.3c6 8 9.4 17.5 9.4 27.1V384c0 70.7-57.3 128-128 128H128C57.3 512 0 454.7 0 384V57.7c0-9.6 3.4-19.1 9.4-27.1l16-21.3C29.5 3.2 35.9 0 42.7 0C54.4 0 64 9.6 64 21.3V43.5c0 8.7 3.5 17 9.7 23.1L134.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L153.6 29.9z" />
-                </svg>
-                <span className={styles.streakText}>Unbroken</span>
-              </div>
+              {streak > 0 && dayPlan.isSealed && operatorPct === 100 ? (
+                <div className={styles.streakRow}>
+                  <svg className={styles.icon} viewBox="0 0 384 512" fill="currentColor" style={{ color: '#eab308' }}>
+                    <path d="M153.6 29.9l16-21.3C173.6 3.2 180 0 186.7 0C198.4 0 208 9.6 208 21.3V43.5c0 8.7 3.5 17 9.7 23.1L278.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L350.3 66.6c6.2-6.1 9.7-14.4 9.7-23.1V21.3C360 9.6 369.6 0 381.3 0c6.7 0 13.1 3.2 17.1 8.6l16 21.3c6 8 9.4 17.5 9.4 27.1V384c0 70.7-57.3 128-128 128H128C57.3 512 0 454.7 0 384V57.7c0-9.6 3.4-19.1 9.4-27.1l16-21.3C29.5 3.2 35.9 0 42.7 0C54.4 0 64 9.6 64 21.3V43.5c0 8.7 3.5 17 9.7 23.1L134.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L153.6 29.9z" />
+                  </svg>
+                  <span className={styles.streakText}>Unbroken</span>
+                </div>
+              ) : (
+                <div className={styles.streakRow}>
+                  <span className={styles.streakText} style={{ color: '#44403c' }}>No streak</span>
+                </div>
+              )}
             </div>
 
             {/* Stat 3 */}
@@ -658,6 +762,13 @@ export default function TodayPage() {
           onCancel={handleSyncCancel}
         />
       )}
+
+      {/* Seal Day Modal */}
+      <SealDayModal
+        isOpen={sealModalOpen}
+        onConfirm={handleSealConfirm}
+        onCancel={() => setSealModalOpen(false)}
+      />
 
       {/* Footer / Quote */}
       <div className={styles.footer}>

@@ -1,0 +1,116 @@
+/* Interactive Checkbox Styles */
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+.box {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 1px solid #292520;
+  background: #0c0a09;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 150ms ease-in-out;
+  position: relative;
+}
+
+/* Hover state */
+.label:hover .box {
+  border-color: #44403c;
+  box-shadow: 0 0 0 2px rgba(168, 162, 158, 0.1);
+}
+
+/* Focus state */
+.input:focus-visible + .box {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+/* Checked state */
+.boxChecked {
+  border-color: #22c55e;
+  background: #22c55e;
+}
+
+.label:hover .boxChecked,
+:has(.label):hover .boxChecked {
+  border-color: #22c55e;
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+/* Disabled state */
+.label:has(.input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.label:has(.input:disabled) .box {
+  border-color: #292520;
+  background: #0c0a09;
+}
+
+/* Checkmark */
+.checkmark {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: #0c0a09;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+.boxChecked .checkmark {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Animation states */
+.boxAnimating {
+  animation: checkPop 200ms ease-out;
+}
+
+.checkmarkAnimating {
+  animation: checkmarkDraw 250ms ease-out;
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0.95);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes checkmarkDraw {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+

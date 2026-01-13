@@ -1,19 +1,480 @@
-/* Journal Page Styles */
+/* Journal Page Styles - New Komposo Design */
 
 .page {
-  max-width: 56rem;
+  position: relative;
+  max-width: 48rem;
   margin: 0 auto;
+  z-index: 10;
 }
 
-.page h1 {
-  font-size: 2rem;
+.bgGrid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.02;
+  background-image: linear-gradient(#292520 1px, transparent 1px),
+    linear-gradient(90deg, #292520 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.container {
+  position: relative;
+  padding: 2.5rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 3.5rem 3rem;
+  }
+}
+
+/* Header */
+.header {
+  margin-bottom: 3rem;
+}
+
+.title {
+  font-size: 2.25rem;
   font-weight: bold;
+  letter-spacing: -0.025em;
   color: white;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   font-family: var(--font-space), sans-serif;
 }
 
-.page p {
+@media (min-width: 768px) {
+  .title {
+    font-size: 3rem;
+  }
+}
+
+.subtitle {
+  color: #a8a29e;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.debugStamp {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.625rem;
+  color: #44403c;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+
+.dateRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   color: #a8a29e;
 }
 
+.dateRow .icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.dateText {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Entry Section */
+.entrySection {
+  margin-bottom: 1.5rem;
+}
+
+.textareaCard {
+  display: flex;
+  flex-direction: column;
+  background: #1c1917;
+  border: 1px solid #292520;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.2s;
+  min-height: 360px;
+}
+
+.textareaCard:focus-within {
+  border-color: #44403c;
+}
+
+.textarea {
+  background: transparent;
+  border: none;
+  color: #e7e5e4;
+  font-size: 1rem;
+  line-height: 1.75;
+  resize: none;
+  outline: none;
+  font-family: var(--font-space), sans-serif;
+  flex: 1;
+  min-height: 280px;
+}
+
+.textarea::placeholder {
+  color: #44403c;
+}
+
+/* Auto-save indicator */
+.autoSaveRow {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #292520;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.autoSaveLabel {
+  font-size: 0.625rem;
+  font-family: var(--font-mono), monospace;
+  color: #44403c;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.autoSaveStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.saveDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #44403c;
+  transition: opacity 0.3s;
+}
+
+.saveDotPulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.saveDotSaved {
+  opacity: 0.5;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.saveText {
+  font-size: 0.625rem;
+  color: #44403c;
+  font-family: var(--font-mono), monospace;
+}
+
+/* Navigation */
+.navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #a8a29e;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.navButton:hover:not(:disabled) {
+  color: white;
+}
+
+.navButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.navButton .icon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.navLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  color: #44403c;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Add Entry Section */
+.addEntrySection {
+  margin-top: 1.5rem;
+}
+
+.addEntryButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: white;
+  color: #0c0a09;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.addEntryButton:hover {
+  background: #e7e5e4;
+}
+
+.addEntryButton .icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* Entries List Section */
+.entriesListSection {
+  margin-top: 3rem;
+  padding-top: 3rem;
+  border-top: 1px solid #292520;
+}
+
+.entriesListHeader {
+  margin-bottom: 2rem;
+}
+
+.entriesListTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: -0.025em;
+  color: white;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-space), sans-serif;
+}
+
+@media (min-width: 768px) {
+  .entriesListTitle {
+    font-size: 1.875rem;
+  }
+}
+
+.entriesListSubtitle {
+  color: #a8a29e;
+  font-size: 0.875rem;
+}
+
+.entriesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.entryCard {
+  background: #1c1917;
+  border: 1px solid #292520;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: border-color 0.2s;
+}
+
+.entryCard:hover {
+  border-color: #44403c;
+}
+
+.entryCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.entryCardDate {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  color: #a8a29e;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.entryCardActive {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.625rem;
+  color: #22c55e;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.25rem 0.5rem;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 0.25rem;
+}
+
+.entryCardContent {
+  color: #e7e5e4;
+  font-size: 0.875rem;
+  line-height: 1.75;
+  font-family: var(--font-space), sans-serif;
+}
+
+/* Journal OS Section */
+.journalOsSection {
+  margin-top: 4rem;
+  padding-top: 3rem;
+  border-top: 1px solid #292520;
+}
+
+.journalOsHeader {
+  margin-bottom: 2rem;
+}
+
+.journalOsTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: -0.025em;
+  color: white;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-space), sans-serif;
+}
+
+@media (min-width: 768px) {
+  .journalOsTitle {
+    font-size: 1.875rem;
+  }
+}
+
+.journalOsSubtitle {
+  color: #a8a29e;
+  font-size: 0.875rem;
+}
+
+.journalOsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .journalOsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.statCard {
+  background: #1c1917;
+  border: 1px solid #292520;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: border-color 0.2s;
+}
+
+.statCard:hover {
+  border-color: #44403c;
+}
+
+.statCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.statCardTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 0.25rem;
+  font-family: var(--font-space), sans-serif;
+}
+
+.statCardDescription {
+  color: #a8a29e;
+  font-size: 0.75rem;
+}
+
+.statCardIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #44403c;
+}
+
+.statCardValue {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  font-family: var(--font-space), sans-serif;
+}
+
+.statCardSubtext {
+  color: #a8a29e;
+  font-size: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+/* Quick Actions */
+.quickActions {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .quickActions {
+    flex-direction: row;
+  }
+}
+
+.actionButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #1c1917;
+  border: 1px solid #292520;
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.actionButton:hover {
+  border-color: #44403c;
+}
+
+.actionButton .icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+}

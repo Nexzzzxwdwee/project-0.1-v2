@@ -2,53 +2,31 @@
 
 import { useState, useEffect, useRef } from 'react';
 import styles from './habits.module.css';
+import {
+  getPresets,
+  savePresets,
+  generateId,
+  generateUniquePresetName,
+  getDayPlansReferencingPreset,
+  updateDayPlansPresetReference,
+  type Preset,
+  type PresetId,
+} from '@/lib/presets';
+import RenamePresetModal from '@/components/ui/RenamePresetModal';
+import DeletePresetModal from '@/components/ui/DeletePresetModal';
 
 interface Habit {
-  id: number;
+  id: string; // presetItemId
   name: string;
-  completed: boolean;
+  completed: boolean; // UI only, not persisted in preset
 }
 
 interface Task {
-  id: number;
+  id: string; // presetItemId
   text: string;
   time: string; // HH:MM format
-  completed: boolean;
+  completed: boolean; // UI only, not persisted in preset
 }
-
-const mockHabitsByPreset: Record<'default' | 'trading' | 'recovery', Habit[]> = {
-  default: [
-    { id: 1, name: 'morning sauna', completed: true },
-    { id: 2, name: 'deep work block', completed: true },
-    { id: 3, name: 'read 30 mins', completed: false },
-    { id: 4, name: 'zero sugar', completed: false },
-  ],
-  trading: [
-    { id: 101, name: 'market prep', completed: false },
-    { id: 102, name: 'trading journal', completed: false },
-    { id: 103, name: 'no news check', completed: false },
-  ],
-  recovery: [
-    { id: 201, name: 'light walk', completed: false },
-    { id: 202, name: 'meditation', completed: false },
-    { id: 203, name: 'early sleep', completed: false },
-  ],
-};
-
-const mockTasksByPreset: Record<'default' | 'trading' | 'recovery', Task[]> = {
-  default: [
-    { id: 1, text: 'email client reports', time: '09:00', completed: true },
-    { id: 2, text: 'team standup meeting', time: '14:00', completed: false },
-    { id: 3, text: 'review quarterly goals', time: '16:30', completed: false },
-  ],
-  trading: [
-    { id: 101, text: 'pre-market analysis', time: '08:00', completed: false },
-    { id: 102, text: 'trade review session', time: '15:00', completed: false },
-  ],
-  recovery: [
-    { id: 201, text: 'gentle yoga', time: '10:00', completed: false },
-  ],
-};
 
 function formatTime(time: string): string {
   if (!time) return '';
@@ -253,75 +231,343 @@ function TimePicker({
 }
 
 export default function HabitsPage() {
-  const [activePreset, setActivePreset] = useState<'default' | 'trading' | 'recovery'>('default');
-  const [habits, setHabits] = useState<Habit[]>(mockHabitsByPreset.default);
-  const [tasks, setTasks] = useState<Task[]>(mockTasksByPreset.default);
+  const [presets, setPresets] = useState<Record<PresetId, Preset>>({});
+  const [activePreset, setActivePreset] = useState<PresetId>('default');
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [newHabitInput, setNewHabitInput] = useState('');
   const [newTaskText, setNewTaskText] = useState('');
   const [newTaskTime, setNewTaskTime] = useState('');
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [renameModalOpen, setRenameModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
-  const handlePresetChange = (preset: 'default' | 'trading' | 'recovery') => {
-    setActivePreset(preset);
-    setHabits(mockHabitsByPreset[preset]);
-    setTasks(mockTasksByPreset[preset]);
+  // Load presets on mount
+  useEffect(() => {
+    const loadedPresets = getPresets();
+    setPresets(loadedPresets);
+    
+    // Set active preset to first available if default doesn't exist
+    const presetIds = Object.keys(loadedPresets);
+    if (presetIds.length > 0) {
+      const initialPreset = loadedPresets['default'] || loadedPresets[presetIds[0]];
+      if (initialPreset) {
+        setActivePreset(initialPreset.id);
+        loadPresetData(initialPreset);
+      }
+    }
+    
+    // Mark initial load as complete after a brief delay to avoid saving during load
+    setTimeout(() => setIsInitialLoad(false), 100);
+  }, []);
+
+  // Convert PresetItem[] to Habit[]/Task[] for display
+  const loadPresetData = (preset: Preset) => {
+    setHabits(
+      preset.habits.map((h) => ({
+        id: h.id,
+        name: h.text,
+        completed: false, // UI only
+      }))
+    );
+    setTasks(
+      preset.tasks.map((t) => ({
+        id: t.id,
+        text: t.text,
+        time: t.time || '09:00',
+        completed: false, // UI only
+      }))
+    );
   };
 
-  const toggleHabit = (id: number) => {
-    setHabits(habits.map((h) => (h.id === id ? { ...h, completed: !h.completed } : h)));
+  // Auto-save when habits or tasks change (debounced)
+  useEffect(() => {
+    // Skip save during initial load, if presets haven't loaded yet, or if preset doesn't exist
+    if (isInitialLoad) return;
+    if (Object.keys(presets).length === 0) return;
+    if (!presets[activePreset]) return;
+    
+    const timeoutId = setTimeout(() => {
+      // Use functional updates to get latest state
+      setPresets((prevPresets) => {
+        if (!prevPresets[activePreset]) return prevPresets;
+        
+        setHabits((currentHabits) => {
+          setTasks((currentTasks) => {
+            const currentPreset = prevPresets[activePreset];
+            const updatedPreset: Preset = {
+              ...currentPreset,
+              habits: currentHabits.map((h) => {
+                const original = currentPreset.habits.find(orig => orig.id === h.id);
+                return {
+                  ...(original || {}),
+                  id: h.id,
+                  text: h.name,
+                };
+              }),
+              tasks: currentTasks.map((t) => {
+                const original = currentPreset.tasks.find(orig => orig.id === t.id);
+                return {
+                  ...(original || {}),
+                  id: t.id,
+                  text: t.text,
+                  time: t.time,
+                };
+              }),
+              updatedAt: Date.now(),
+            };
+            
+            const updatedPresets = {
+              ...prevPresets,
+              [activePreset]: updatedPreset,
+            };
+            
+            savePresets(updatedPresets);
+            return currentTasks;
+          });
+          return currentHabits;
+        });
+        return prevPresets;
+      });
+    }, 300); // Debounce saves
+    
+    return () => clearTimeout(timeoutId);
+  }, [habits, tasks, activePreset]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePresetChange = (presetId: PresetId) => {
+    // Save current preset before switching using functional updates
+    setPresets((prevPresets) => {
+      if (prevPresets[activePreset]) {
+        setHabits((currentHabits) => {
+          setTasks((currentTasks) => {
+            const currentPreset = prevPresets[activePreset];
+            const updatedPreset: Preset = {
+              ...currentPreset,
+              habits: currentHabits.map((h) => {
+                const original = currentPreset.habits.find(orig => orig.id === h.id);
+                return {
+                  ...(original || {}),
+                  id: h.id,
+                  text: h.name,
+                };
+              }),
+              tasks: currentTasks.map((t) => {
+                const original = currentPreset.tasks.find(orig => orig.id === t.id);
+                return {
+                  ...(original || {}),
+                  id: t.id,
+                  text: t.text,
+                  time: t.time,
+                };
+              }),
+              updatedAt: Date.now(),
+            };
+            
+            const savedPresets = {
+              ...prevPresets,
+              [activePreset]: updatedPreset,
+            };
+            
+            savePresets(savedPresets);
+            return currentTasks;
+          });
+          return currentHabits;
+        });
+      }
+      
+      // Switch to new preset
+      const preset = prevPresets[presetId];
+      if (preset) {
+        setActivePreset(presetId);
+        loadPresetData(preset);
+      }
+      return prevPresets;
+    });
+  };
+
+  const toggleHabit = (id: string) => {
+    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, completed: !h.completed } : h)));
   };
 
   const addHabit = () => {
     if (newHabitInput.trim()) {
       const newHabit: Habit = {
-        id: Date.now(),
+        id: generateId(),
         name: newHabitInput.trim(),
         completed: false,
       };
-      setHabits([...habits, newHabit]);
+      setHabits((prev) => [...prev, newHabit]);
       setNewHabitInput('');
     }
   };
 
-  const deleteHabit = (id: number) => {
-    setHabits(habits.filter((h) => h.id !== id));
+  const deleteHabit = (id: string) => {
+    setHabits((prev) => prev.filter((h) => h.id !== id));
   };
 
-  const toggleTask = (id: number) => {
-    setTasks(tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+  const toggleTask = (id: string) => {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
   };
 
   const addTask = () => {
     if (newTaskText.trim()) {
       const newTask: Task = {
-        id: Date.now(),
+        id: generateId(),
         text: newTaskText.trim(),
         time: newTaskTime || '09:00',
         completed: false,
       };
-      setTasks([...tasks, newTask]);
+      setTasks((prev) => [...prev, newTask]);
       setNewTaskText('');
       setNewTaskTime('');
     }
   };
 
-  const deleteTask = (id: number) => {
-    setTasks(tasks.filter((t) => t.id !== id));
+  const deleteTask = (id: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const editTask = (id: number) => {
-    const task = tasks.find((t) => t.id === id);
-    if (!task) return;
+  const editTask = (id: string) => {
+    setTasks((prev) => {
+      const task = prev.find((t) => t.id === id);
+      if (!task) return prev;
 
-    const newText = prompt('Task name:', task.text) || task.text;
-    const newTime = prompt('Time (HH:MM):', task.time) || task.time;
+      const newText = prompt('Task name:', task.text) || task.text;
+      const newTime = prompt('Time (HH:MM):', task.time) || task.time;
 
-    setTasks(
-      tasks.map((t) =>
+      return prev.map((t) =>
         t.id === id
           ? { ...t, text: newText, time: newTime }
           : t
-      )
-    );
+      );
+    });
+  };
+
+  const handleNewPreset = () => {
+    // Save current preset first (will be handled by auto-save useEffect)
+    // Create new preset
+    setPresets((prevPresets) => {
+      const newPresetId = `preset_${Date.now()}`;
+      const uniqueName = generateUniquePresetName('New Preset', prevPresets);
+      
+      const newPreset: Preset = {
+        id: newPresetId,
+        name: uniqueName,
+        habits: [],
+        tasks: [],
+        updatedAt: Date.now(),
+      };
+
+      const updatedPresets = {
+        ...prevPresets,
+        [newPresetId]: newPreset,
+      };
+
+      savePresets(updatedPresets);
+      setActivePreset(newPresetId);
+      loadPresetData(newPreset);
+      
+      return updatedPresets;
+    });
+  };
+
+  const handleRenamePreset = () => {
+    if (!presets[activePreset]) return;
+    setRenameModalOpen(true);
+  };
+
+  const handleRenameConfirm = (newName: string) => {
+    if (!presets[activePreset]) return;
+    
+    setPresets((prevPresets) => {
+      const currentPreset = prevPresets[activePreset];
+      if (!currentPreset) return prevPresets;
+
+      // Generate unique name if needed
+      const uniqueName = generateUniquePresetName(newName, prevPresets);
+      
+      const updatedPreset: Preset = {
+        ...currentPreset,
+        name: uniqueName,
+        updatedAt: Date.now(),
+      };
+
+      const updatedPresets = {
+        ...prevPresets,
+        [activePreset]: updatedPreset,
+      };
+
+      savePresets(updatedPresets);
+      setRenameModalOpen(false);
+      return updatedPresets;
+    });
+  };
+
+  const handleDeletePreset = () => {
+    if (!presets[activePreset]) return;
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!presets[activePreset]) return;
+    
+    const presetToDeleteId = activePreset;
+    const presetIds = Object.keys(presets);
+    
+    // Find fallback preset
+    const remainingPresets = presetIds.filter((id) => id !== presetToDeleteId);
+    let fallbackPresetId: PresetId;
+    
+    if (remainingPresets.length > 0) {
+      fallbackPresetId = remainingPresets[0];
+    } else {
+      // Create a default preset if none remain
+      fallbackPresetId = 'default';
+      const defaultPreset: Preset = {
+        id: 'default',
+        name: 'Default',
+        habits: [],
+        tasks: [],
+        updatedAt: Date.now(),
+      };
+      
+      // Update day plans that reference the deleted preset
+      updateDayPlansPresetReference(presetToDeleteId, fallbackPresetId);
+      
+      // Remove deleted preset and add default
+      setPresets((prevPresets) => {
+        const updatedPresets = { ...prevPresets };
+        delete updatedPresets[presetToDeleteId];
+        updatedPresets[fallbackPresetId] = defaultPreset;
+        savePresets(updatedPresets);
+        setActivePreset(fallbackPresetId);
+        loadPresetData(defaultPreset);
+        return updatedPresets;
+      });
+      
+      setDeleteModalOpen(false);
+      return;
+    }
+
+    // Update day plans that reference the deleted preset
+    updateDayPlansPresetReference(presetToDeleteId, fallbackPresetId);
+
+    // Remove preset from storage
+    setPresets((prevPresets) => {
+      const updatedPresets = { ...prevPresets };
+      delete updatedPresets[presetToDeleteId];
+      savePresets(updatedPresets);
+      
+      // Switch to fallback
+      if (updatedPresets[fallbackPresetId]) {
+        setActivePreset(fallbackPresetId);
+        loadPresetData(updatedPresets[fallbackPresetId]);
+      }
+      
+      return updatedPresets;
+    });
+
+    setDeleteModalOpen(false);
   };
 
   const activeHabitsCount = habits.filter((h) => !h.completed).length;
@@ -342,44 +588,50 @@ export default function HabitsPage() {
         </div>
 
         <div className={styles.presetsList}>
-          <button
-            type="button"
-            className={`${styles.presetButton} ${activePreset === 'default' ? styles.presetButtonActive : ''}`}
-            onClick={() => handlePresetChange('default')}
-          >
-            Default
-          </button>
-          <button
-            type="button"
-            className={`${styles.presetButton} ${activePreset === 'trading' ? styles.presetButtonActive : ''}`}
-            onClick={() => handlePresetChange('trading')}
-          >
-            Trading Day
-          </button>
-          <button
-            type="button"
-            className={`${styles.presetButton} ${activePreset === 'recovery' ? styles.presetButtonActive : ''}`}
-            onClick={() => handlePresetChange('recovery')}
-          >
-            Recovery
-          </button>
+          {Object.values(presets).map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              className={`${styles.presetButton} ${activePreset === preset.id ? styles.presetButtonActive : ''}`}
+              onClick={() => handlePresetChange(preset.id)}
+            >
+              {preset.name}
+            </button>
+          ))}
         </div>
 
         {/* Preset Actions */}
         <div className={styles.presetActions}>
-          <button type="button" className={styles.actionButton}>
+          <button
+            type="button"
+            className={styles.actionButton}
+            onClick={handleNewPreset}
+            aria-label="Create new preset"
+          >
             <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
               <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z" />
             </svg>
             New Preset
           </button>
-          <button type="button" className={styles.actionButton}>
+          <button
+            type="button"
+            className={styles.actionButton}
+            onClick={handleRenamePreset}
+            disabled={Object.keys(presets).length === 0}
+            aria-label="Rename preset"
+          >
             <svg className={styles.icon} viewBox="0 0 512 512" fill="currentColor">
               <path d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z" />
             </svg>
             Rename
           </button>
-          <button type="button" className={`${styles.actionButton} ${styles.actionButtonDelete}`}>
+          <button
+            type="button"
+            className={`${styles.actionButton} ${styles.actionButtonDelete}`}
+            onClick={handleDeletePreset}
+            disabled={Object.keys(presets).length === 0 || Object.keys(presets).length === 1}
+            aria-label="Delete preset"
+          >
             <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
               <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z" />
             </svg>
@@ -561,6 +813,24 @@ export default function HabitsPage() {
           </button>
         </div>
       </section>
+
+      {/* Modals */}
+      {presets[activePreset] && (
+        <>
+          <RenamePresetModal
+            isOpen={renameModalOpen}
+            currentName={presets[activePreset].name}
+            onConfirm={handleRenameConfirm}
+            onCancel={() => setRenameModalOpen(false)}
+          />
+          <DeletePresetModal
+            isOpen={deleteModalOpen}
+            presetName={presets[activePreset].name}
+            onConfirm={handleDeleteConfirm}
+            onCancel={() => setDeleteModalOpen(false)}
+          />
+        </>
+      )}
     </div>
   );
 }

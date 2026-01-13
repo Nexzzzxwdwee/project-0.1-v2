@@ -3,17 +3,393 @@
 .page {
   max-width: 56rem;
   margin: 0 auto;
+  position: relative;
+  z-index: 10;
 }
 
-.page h1 {
-  font-size: 2rem;
+/* Header */
+.header {
+  margin-bottom: 3rem;
+}
+
+.headerTop {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 2.25rem;
   font-weight: bold;
+  letter-spacing: -0.025em;
   color: white;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   font-family: var(--font-space), sans-serif;
 }
 
-.page p {
+@media (min-width: 768px) {
+  .title {
+    font-size: 3rem;
+  }
+}
+
+.subtitle {
+  color: #a8a29e;
+  font-size: 0.875rem;
+}
+
+@media (min-width: 768px) {
+  .subtitle {
+    font-size: 1rem;
+  }
+}
+
+/* Week Selector */
+.weekSelector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.weekSelectorButton {
+  color: #a8a29e;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.weekSelectorButton:hover {
+  color: white;
+}
+
+.weekSelectorButton .icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.weekSelectorDisplay {
+  background: #1c1917;
+  border: 1px solid #292520;
+  border-radius: 0.75rem;
+  padding: 0.5rem 1rem;
+  min-width: 200px;
+  text-align: center;
+}
+
+.weekSelectorText {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.875rem;
+  color: white;
+}
+
+/* Summary Section */
+.summarySection {
+  margin-bottom: 3rem;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .summaryGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.summaryCard {
+  background: #1c1917;
+  border: 1px solid #292520;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.summaryLabel {
+  color: #a8a29e;
+  font-size: 0.75rem;
+  font-family: var(--font-mono), monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+}
+
+.summaryValueRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.summaryValue {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  font-family: var(--font-mono), monospace;
+}
+
+.summaryValueSub {
+  font-size: 0.875rem;
+  color: #a8a29e;
+  font-family: var(--font-mono), monospace;
+  margin-bottom: 0.25rem;
+}
+
+.progressBar {
+  width: 100%;
+  background: #292520;
+  height: 0.375rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.progressFill {
+  background: #22c55e;
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s;
+}
+
+.summaryNote {
+  font-size: 0.625rem;
+  color: #a8a29e;
+  font-family: var(--font-mono), monospace;
+  margin-top: 1rem;
+}
+
+.streakBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 1rem;
+}
+
+.fireIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: #eab308;
+}
+
+.streakBadgeText {
+  font-size: 0.625rem;
+  color: #eab308;
+  font-family: var(--font-mono), monospace;
+  text-transform: uppercase;
+}
+
+/* Week View Section */
+.weekViewSection {
+  margin-bottom: 3rem;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 1.5rem;
+  font-family: var(--font-space), sans-serif;
+}
+
+.weekGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .weekGrid {
+    gap: 0.75rem;
+  }
+}
+
+.dayCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: #1c1917;
+  border: 1px solid #292520;
+  transition: all 0.2s;
+  cursor: pointer;
+  text-align: center;
+}
+
+.dayCard:hover {
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.dayCardToday {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3);
+}
+
+.dayLabel {
+  font-size: 0.625rem;
+  font-family: var(--font-mono), monospace;
+  color: #a8a29e;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.dayDate {
+  font-size: 0.75rem;
+  font-family: var(--font-mono), monospace;
+  color: #a8a29e;
+  margin-bottom: 0.75rem;
+}
+
+.dayDateToday {
+  color: white;
+  font-weight: bold;
+}
+
+.dayStatusIcon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  border: 1px solid;
+}
+
+.dayStatusIconComplete {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: #22c55e;
+}
+
+.dayStatusIconComplete .icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: #22c55e;
+}
+
+.dayStatusIconIncomplete {
+  background: #292520;
+  border-color: #44403c;
+}
+
+.dayStatusIconIncomplete .icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: #44403c;
+}
+
+.dayStatusText {
+  font-size: 0.625rem;
+  font-family: var(--font-mono), monospace;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.dayStatusTextComplete {
+  color: #22c55e;
+}
+
+.dayStatusTextIncomplete {
   color: #a8a29e;
 }
 
+.dayPoints {
+  font-size: 0.5625rem;
+  color: #a8a29e;
+  font-family: var(--font-mono), monospace;
+  margin-top: 0.5rem;
+}
+
+.dayPointsToday {
+  color: #22c55e;
+}
+
+/* Patterns Section */
+.patternsSection {
+  margin-bottom: 4rem;
+}
+
+.patternsCard {
+  background: #1c1917;
+  border: 1px solid #292520;
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .patternsCard {
+    padding: 2rem;
+  }
+}
+
+.patternsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.patternItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.patternDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.5rem;
+}
+
+.patternDotGreen {
+  background: #22c55e;
+}
+
+.patternDotYellow {
+  background: #eab308;
+}
+
+.patternDotGray {
+  background: #a8a29e;
+}
+
+.patternTitle {
+  color: #e7e5e4;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--font-space), sans-serif;
+}
+
+.patternDescription {
+  color: #a8a29e;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+/* Footer */
+.footer {
+  padding-top: 2rem;
+  border-top: 1px solid #292520;
+  text-align: center;
+}
+
+.footerQuote {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  color: #44403c;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+}

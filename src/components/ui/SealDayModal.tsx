@@ -5,12 +5,14 @@ import styles from './preset-sync-modal.module.css';
 
 interface SealDayModalProps {
   isOpen: boolean;
+  operatorPct: number;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
 export default function SealDayModal({
   isOpen,
+  operatorPct,
   onConfirm,
   onCancel,
 }: SealDayModalProps) {
@@ -54,6 +56,11 @@ export default function SealDayModal({
           <p className={styles.description}>
             This locks today&apos;s plan and cannot be undone.
           </p>
+          {operatorPct < 100 && (
+            <p className={styles.warningText}>
+              You&apos;re sealing at {operatorPct}%. This cannot be undone.
+            </p>
+          )}
         </div>
 
         <div className={styles.footer}>

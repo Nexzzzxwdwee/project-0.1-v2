@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import styles from './today.module.css';
 import InteractiveCheckbox from '@/components/ui/InteractiveCheckbox';
 import PresetSyncModal from '@/components/ui/PresetSyncModal';
@@ -18,14 +19,25 @@ import {
   type DaySummary,
 } from '@/lib/presets';
 import SealDayModal from '@/components/ui/SealDayModal';
+import TimePicker from '@/components/ui/TimePicker';
 
 function formatTime(time: string | undefined): string {
-  if (!time) return '--:--';
+  if (!time) return '';
+  // If already in 12-hour format "hh:mm AM/PM", return as-is (normalized)
+  const match12h = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (match12h) {
+    const h = parseInt(match12h[1], 10);
+    const m = parseInt(match12h[2], 10);
+    const period = match12h[3].toUpperCase();
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+  }
+  // Otherwise, try to parse as 24-hour format for backward compatibility
   const [hours, minutes] = time.split(':');
   const hour = parseInt(hours, 10);
+  if (isNaN(hour)) return '';
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour % 12 || 12;
-  return `${displayHour}:${String(minutes || '00').padStart(2, '0')} ${ampm}`;
+  return `${String(displayHour).padStart(2, '0')}:${String(minutes || '00').padStart(2, '0')} ${ampm}`;
 }
 
 function getTodayDateString(): string {
@@ -137,6 +149,24 @@ export default function TodayPage() {
 
   // Calculate dynamic status
   const status = useMemo(() => {
+    // If sealed, show sealed status
+    if (dayPlan.isSealed) {
+      if (operatorPct === 100) {
+        return {
+          label: 'Unbroken',
+          subtitle: 'Perfect execution. Day sealed.',
+          color: '#eab308',
+        };
+      } else {
+        return {
+          label: operatorPct >= 70 ? 'Elite' : operatorPct >= 1 ? 'Strong' : 'Building',
+          subtitle: 'Day sealed.',
+          color: operatorPct === 100 ? '#eab308' : operatorPct >= 70 ? '#22c55e' : operatorPct >= 1 ? '#3b82f6' : '#a8a29e',
+        };
+      }
+    }
+    
+    // Not sealed - show percentage-based status
     if (operatorPct === 0) {
       return {
         label: 'Building',
@@ -154,12 +184,6 @@ export default function TodayPage() {
         label: 'Elite',
         subtitle: 'Execution is optimal. Maintain trajectory.',
         color: '#22c55e',
-      };
-    } else if (operatorPct === 100 && dayPlan.isSealed) {
-      return {
-        label: 'Unbroken',
-        subtitle: 'Perfect execution. Day sealed.',
-        color: '#eab308',
       };
     } else {
       // 100% but not sealed
@@ -197,7 +221,7 @@ export default function TodayPage() {
             id: generateId(),
             kind: 'task',
             text: taskText.trim(),
-            time: taskTime || '00:00',
+            time: taskTime || '', // Don't auto-assign time
             completed: false,
             source: 'manual',
             presetId: null,
@@ -223,7 +247,8 @@ export default function TodayPage() {
     if (dayPlan.isSealed) return;
     setEditingItemId(item.id);
     setEditText(item.text);
-    setEditTime(item.time || '');
+    // Convert time to 12-hour format if it's in 24-hour format
+    setEditTime(item.time ? formatTime(item.time) : '');
   };
 
   const saveEdit = () => {
@@ -236,7 +261,7 @@ export default function TodayPage() {
           ? {
               ...item,
               text: editText.trim(),
-              time: item.kind === 'task' ? editTime : item.time,
+              time: item.kind === 'task' ? editTime : item.time, // Already in 12-hour format from TimePicker
               userEdited: true,
             }
           : item
@@ -388,7 +413,7 @@ export default function TodayPage() {
         </div>
 
         {/* User Status Card */}
-        <div className={styles.rankCard}>
+        <Link href="/rank" className={styles.rankCard}>
           <div className={styles.rankHeader}>
             <span className={styles.rankLabel}>Current Rank</span>
             <svg className={styles.icon} viewBox="0 0 512 512" fill="currentColor" style={{ color: '#eab308' }}>
@@ -406,7 +431,7 @@ export default function TodayPage() {
             <span>750 / 1000 XP</span>
             <span>Next: Operator</span>
           </div>
-        </div>
+        </Link>
       </header>
 
       {/* Daily Status Card */}
@@ -420,11 +445,18 @@ export default function TodayPage() {
                 <span className={styles.statusText}>Status: {status.label}</span>
               </div>
               <p className={styles.statusSubtext}>{status.subtitle}</p>
+              {!dayPlan.isSealed && operatorPct < 100 && (
+                <p className={styles.sealHelperText}>
+                  You can seal now, but it will lock the day at {operatorPct}%.
+                </p>
+              )}
             </div>
             {dayPlan.isSealed ? (
               <div className={styles.sealBadge}>
-                <div className={styles.sealDot}></div>
-                <span className={styles.sealText}>Day Sealed</span>
+                <svg className={styles.sealIcon} viewBox="0 0 448 512" fill="currentColor">
+                  <path d="M144 144v48H304V144c0-44.2-35.8-80-80-80s-80 35.8-80 80zM96 192V144C96 64.5 160.5 0 240 0s144 64.5 144 144v48h16c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V256c0-35.3 28.7-64 64-64H96z" />
+                </svg>
+                <span className={styles.sealText}>DAY SEALED</span>
               </div>
             ) : (
               <button
@@ -433,7 +465,10 @@ export default function TodayPage() {
                 onClick={handleSealDay}
                 aria-label="Seal this day"
               >
-                Seal Day
+                <svg className={styles.sealIcon} viewBox="0 0 448 512" fill="currentColor">
+                  <path d="M144 144v48H304V144c0-44.2-35.8-80-80-80s-80 35.8-80 80zM96 192V144C96 64.5 160.5 0 240 0s144 64.5 144 144v48h16c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V256c0-35.3 28.7-64 64-64H96z" />
+                </svg>
+                <span>SEAL THE DAY</span>
               </button>
             )}
           </div>
@@ -458,18 +493,20 @@ export default function TodayPage() {
                 <span className={styles.statValue}>{streak}</span>
                 <span className={styles.statUnit}>Days</span>
               </div>
-              {streak > 0 && dayPlan.isSealed && operatorPct === 100 ? (
-                <div className={styles.streakRow}>
-                  <svg className={styles.icon} viewBox="0 0 384 512" fill="currentColor" style={{ color: '#eab308' }}>
-                    <path d="M153.6 29.9l16-21.3C173.6 3.2 180 0 186.7 0C198.4 0 208 9.6 208 21.3V43.5c0 8.7 3.5 17 9.7 23.1L278.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L350.3 66.6c6.2-6.1 9.7-14.4 9.7-23.1V21.3C360 9.6 369.6 0 381.3 0c6.7 0 13.1 3.2 17.1 8.6l16 21.3c6 8 9.4 17.5 9.4 27.1V384c0 70.7-57.3 128-128 128H128C57.3 512 0 454.7 0 384V57.7c0-9.6 3.4-19.1 9.4-27.1l16-21.3C29.5 3.2 35.9 0 42.7 0C54.4 0 64 9.6 64 21.3V43.5c0 8.7 3.5 17 9.7 23.1L134.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L153.6 29.9z" />
-                  </svg>
-                  <span className={styles.streakText}>Unbroken</span>
-                </div>
-              ) : (
-                <div className={styles.streakRow}>
-                  <span className={styles.streakText} style={{ color: '#44403c' }}>No streak</span>
-                </div>
-              )}
+              <div className={styles.streakRow}>
+                {streak === 0 ? (
+                  <span className={styles.streakSubtitle}>No streak — 100% operator days.</span>
+                ) : streak > 0 && dayPlan.isSealed && operatorPct === 100 ? (
+                  <>
+                    <svg className={styles.icon} viewBox="0 0 384 512" fill="currentColor" style={{ color: '#eab308' }}>
+                      <path d="M153.6 29.9l16-21.3C173.6 3.2 180 0 186.7 0C198.4 0 208 9.6 208 21.3V43.5c0 8.7 3.5 17 9.7 23.1L278.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L350.3 66.6c6.2-6.1 9.7-14.4 9.7-23.1V21.3C360 9.6 369.6 0 381.3 0c6.7 0 13.1 3.2 17.1 8.6l16 21.3c6 8 9.4 17.5 9.4 27.1V384c0 70.7-57.3 128-128 128H128C57.3 512 0 454.7 0 384V57.7c0-9.6 3.4-19.1 9.4-27.1l16-21.3C29.5 3.2 35.9 0 42.7 0C54.4 0 64 9.6 64 21.3V43.5c0 8.7 3.5 17 9.7 23.1L134.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L153.6 29.9z" />
+                    </svg>
+                    <span className={styles.streakSubtitle}>Consecutive 100% operator days.</span>
+                  </>
+                ) : (
+                  <span className={styles.streakSubtitle}>Last streak: {streak} (seal today to continue).</span>
+                )}
+              </div>
             </div>
 
             {/* Stat 3 */}
@@ -581,12 +618,11 @@ export default function TodayPage() {
           {/* Add Task Input */}
           {!dayPlan.isSealed && (
             <div className={styles.taskInput}>
-              <input
-                type="text"
-                placeholder="00:00"
-                className={styles.taskTimeInput}
+              <TimePicker
                 value={taskTime}
-                onChange={(e) => setTaskTime(e.target.value)}
+                onChange={setTaskTime}
+                placeholder="Set time"
+                className={styles.taskTimePicker}
               />
               <div className={styles.taskDivider}></div>
               <input
@@ -648,19 +684,14 @@ export default function TodayPage() {
                 </div>
                 {editingItemId === task.id ? (
                   <>
-                    <input
-                      type="text"
-                      placeholder="00:00"
-                      className={styles.editTimeInput}
-                      value={editTime}
-                      onChange={(e) => setEditTime(e.target.value)}
-                      onBlur={saveEdit}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveEdit();
-                        if (e.key === 'Escape') cancelEdit();
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <TimePicker
+                        value={editTime}
+                        onChange={setEditTime}
+                        placeholder="Set time"
+                        className={styles.editTimePicker}
+                      />
+                    </div>
                     <input
                       type="text"
                       className={styles.editTextInput}
@@ -677,7 +708,20 @@ export default function TodayPage() {
                   </>
                 ) : (
                   <>
-                    <span className={styles.taskTime}>{formatTime(task.time)}</span>
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!dayPlan.isSealed) {
+                          startEdit(task);
+                        }
+                      }}
+                      className={styles.taskTimeWrapper}
+                      title={dayPlan.isSealed ? '' : 'Click to set time'}
+                    >
+                      {task.time && (
+                        <span className={styles.taskTime}>{formatTime(task.time)}</span>
+                      )}
+                    </div>
                     <span
                       className={styles.taskText}
                       onDoubleClick={(e) => {
@@ -766,6 +810,7 @@ export default function TodayPage() {
       {/* Seal Day Modal */}
       <SealDayModal
         isOpen={sealModalOpen}
+        operatorPct={operatorPct}
         onConfirm={handleSealConfirm}
         onCancel={() => setSealModalOpen(false)}
       />

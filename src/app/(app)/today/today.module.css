@@ -60,12 +60,27 @@
 
 /* Rank Card */
 .rankCard {
+  display: block;
+  text-decoration: none;
   background: #1c1917;
   border: 1px solid #292520;
   border-radius: 1rem;
   padding: 1rem;
   min-width: 240px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rankCard:hover {
+  border-color: #44403c;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.5);
+}
+
+.rankCard:focus-visible {
+  outline: 2px solid #eab308;
+  outline-offset: 2px;
 }
 
 .rankHeader {
@@ -168,8 +183,8 @@
 .statusHeader {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
 }
 
 @media (min-width: 768px) {
@@ -184,7 +199,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0;
 }
 
 .statusDot {
@@ -215,50 +230,85 @@
 .statusSubtext {
   color: #a8a29e;
   font-size: 0.875rem;
+  margin: 0;
+  line-height: 1.4;
 }
 
 .sealBadge {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: 9999px;
-  background: rgba(41, 37, 36, 0.5);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(41, 37, 36, 0.6);
   border: 1px solid #292520;
+  opacity: 0.8;
 }
 
 .sealButton {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: 9999px;
-  background: rgba(41, 37, 36, 0.5);
-  border: 1px solid #292520;
-  font-size: 0.75rem;
-  color: #a8a29e;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: #22c55e;
+  border: 1px solid #22c55e;
+  color: #0c0a09;
   font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.1em;
   cursor: pointer;
   transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.sealButton::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(22, 163, 74, 0.3) 100%);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
 }
 
 .sealButton:hover:not(:disabled) {
-  background: rgba(41, 37, 36, 0.8);
-  border-color: #44403c;
-  color: #e7e5e4;
+  background: #16a34a;
+  border-color: #16a34a;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.4), 0 0 40px rgba(34, 197, 94, 0.2);
+  transform: translateY(-1px);
+}
+
+.sealButton:hover:not(:disabled)::before {
+  opacity: 1;
+}
+
+.sealButton:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
 }
 
 .sealButton:disabled {
+  background: rgba(41, 37, 36, 0.5);
+  border-color: #292520;
+  color: #a8a29e;
   cursor: not-allowed;
   opacity: 0.6;
+  box-shadow: none;
 }
 
-.sealDot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: #a8a29e;
+.sealButton:disabled::before {
+  opacity: 0;
+}
+
+.sealIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 .sealText {
@@ -266,6 +316,16 @@
   color: #a8a29e;
   font-family: var(--font-mono), monospace;
   text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+
+.sealHelperText {
+  font-size: 0.75rem;
+  color: #78716c;
+  margin: 0.25rem 0 0 0;
+  font-style: italic;
+  line-height: 1.4;
 }
 
 .statsGrid {
@@ -349,20 +409,29 @@
 .streakRow {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
   margin-top: 0.5rem;
 }
 
 .streakRow .icon {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
 }
 
 .streakText {
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   color: #eab308;
   font-family: var(--font-mono), monospace;
   text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.streakSubtitle {
+  font-size: 0.75rem;
+  color: #a8a29e;
+  font-family: var(--font-mono), monospace;
+  line-height: 1.4;
 }
 
 .scoreNote {
@@ -494,6 +563,21 @@
 .taskInput:focus-within {
   border-color: #a8a29e;
   box-shadow: 0 0 0 1px #a8a29e;
+}
+
+.taskTimePicker {
+  flex-shrink: 0;
+}
+
+.taskTimeWrapper {
+  cursor: pointer;
+  min-width: 3.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.editTimePicker {
+  flex-shrink: 0;
 }
 
 .taskTimeInput {

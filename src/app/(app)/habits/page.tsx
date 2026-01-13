@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import styles from './habits.module.css';
 import {
   getPresets,
@@ -241,6 +241,24 @@ export default function HabitsPage() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [renameModalOpen, setRenameModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  
+  // Refs to store latest habits/tasks/activePreset for commit function
+  const habitsRef = useRef<Habit[]>([]);
+  const tasksRef = useRef<Task[]>([]);
+  const activePresetRef = useRef<PresetId>(activePreset);
+  
+  // Keep refs in sync with state
+  useEffect(() => {
+    habitsRef.current = habits;
+  }, [habits]);
+  
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+  
+  useEffect(() => {
+    activePresetRef.current = activePreset;
+  }, [activePreset]);
 
   // Load presets on mount
   useEffect(() => {
@@ -280,6 +298,56 @@ export default function HabitsPage() {
     );
   };
 
+  // Commit current preset to localStorage (synchronous save)
+  // Uses refs to ensure we always have the latest habits/tasks/activePreset
+  // Loads fresh presets from storage to avoid stale state
+  const commitActivePreset = useCallback(() => {
+    const currentPresetId = activePresetRef.current;
+    const currentHabits = habitsRef.current;
+    const currentTasks = tasksRef.current;
+    
+    // Load fresh presets from storage (not from state)
+    const allPresets = getPresets();
+    if (Object.keys(allPresets).length === 0) return;
+    if (!allPresets[currentPresetId]) return;
+    
+    const currentPreset = allPresets[currentPresetId];
+    
+    const updatedPreset: Preset = {
+      ...currentPreset,
+      habits: currentHabits.map((h) => {
+        const original = currentPreset.habits.find(orig => orig.id === h.id);
+        return {
+          ...(original || {}),
+          id: h.id,
+          text: h.name,
+        };
+      }),
+      tasks: currentTasks.map((t) => {
+        const original = currentPreset.tasks.find(orig => orig.id === t.id);
+        return {
+          ...(original || {}),
+          id: t.id,
+          text: t.text,
+          time: t.time,
+        };
+      }),
+      updatedAt: Date.now(),
+    };
+    
+    // Update only the matching preset by ID, preserve all others
+    const updatedPresets = {
+      ...allPresets,
+      [currentPresetId]: updatedPreset,
+    };
+    
+    // Save to storage
+    savePresets(updatedPresets);
+    
+    // Update state to reflect the save
+    setPresets(updatedPresets);
+  }, []);
+
   // Auto-save when habits or tasks change (debounced)
   useEffect(() => {
     // Skip save during initial load, if presets haven't loaded yet, or if preset doesn't exist
@@ -288,101 +356,32 @@ export default function HabitsPage() {
     if (!presets[activePreset]) return;
     
     const timeoutId = setTimeout(() => {
-      // Use functional updates to get latest state
-      setPresets((prevPresets) => {
-        if (!prevPresets[activePreset]) return prevPresets;
-        
-        setHabits((currentHabits) => {
-          setTasks((currentTasks) => {
-            const currentPreset = prevPresets[activePreset];
-            const updatedPreset: Preset = {
-              ...currentPreset,
-              habits: currentHabits.map((h) => {
-                const original = currentPreset.habits.find(orig => orig.id === h.id);
-                return {
-                  ...(original || {}),
-                  id: h.id,
-                  text: h.name,
-                };
-              }),
-              tasks: currentTasks.map((t) => {
-                const original = currentPreset.tasks.find(orig => orig.id === t.id);
-                return {
-                  ...(original || {}),
-                  id: t.id,
-                  text: t.text,
-                  time: t.time,
-                };
-              }),
-              updatedAt: Date.now(),
-            };
-            
-            const updatedPresets = {
-              ...prevPresets,
-              [activePreset]: updatedPreset,
-            };
-            
-            savePresets(updatedPresets);
-            return currentTasks;
-          });
-          return currentHabits;
-        });
-        return prevPresets;
-      });
+      commitActivePreset();
     }, 300); // Debounce saves
     
     return () => clearTimeout(timeoutId);
   }, [habits, tasks, activePreset]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Save on unmount (safety net)
+  useEffect(() => {
+    return () => {
+      commitActivePreset();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handlePresetChange = (presetId: PresetId) => {
-    // Save current preset before switching using functional updates
-    setPresets((prevPresets) => {
-      if (prevPresets[activePreset]) {
-        setHabits((currentHabits) => {
-          setTasks((currentTasks) => {
-            const currentPreset = prevPresets[activePreset];
-            const updatedPreset: Preset = {
-              ...currentPreset,
-              habits: currentHabits.map((h) => {
-                const original = currentPreset.habits.find(orig => orig.id === h.id);
-                return {
-                  ...(original || {}),
-                  id: h.id,
-                  text: h.name,
-                };
-              }),
-              tasks: currentTasks.map((t) => {
-                const original = currentPreset.tasks.find(orig => orig.id === t.id);
-                return {
-                  ...(original || {}),
-                  id: t.id,
-                  text: t.text,
-                  time: t.time,
-                };
-              }),
-              updatedAt: Date.now(),
-            };
-            
-            const savedPresets = {
-              ...prevPresets,
-              [activePreset]: updatedPreset,
-            };
-            
-            savePresets(savedPresets);
-            return currentTasks;
-          });
-          return currentHabits;
-        });
-      }
-      
-      // Switch to new preset
-      const preset = prevPresets[presetId];
-      if (preset) {
-        setActivePreset(presetId);
-        loadPresetData(preset);
-      }
-      return prevPresets;
-    });
+    // Always save current preset before switching (synchronous)
+    commitActivePreset();
+    
+    // Load fresh presets from storage to get latest data
+    const allPresets = getPresets();
+    const preset = allPresets[presetId];
+    if (preset) {
+      setActivePreset(presetId);
+      loadPresetData(preset);
+      // Update presets state to reflect any changes from storage
+      setPresets(allPresets);
+    }
   };
 
   const toggleHabit = (id: string) => {
@@ -444,7 +443,9 @@ export default function HabitsPage() {
   };
 
   const handleNewPreset = () => {
-    // Save current preset first (will be handled by auto-save useEffect)
+    // Save current preset first before creating new one
+    commitActivePreset();
+    
     // Create new preset
     setPresets((prevPresets) => {
       const newPresetId = `preset_${Date.now()}`;

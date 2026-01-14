@@ -13,10 +13,13 @@ import {
   generateId,
   getStreak,
   saveDaySummary,
+  getUserProgress,
+  updateUserProgress,
   type DayPlan,
   type DayPlanItem,
   type PresetId,
   type DaySummary,
+  type DayStatus,
 } from '@/lib/presets';
 import SealDayModal from '@/components/ui/SealDayModal';
 import TimePicker from '@/components/ui/TimePicker';
@@ -81,10 +84,60 @@ export default function TodayPage() {
     const loadedPresets = getPresets();
     setPresets(loadedPresets);
     
+    // Initialize UserProgress if missing
+    const userProgress = getUserProgress();
+    if (!userProgress) {
+      const defaultProgress = {
+        xp: 0,
+        rank: 'Novice',
+        xpToNext: 100,
+        bestStreak: 0,
+        currentStreak: 0,
+        lastSealedDate: null,
+        updatedAt: Date.now(),
+      };
+      updateUserProgress(() => defaultProgress);
+    }
+    
+    // Normalize items: ensure all items have unique IDs
+    let normalizedPlan = plan;
+    let needsSave = false;
+    const itemIds = new Set<string>();
+    
+    normalizedPlan = {
+      ...plan,
+      items: plan.items.map((item) => {
+        if (!item.id || itemIds.has(item.id)) {
+          // Generate new ID if missing or duplicate
+          const newId = generateId();
+          needsSave = true;
+          itemIds.add(newId);
+          return { ...item, id: newId };
+        }
+        itemIds.add(item.id);
+        return item;
+      }),
+      archived: plan.archived.map((item) => {
+        if (!item.id || itemIds.has(item.id)) {
+          const newId = generateId();
+          needsSave = true;
+          itemIds.add(newId);
+          return { ...item, id: newId };
+        }
+        itemIds.add(item.id);
+        return item;
+      }),
+    };
+    
+    // If normalization occurred, save immediately
+    if (needsSave) {
+      saveDayPlan(normalizedPlan);
+    }
+    
     // If no plan exists OR items.length === 0, initialize from preset
-    if (plan.items.length === 0) {
+    if (normalizedPlan.items.length === 0) {
       // Choose activePresetId: use stored if present, else default to first preset
-      const activePresetId = plan.activePresetId || 
+      const activePresetId = normalizedPlan.activePresetId || 
         (Object.keys(loadedPresets).length > 0 ? Object.keys(loadedPresets)[0] : null);
       
       if (activePresetId && loadedPresets[activePresetId]) {
@@ -111,11 +164,11 @@ export default function TodayPage() {
         saveDayPlan(merged);
       } else {
         // No presets available, just set the plan
-        setDayPlan(plan);
+        setDayPlan(normalizedPlan);
       }
     } else {
-      // Plan exists with items, just load it
-      setDayPlan(plan);
+      // Plan exists with items, use normalized plan
+      setDayPlan(normalizedPlan);
     }
     
     // Calculate streak
@@ -146,6 +199,37 @@ export default function TodayPage() {
   const operatorTotal = operatorItems.length;
   const operatorDone = operatorItems.filter((item) => item.completed).length;
   const operatorPct = operatorTotal === 0 ? 0 : Math.round((operatorDone / operatorTotal) * 100);
+
+  // Calculate Total Score (habits 70% + tasks 30% capped at 2)
+  const totalScore = useMemo(() => {
+    const habits = dayPlan.items.filter((item) => item.kind === 'habit');
+    const tasks = dayPlan.items.filter((item) => item.kind === 'task');
+    
+    // Habits bucket (0-100 int)
+    const habitsTotal = habits.length;
+    const habitsDone = habits.filter((h) => h.completed).length;
+    const habitsPct = habitsTotal === 0 ? 0 : Math.round((habitsDone / habitsTotal) * 100);
+    
+    // Tasks bucket (capped at 2, 0-100 int)
+    const tasksTotal = tasks.length;
+    const tasksDone = tasks.filter((t) => t.completed).length;
+    const tasksDenominator = Math.min(tasksTotal, 2);
+    const tasksNumerator = Math.min(tasksDone, 2);
+    const tasksPctCapped = tasksDenominator === 0 ? 0 : Math.round((tasksNumerator / tasksDenominator) * 100);
+    
+    // Combined score (70% habits, 30% tasks, 0-100 int)
+    const totalScorePct = Math.round(habitsPct * 0.7 + tasksPctCapped * 0.3);
+    
+    return {
+      totalScorePct,
+      habitsPct,
+      tasksPctCapped,
+      habitsTotal,
+      habitsDone,
+      tasksTotal,
+      tasksDone,
+    };
+  }, [dayPlan.items]);
 
   // Calculate dynamic status
   const status = useMemo(() => {
@@ -354,7 +438,35 @@ export default function TodayPage() {
     const sealOperatorDone = operatorHabits.filter((item) => item.completed).length;
     const sealOperatorPct = sealOperatorTotal === 0 ? 0 : Math.round((sealOperatorDone / sealOperatorTotal) * 100);
     
-    // Create and save DaySummary
+    // Calculate Total Score metrics (same as live calculation)
+    const habits = dayPlan.items.filter((item) => item.kind === 'habit');
+    const tasks = dayPlan.items.filter((item) => item.kind === 'task');
+    const habitsTotal = habits.length;
+    const habitsDone = habits.filter((h) => h.completed).length;
+    const habitsPct = habitsTotal === 0 ? 0 : Math.round((habitsDone / habitsTotal) * 100);
+    const tasksTotal = tasks.length;
+    const tasksDone = tasks.filter((t) => t.completed).length;
+    const tasksDenominator = Math.min(tasksTotal, 2);
+    const tasksNumerator = Math.min(tasksDone, 2);
+    const tasksPctCapped = tasksDenominator === 0 ? 0 : Math.round((tasksNumerator / tasksDenominator) * 100);
+    const totalScorePct = Math.round(habitsPct * 0.7 + tasksPctCapped * 0.3);
+    
+    // Determine status based on operatorPct and sealed state
+    let dayStatus: DayStatus;
+    if (sealOperatorPct === 100) {
+      dayStatus = 'Unbroken';
+    } else if (sealOperatorPct >= 70) {
+      dayStatus = 'Elite';
+    } else if (sealOperatorPct >= 1) {
+      dayStatus = 'Strong';
+    } else {
+      dayStatus = 'Building';
+    }
+    
+    // XP earned equals totalScorePct (placeholder mapping)
+    const xpEarned = totalScorePct;
+    
+    // Create and save DaySummary with all fields
     const summary: DaySummary = {
       date: today,
       operatorPct: sealOperatorPct,
@@ -362,6 +474,15 @@ export default function TodayPage() {
       operatorDone: sealOperatorDone,
       isSealed: true,
       sealedAt: Date.now(),
+      totalScorePct,
+      habitsPct,
+      tasksPctCapped,
+      habitsTotal,
+      habitsDone,
+      tasksTotal,
+      tasksDone,
+      status: dayStatus,
+      xpEarned,
     };
     
     saveDaySummary(summary);
@@ -371,6 +492,16 @@ export default function TodayPage() {
     // Recalculate streak
     const newStreak = getStreak();
     setStreak(newStreak);
+    
+    // Update user progress with XP earned and streak
+    updateUserProgress((prev) => ({
+      ...prev,
+      xp: prev.xp + xpEarned,
+      lastSealedDate: today,
+      bestStreak: Math.max(prev.bestStreak, newStreak),
+      currentStreak: newStreak,
+      updatedAt: Date.now(),
+    }));
     
     setSealModalOpen(false);
   };
@@ -513,8 +644,8 @@ export default function TodayPage() {
             <div className={styles.statBox}>
               <span className={styles.statLabel}>Total Score</span>
               <div className={styles.statValueRow}>
-                <span className={styles.statValue}>850</span>
-                <span className={styles.statUnit}>pts</span>
+                <span className={styles.statValue}>{totalScore.totalScorePct}</span>
+                <span className={styles.statUnit}>XP</span>
               </div>
               <div className={styles.scoreNote}>Habits + Tasks</div>
             </div>

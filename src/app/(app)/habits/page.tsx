@@ -9,6 +9,8 @@ import {
   generateUniquePresetName,
   getDayPlansReferencingPreset,
   updateDayPlansPresetReference,
+  getActivePresetId,
+  setActivePresetId,
   type Preset,
   type PresetId,
 } from '@/lib/presets';
@@ -262,13 +264,30 @@ export default function HabitsPage() {
 
   // Load presets on mount
   useEffect(() => {
+    // Read activePresetId FIRST before calling getPresets() to avoid it initializing mock data
+    const activePresetId = getActivePresetId();
     const loadedPresets = getPresets();
     setPresets(loadedPresets);
     
-    // Set active preset to first available if default doesn't exist
     const presetIds = Object.keys(loadedPresets);
+    
     if (presetIds.length > 0) {
-      const initialPreset = loadedPresets['default'] || loadedPresets[presetIds[0]];
+      let initialPreset: Preset | undefined;
+      
+      // ALWAYS prioritize activePresetId if it exists and preset exists
+      // Do NOT treat "default" as special - only use it if activePresetId doesn't exist
+      if (activePresetId && loadedPresets[activePresetId]) {
+        initialPreset = loadedPresets[activePresetId];
+      } else if (presetIds.length > 0) {
+        // Fallback to first available preset (no special treatment for "default")
+        initialPreset = loadedPresets[presetIds[0]];
+        
+        // If we have an activePresetId but preset doesn't exist, set it to the first available
+        if (activePresetId && !loadedPresets[activePresetId] && initialPreset) {
+          setActivePresetId(initialPreset.id);
+        }
+      }
+      
       if (initialPreset) {
         setActivePreset(initialPreset.id);
         loadPresetData(initialPreset);
@@ -312,6 +331,24 @@ export default function HabitsPage() {
     if (!allPresets[currentPresetId]) return;
     
     const currentPreset = allPresets[currentPresetId];
+    
+    // CRITICAL GUARD: Prevent overwriting non-empty preset with empty state
+    // 
+    // Why this exists:
+    // - React StrictMode in development double-renders components, causing unmount/remount cycles
+    // - During unmount cleanup, refs (habitsRef/tasksRef) may still be empty [] if state hasn't synced yet
+    // - Without this guard, commitActivePreset() would save empty arrays, overwriting valid preset data
+    // - This is especially dangerous during initial mount after onboarding saves a preset
+    //
+    // Future-proofing for Supabase:
+    // - When migrating to Supabase, this same guard prevents race conditions where:
+    //   - Local state is empty (loading) but server has data
+    //   - We should never overwrite server data with empty local state
+    // - Keep this guard even after migration - it's a safety net for any async state sync issues
+    if (currentHabits.length === 0 && currentTasks.length === 0 && 
+        ((currentPreset.habits?.length || 0) > 0 || (currentPreset.tasks?.length || 0) > 0)) {
+      return;
+    }
     
     const updatedPreset: Preset = {
       ...currentPreset,
@@ -365,9 +402,12 @@ export default function HabitsPage() {
   // Save on unmount (safety net)
   useEffect(() => {
     return () => {
-      commitActivePreset();
+      // Only commit if not initial load (prevents overwriting with empty state)
+      if (!isInitialLoad) {
+        commitActivePreset();
+      }
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isInitialLoad, commitActivePreset]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePresetChange = (presetId: PresetId) => {
     // Always save current preset before switching (synchronous)

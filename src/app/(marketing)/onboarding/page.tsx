@@ -1,8 +1,27 @@
 'use client';
 
-import Link from 'next/link';
+import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './onboarding.module.css';
+import {
+  getPresets,
+  savePresets,
+  setActivePresetId,
+  getDayPlan,
+  saveDayPlan,
+  mergePresetIntoDayPlan,
+  generateId,
+  normalizeText,
+  type Preset,
+  type PresetItem,
+} from '@/lib/presets';
+
+interface OnboardingItem {
+  id: string;
+  text: string;
+  checked: boolean;
+  source: 'default' | 'custom';
+}
 
 // Mock data
 const mockHabits = [
@@ -20,12 +39,196 @@ const mockTasks = [
   { id: 3, name: 'Content output', checked: false },
 ];
 
+function getTodayDateString(): string {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [onboardingHabits, setOnboardingHabits] = useState<OnboardingItem[]>(
+    mockHabits.map((h) => ({
+      id: generateId(),
+      text: h.name,
+      checked: h.checked,
+      source: 'default' as const,
+    }))
+  );
+  const [onboardingTasks, setOnboardingTasks] = useState<OnboardingItem[]>(
+    mockTasks.map((t) => ({
+      id: generateId(),
+      text: t.name,
+      checked: t.checked,
+      source: 'default' as const,
+    }))
+  );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAddHabit = () => {
+    const text = prompt('Enter habit name:');
+    if (text && text.trim()) {
+      setOnboardingHabits((prev) => [
+        ...prev,
+        {
+          id: generateId(),
+          text: text.trim(),
+          checked: false,
+          source: 'custom' as const,
+        },
+      ]);
+    }
+  };
+
+  const handleAddTask = () => {
+    const text = prompt('Enter task name:');
+    if (text && text.trim()) {
+      setOnboardingTasks((prev) => [
+        ...prev,
+        {
+          id: generateId(),
+          text: text.trim(),
+          checked: false,
+          source: 'custom' as const,
+        },
+      ]);
+    }
+  };
+
+  const handleDeleteHabit = (id: string) => {
+    setOnboardingHabits((prev) => prev.filter((h) => h.id !== id));
+  };
+
+  const handleDeleteTask = (id: string) => {
+    setOnboardingTasks((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const handleToggleHabit = (id: string) => {
+    setOnboardingHabits((prev) =>
+      prev.map((h) => (h.id === id ? { ...h, checked: !h.checked } : h))
+    );
+  };
+
+  const handleToggleTask = (id: string) => {
+    setOnboardingTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, checked: !t.checked } : t))
+    );
+  };
+
+  const handleHabitTextChange = (id: string, text: string) => {
+    setOnboardingHabits((prev) =>
+      prev.map((h) => (h.id === id ? { ...h, text } : h))
+    );
+  };
+
+  const handleTaskTextChange = (id: string, text: string) => {
+    setOnboardingTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, text } : t))
+    );
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    router.push('/today');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Use state arrays directly
+      const habits: PresetItem[] = onboardingHabits
+        .map((h) => h.text.trim())
+        .filter((text) => text.length > 0)
+        .map((text) => ({
+          id: generateId(),
+          text,
+        }));
+
+      const tasks: PresetItem[] = onboardingTasks
+        .map((t) => t.text.trim())
+        .filter((text) => text.length > 0)
+        .map((text) => ({
+          id: generateId(),
+          text,
+        }));
+
+      if (habits.length === 0 && tasks.length === 0) {
+        setError('Please add at least one habit or task.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Get existing presets
+      const allPresets = getPresets();
+      
+      // Determine preset name and ID
+      const presetName = 'Default';
+      let presetId: string = 'default';
+      
+      // Check if default preset exists
+      if (allPresets[presetId]) {
+        // Update existing preset (preserve IDs if possible)
+        const existingPreset = allPresets[presetId];
+        const updatedPreset: Preset = {
+          ...existingPreset,
+          name: presetName,
+          habits: habits.map((h) => {
+            // Try to match by text to preserve ID
+            const existing = existingPreset.habits.find((eh) => normalizeText(eh.text) === normalizeText(h.text));
+            return existing ? existing : h;
+          }),
+          tasks: tasks.map((t) => {
+            const existing = existingPreset.tasks.find((et) => normalizeText(et.text) === normalizeText(t.text));
+            return existing ? existing : t;
+          }),
+          updatedAt: Date.now(),
+        };
+        allPresets[presetId] = updatedPreset;
+      } else {
+        // Create new preset
+        allPresets[presetId] = {
+          id: presetId,
+          name: presetName,
+          habits,
+          tasks,
+          updatedAt: Date.now(),
+        };
+      }
+
+      // Save presets
+      savePresets(allPresets);
+
+      // Set active preset ID
+      setActivePresetId(presetId);
+
+      // Initialize today's day plan
+      const today = getTodayDateString();
+      const existingPlan = getDayPlan(today);
+      const preset = allPresets[presetId];
+
+      const emptyPlan = {
+        date: today,
+        activePresetId: null,
+        presetUpdatedAt: null,
+        items: [],
+        archived: [],
+        isSealed: false,
+      };
+
+      // Merge preset into day plan (same logic as /today)
+      const merged = mergePresetIntoDayPlan(preset, emptyPlan, {
+        keepCompletion: false,
+        keepManual: true,
+      });
+
+      merged.activePresetId = presetId;
+      saveDayPlan(merged);
+
+      // Redirect to /today
+      router.push('/today');
+    } catch (err) {
+      console.error('Failed to initialize:', err);
+      setError('Failed to save. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -69,15 +272,17 @@ export default function OnboardingPage() {
             </div>
 
             <div className={styles.habitsList}>
-              {mockHabits.map((habit, index) => (
+              {onboardingHabits.map((habit, index) => (
                 <div key={habit.id} className={styles.habitItem}>
                   <div className={styles.habitInputGroup}>
                     <label className={styles.habitLabel}>Habit {String(index + 1).padStart(2, '0')}</label>
                     <input
                       type="text"
-                      defaultValue={habit.name}
-                      className={styles.habitInput}
+                      value={habit.text}
+                      onChange={(e) => handleHabitTextChange(habit.id, e.target.value)}
+                      className={`${styles.habitInput} habit-input`}
                       placeholder="Enter habit name..."
+                      disabled={isLoading}
                     />
                     <div className={styles.inputBorder}></div>
                   </div>
@@ -86,12 +291,16 @@ export default function OnboardingPage() {
                       type="checkbox"
                       id={`habit-${habit.id}`}
                       className={styles.checkboxCustom}
-                      defaultChecked={habit.checked}
+                      checked={habit.checked}
+                      onChange={() => handleToggleHabit(habit.id)}
+                      disabled={isLoading}
                     />
                     <button
                       type="button"
                       className={styles.deleteButton}
                       aria-label="Delete habit"
+                      onClick={() => handleDeleteHabit(habit.id)}
+                      disabled={isLoading}
                     >
                       <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
                         <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z" />
@@ -102,7 +311,7 @@ export default function OnboardingPage() {
               ))}
             </div>
 
-            <button type="button" className={styles.addButton} onClick={() => {}}>
+            <button type="button" className={styles.addButton} onClick={handleAddHabit} disabled={isLoading}>
               <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
                 <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z" />
               </svg>
@@ -123,19 +332,29 @@ export default function OnboardingPage() {
             </div>
 
             <div className={styles.tasksList}>
-              {mockTasks.map((task) => (
+              {onboardingTasks.map((task) => (
                 <div key={task.id} className={styles.taskItem}>
                   <input
                     type="checkbox"
                     className={styles.checkboxCustom}
                     id={`task-${task.id}`}
-                    defaultChecked={task.checked}
+                    checked={task.checked}
+                    onChange={() => handleToggleTask(task.id)}
+                    disabled={isLoading}
                   />
-                  <span className={styles.taskText}>{task.name}</span>
+                  <input
+                    type="text"
+                    value={task.text}
+                    onChange={(e) => handleTaskTextChange(task.id, e.target.value)}
+                    className={`${styles.taskText} task-input`}
+                    disabled={isLoading}
+                  />
                   <button
                     type="button"
                     className={styles.taskDeleteButton}
                     aria-label="Delete task"
+                    onClick={() => handleDeleteTask(task.id)}
+                    disabled={isLoading}
                   >
                     <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
                       <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z" />
@@ -145,7 +364,7 @@ export default function OnboardingPage() {
               ))}
             </div>
 
-            <button type="button" className={styles.addTaskButton} onClick={() => {}}>
+            <button type="button" className={styles.addTaskButton} onClick={handleAddTask} disabled={isLoading}>
               <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
                 <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z" />
               </svg>
@@ -178,12 +397,25 @@ export default function OnboardingPage() {
           {/* Footer / Action */}
           <div className={`${styles.footer} ${styles.animateEnter} ${styles.delay400}`}>
             <div className={styles.footerBlur}></div>
-            <button type="submit" className={styles.submitButton}>
+            {error && (
+              <div className={styles.errorMessage} role="alert">
+                {error}
+              </div>
+            )}
+            <button
+              type="submit"
+              className={styles.submitButton}
+              disabled={isLoading}
+            >
               <span className={styles.submitButtonInner}>
-                <span className={styles.submitButtonText}>Save & Initialize</span>
-                <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
-                  <path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z" />
-                </svg>
+                <span className={styles.submitButtonText}>
+                  {isLoading ? 'Initializing…' : 'Save & Initialize'}
+                </span>
+                {!isLoading && (
+                  <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
+                    <path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z" />
+                  </svg>
+                )}
               </span>
             </button>
             <p className={styles.footerHint}>Press Enter to confirm</p>

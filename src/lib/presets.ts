@@ -42,13 +42,35 @@ export interface DayPlan {
   isSealed: boolean;
 }
 
+export type DayStatus = 'Building' | 'Strong' | 'Elite' | 'Unbroken';
+
 export interface DaySummary {
   date: string; // YYYY-MM-DD
-  operatorPct: number;
+  operatorPct: number; // 0-100 (habits only)
   operatorTotal: number;
   operatorDone: number;
   isSealed: boolean;
   sealedAt: number | null;
+  // Total Score fields (0-100 integers)
+  totalScorePct: number; // 0-100
+  habitsPct: number; // 0-100
+  tasksPctCapped: number; // 0-100
+  habitsTotal: number;
+  habitsDone: number;
+  tasksTotal: number;
+  tasksDone: number;
+  status: DayStatus;
+  xpEarned: number; // Placeholder: equals totalScorePct
+}
+
+export interface UserProgress {
+  xp: number; // Total accumulated XP
+  rank: string; // Current rank name
+  xpToNext: number; // XP needed for next rank
+  bestStreak: number; // All-time best streak
+  currentStreak: number; // Current active streak
+  lastSealedDate: string | null; // YYYY-MM-DD of last sealed day
+  updatedAt: number; // Timestamp
 }
 
 /**
@@ -215,6 +237,20 @@ export function getDayPlan(date: string): DayPlan {
  */
 export function saveDayPlan(plan: DayPlan): void {
   setJSON(`${P01_PREFIX}dayplan:${plan.date}`, plan);
+}
+
+/**
+ * Get active preset ID from localStorage
+ */
+export function getActivePresetId(): PresetId | null {
+  return getJSON<PresetId | null>(`${P01_PREFIX}activePresetId`, null);
+}
+
+/**
+ * Set active preset ID in localStorage
+ */
+export function setActivePresetId(presetId: PresetId): void {
+  setJSON(`${P01_PREFIX}activePresetId`, presetId);
 }
 
 /**
@@ -465,5 +501,41 @@ export function getStreak(today?: string): number {
   }
   
   return streak;
+}
+
+/**
+ * Get user progress from localStorage
+ */
+export function getUserProgress(): UserProgress | null {
+  return getJSON<UserProgress | null>(`${P01_PREFIX}userProgress`, null);
+}
+
+/**
+ * Save user progress to localStorage
+ */
+export function saveUserProgress(progress: UserProgress): void {
+  setJSON(`${P01_PREFIX}userProgress`, progress);
+}
+
+/**
+ * Update user progress using an updater function
+ */
+export function updateUserProgress(updater: (prev: UserProgress) => UserProgress): void {
+  const current = getUserProgress();
+  if (!current) {
+    // Initialize with default values
+    const defaultProgress: UserProgress = {
+      xp: 0,
+      rank: 'Novice',
+      xpToNext: 100,
+      bestStreak: 0,
+      currentStreak: 0,
+      lastSealedDate: null,
+      updatedAt: Date.now(),
+    };
+    saveUserProgress(updater(defaultProgress));
+  } else {
+    saveUserProgress(updater(current));
+  }
 }
 

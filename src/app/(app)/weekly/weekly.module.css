@@ -85,6 +85,24 @@
   color: white;
 }
 
+/* Empty State */
+.emptyStateSection {
+  margin-bottom: 3rem;
+}
+
+.emptyState {
+  padding: 2rem;
+  text-align: center;
+  background: #1c1917;
+  border: 1px solid #292520;
+  border-radius: 1rem;
+}
+
+.emptyStateText {
+  color: #a8a29e;
+  font-size: 0.875rem;
+}
+
 /* Summary Section */
 .summarySection {
   margin-bottom: 3rem;

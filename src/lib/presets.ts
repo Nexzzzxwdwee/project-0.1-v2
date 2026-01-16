@@ -469,6 +469,39 @@ export function saveDaySummary(summary: DaySummary): void {
 }
 
 /**
+ * Get all sealed day summaries (READ-ONLY)
+ * Returns summaries sorted by date descending (newest first)
+ */
+export function getAllSealedDaySummaries(): DaySummary[] {
+  if (typeof window === 'undefined') return [];
+  
+  const summaryKeys = listKeys(`${P01_PREFIX}daySummary:`);
+  const summaries: DaySummary[] = [];
+  
+  for (const key of summaryKeys) {
+    try {
+      const summary = getJSON<DaySummary | null>(key, null);
+      // Only include sealed summaries
+      if (summary && summary.isSealed) {
+        summaries.push(summary);
+      }
+    } catch (error) {
+      // Skip invalid entries
+      console.warn(`Failed to parse daySummary key "${key}":`, error);
+    }
+  }
+  
+  // Sort by date descending (newest first)
+  summaries.sort((a, b) => {
+    if (a.date > b.date) return -1;
+    if (a.date < b.date) return 1;
+    return 0;
+  });
+  
+  return summaries;
+}
+
+/**
  * Calculate streak of consecutive sealed days with 100% operator score
  * Scans backward from today (or provided date)
  */

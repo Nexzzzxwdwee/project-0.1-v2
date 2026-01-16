@@ -1,19 +1,415 @@
-/* Rank Page Styles */
+/* Rank Page Styles - Komposo Design */
 
 .page {
+  min-height: 100vh;
+  background-color: #0c0a09;
+  color: #e7e5e4;
+  position: relative;
+  overflow-y: auto;
+}
+
+.gridBackground {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: linear-gradient(#292520 1px, transparent 1px),
+    linear-gradient(90deg, #292520 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.container {
   max-width: 56rem;
   margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+  position: relative;
+  z-index: 10;
 }
 
-.page h1 {
-  font-size: 2rem;
+@media (min-width: 768px) {
+  .container {
+    padding: 3.5rem 3rem;
+  }
+}
+
+/* Header */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+@media (min-width: 768px) {
+  .header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+.title {
+  font-size: 2.25rem;
   font-weight: bold;
+  letter-spacing: -0.025em;
   color: white;
-  margin-bottom: 1rem;
-  font-family: var(--font-space), sans-serif;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-space, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
 }
 
-.page p {
+@media (min-width: 768px) {
+  .title {
+    font-size: 3rem;
+  }
+}
+
+.subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   color: #a8a29e;
 }
 
+.icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+}
+
+.iconSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.subtitleText {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Current Rank Section */
+.currentRankSection {
+  margin-bottom: 3rem;
+}
+
+.currentRankCard {
+  background-color: #1c1917;
+  border: 1px solid #292520;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: border-color 0.3s;
+}
+
+.currentRankCard:hover {
+  border-color: #44403c;
+}
+
+.currentRankHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.rankLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.rankLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #a8a29e;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.currentBadge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #22c55e;
+  background-color: rgba(34, 197, 94, 0.1);
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.rankName {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+}
+
+.rankIcon {
+  font-size: 1.5rem;
+  color: #eab308;
+}
+
+.rankIconSvg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.emptyState {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: rgba(168, 162, 158, 0.05);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(168, 162, 158, 0.1);
+}
+
+.emptyStateText {
+  color: #a8a29e;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .statsGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.statCard {
+  background-color: rgba(41, 37, 32, 0.5);
+  border: 1px solid #292520;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.statLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.625rem;
+  color: #a8a29e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.statValue {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+}
+
+/* Progress Section */
+.progressSection {
+  margin-top: 1.5rem;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.progressLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #a8a29e;
+}
+
+.progressValue {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #eab308;
+}
+
+.progressBar {
+  width: 100%;
+  height: 0.375rem;
+  background-color: #292520;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: #eab308;
+  border-radius: 9999px;
+  box-shadow: 0 0 10px #eab308;
+  transition: width 0.3s ease;
+}
+
+/* Ranks Section */
+.ranksSection {
+  margin-bottom: 3rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+}
+
+.sectionBadge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #a8a29e;
+  background-color: #1c1917;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.25rem;
+  border: 1px solid #292520;
+}
+
+.ranksGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .ranksGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .ranksGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Rank Card */
+.rankCard {
+  background-color: #1c1917;
+  border: 1px solid #292520;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: all 0.3s;
+}
+
+.rankCard:hover {
+  border-color: #44403c;
+}
+
+.rankCardCurrent {
+  border-color: #44403c;
+  box-shadow: 0 10px 15px -3px rgba(68, 64, 60, 0.2);
+}
+
+.rankCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.rankCardLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.rankCardLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #a8a29e;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.rankCardCurrentBadge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #22c55e;
+  background-color: rgba(34, 197, 94, 0.1);
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.rankCardTitle {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+}
+
+.rankCardIcon {
+  font-size: 1.5rem;
+}
+
+.rankCardIconSvg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.rankCardDescription {
+  font-size: 0.875rem;
+  color: #a8a29e;
+  margin-bottom: 1rem;
+}
+
+.rankCardProgress {
+  margin-top: 0.75rem;
+}
+
+.rankCardProgressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.rankCardProgressLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #a8a29e;
+}
+
+.rankCardProgressValue {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.rankCardProgressBar {
+  width: 100%;
+  height: 0.375rem;
+  background-color: #292520;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.rankCardProgressFill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px currentColor;
+}
+
+/* Footer */
+.footer {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid #292520;
+  text-align: center;
+}
+
+.footerText {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #44403c;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}

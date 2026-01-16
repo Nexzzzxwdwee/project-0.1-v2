@@ -1,78 +1,118 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { generateId } from '@/lib/presets';
+import { P01_PREFIX, getJSON, setJSON } from '@/lib/p01Storage';
 import styles from './goals.module.css';
 
-interface Goal {
-  id: number;
-  title: string;
-  category: string;
-  progress: number; // 0-100
+export interface Goal {
+  id: string;
+  text: string;
+  tag?: string;
+  createdAt: number;
+  updatedAt: number;
   done: boolean;
+  doneAt: number | null;
 }
 
-const mockGoals: Goal[] = [
-  { id: 1, title: 'Reach $10k monthly trading profit', category: 'Trading', progress: 65, done: false },
-  { id: 2, title: 'Complete 30-day fitness challenge', category: 'Health', progress: 80, done: false },
-  { id: 3, title: 'Publish 12 blog posts this quarter', category: 'Content', progress: 42, done: false },
-  { id: 4, title: 'Launch new product feature', category: 'Business', progress: 100, done: true },
-  { id: 5, title: 'Read 24 books this year', category: 'Personal', progress: 35, done: false },
-];
+/**
+ * Get goals from localStorage
+ */
+function getGoals(): Goal[] {
+  if (typeof window === 'undefined') return [];
+  return getJSON<Goal[]>(`${P01_PREFIX}goals`, []);
+}
 
-// Known categories for color coding
-const knownCategories = ['Trading', 'Health', 'Content', 'Business', 'Personal'];
+/**
+ * Save goals to localStorage
+ */
+function saveGoals(goals: Goal[]): void {
+  if (typeof window === 'undefined') return;
+  setJSON(`${P01_PREFIX}goals`, goals);
+}
 
 export default function GoalsPage() {
-  const [goals, setGoals] = useState<Goal[]>(mockGoals);
-  const [newGoalTitle, setNewGoalTitle] = useState('');
-  const [newGoalCategoryText, setNewGoalCategoryText] = useState('');
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [newGoalText, setNewGoalText] = useState('');
+  const [newGoalTag, setNewGoalTag] = useState('');
   const [completedExpanded, setCompletedExpanded] = useState(false);
-  const [focusedGoalId, setFocusedGoalId] = useState<number | null>(null);
-  const [completingGoalId, setCompletingGoalId] = useState<number | null>(null);
 
-  const activeGoals = goals.filter((g) => !g.done);
-  const completedGoals = goals.filter((g) => g.done);
+  // Load goals on mount (after hydration)
+  useEffect(() => {
+    const loadedGoals = getGoals();
+    setGoals(loadedGoals);
+  }, []);
 
+  // Separate active and completed goals, sorted
+  const activeGoals = goals
+    .filter((g) => !g.done)
+    .sort((a, b) => b.updatedAt - a.updatedAt); // Newest updatedAt first
+
+  const completedGoals = goals
+    .filter((g) => g.done)
+    .sort((a, b) => {
+      // Most recent doneAt first, fallback to updatedAt
+      const aTime = a.doneAt || a.updatedAt;
+      const bTime = b.doneAt || b.updatedAt;
+      return bTime - aTime;
+    });
+
+  // Save goals helper
+  const updateGoals = (updatedGoals: Goal[]) => {
+    setGoals(updatedGoals);
+    saveGoals(updatedGoals);
+  };
+
+  // Add new goal
   const handleAddGoal = () => {
-    if (newGoalTitle.trim()) {
-      const categoryText = newGoalCategoryText.trim();
-      const category = categoryText || 'General';
-      
-      const newGoal: Goal = {
-        id: Date.now(),
-        title: newGoalTitle.trim(),
-        category: category,
-        progress: 0,
-        done: false,
-      };
-      setGoals([...goals, newGoal]);
-      setNewGoalTitle('');
-      setNewGoalCategoryText('');
-    }
-  };
+    const text = newGoalText.trim();
+    if (!text) return;
 
-  const handleMarkDone = (id: number) => {
-    setCompletingGoalId(id);
-    setTimeout(() => {
-      setGoals(goals.map((g) => (g.id === id ? { ...g, done: true, progress: 100 } : g)));
-      setCompletingGoalId(null);
-    }, 300);
-  };
-
-  const handleRestore = (id: number) => {
-    setGoals(goals.map((g) => (g.id === id ? { ...g, done: false } : g)));
-  };
-
-  const getCategoryColor = (category: string): string => {
-    const colors: Record<string, string> = {
-      Trading: '#22c55e',
-      Health: '#3b82f6',
-      Content: '#a855f7',
-      Business: '#f59e0b',
-      Personal: '#ef4444',
+    const now = Date.now();
+    const newGoal: Goal = {
+      id: generateId(),
+      text,
+      tag: newGoalTag.trim() || undefined,
+      createdAt: now,
+      updatedAt: now,
+      done: false,
+      doneAt: null,
     };
-    // Return known category color, or neutral color for unknown categories
-    return colors[category] || '#44403c';
+
+    const updated = [...goals, newGoal];
+    updateGoals(updated);
+    setNewGoalText('');
+    setNewGoalTag('');
+  };
+
+  // Toggle done status
+  const handleToggleDone = (id: string) => {
+    const updated = goals.map((goal) => {
+      if (goal.id === id) {
+        const isNowDone = !goal.done;
+        return {
+          ...goal,
+          done: isNowDone,
+          doneAt: isNowDone ? Date.now() : null,
+          updatedAt: Date.now(),
+        };
+      }
+      return goal;
+    });
+    updateGoals(updated);
+  };
+
+  // Delete goal
+  const handleDeleteGoal = (id: string) => {
+    const goal = goals.find((g) => g.id === id);
+    if (!goal) return;
+
+    if (!confirm(`Delete "${goal.text}"? This cannot be undone.`)) {
+      return;
+    }
+
+    const updated = goals.filter((g) => g.id !== id);
+    updateGoals(updated);
   };
 
   return (
@@ -93,39 +133,40 @@ export default function GoalsPage() {
         {/* Active Goals Section */}
         {activeGoals.length > 0 && (
           <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Active Goals</h2>
             <div className={styles.goalsList}>
               {activeGoals.map((goal) => (
-                <div
-                  key={goal.id}
-                  className={`${styles.goalCard} ${focusedGoalId === goal.id ? styles.goalCardFocused : ''} ${completingGoalId === goal.id ? styles.goalCardCompleting : ''}`}
-                  onClick={() => setFocusedGoalId(focusedGoalId === goal.id ? null : goal.id)}
-                  onBlur={() => setFocusedGoalId(null)}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={`Focus on goal: ${goal.title}`}
-                >
+                <div key={goal.id} className={styles.goalCard}>
                   <div className={styles.goalContent}>
                     <div className={styles.goalHeader}>
-                      <h3 className={styles.goalTitle}>{goal.title}</h3>
-                      <span
-                        className={`${styles.categoryPill} ${knownCategories.includes(goal.category) ? '' : styles.categoryPillUnknown}`}
-                        style={{ '--category-color': getCategoryColor(goal.category) } as React.CSSProperties}
-                      >
-                        {goal.category}
-                      </span>
+                      <h3 className={styles.goalTitle}>{goal.text}</h3>
+                      {goal.tag && (
+                        <span className={styles.tagPill} title={goal.tag}>
+                          {goal.tag}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className={`${styles.doneButton} ${completingGoalId === goal.id ? styles.doneButtonPulsing : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMarkDone(goal.id);
-                    }}
-                    aria-label={`Mark "${goal.title}" as done`}
-                  >
-                    DONE
-                  </button>
+                  <div className={styles.goalActions}>
+                    <button
+                      type="button"
+                      className={styles.doneButton}
+                      onClick={() => handleToggleDone(goal.id)}
+                      aria-label={`Mark "${goal.text}" as done`}
+                    >
+                      DONE
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.deleteButton}
+                      onClick={() => handleDeleteGoal(goal.id)}
+                      aria-label={`Delete "${goal.text}"`}
+                    >
+                      <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
+                        <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -135,7 +176,7 @@ export default function GoalsPage() {
         {activeGoals.length === 0 && (
           <section className={styles.section}>
             <div className={styles.emptyState}>
-              <p className={styles.emptyText}>No active goals. Add one below to get started.</p>
+              <p className={styles.emptyText}>No active goals yet.</p>
             </div>
           </section>
         )}
@@ -146,40 +187,41 @@ export default function GoalsPage() {
             <h2 className={styles.addGoalTitle}>Create New Goal</h2>
             <div className={styles.addGoalForm}>
               <div className={styles.inputGroup}>
-                <label htmlFor="goal-title" className={styles.visuallyHidden}>
-                  Goal title
+                <label htmlFor="goal-text" className={styles.visuallyHidden}>
+                  Goal text
                 </label>
                 <input
-                  id="goal-title"
+                  id="goal-text"
                   type="text"
                   className={styles.goalInput}
-                  placeholder="Enter goal title..."
-                  value={newGoalTitle}
-                  onChange={(e) => setNewGoalTitle(e.target.value)}
+                  placeholder="Enter goal..."
+                  value={newGoalText}
+                  onChange={(e) => setNewGoalText(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       handleAddGoal();
                     }
                   }}
+                  aria-label="Goal text (required)"
                 />
               </div>
               <div className={styles.inputGroup}>
-                <label htmlFor="goal-category" className={styles.visuallyHidden}>
-                  Category
+                <label htmlFor="goal-tag" className={styles.visuallyHidden}>
+                  Tag (optional)
                 </label>
                 <input
-                  id="goal-category"
+                  id="goal-tag"
                   type="text"
                   className={styles.goalInput}
-                  placeholder="Category (optional)"
-                  value={newGoalCategoryText}
-                  onChange={(e) => setNewGoalCategoryText(e.target.value)}
+                  placeholder="Tag (optional)"
+                  value={newGoalTag}
+                  onChange={(e) => setNewGoalTag(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       handleAddGoal();
                     }
                   }}
-                  aria-label="Category (optional)"
+                  aria-label="Tag (optional)"
                 />
               </div>
               <button
@@ -222,27 +264,46 @@ export default function GoalsPage() {
                   <div key={goal.id} className={`${styles.goalCard} ${styles.goalCardCompleted}`}>
                     <div className={styles.goalContent}>
                       <div className={styles.goalHeader}>
-                        <h3 className={styles.goalTitle}>{goal.title}</h3>
-                        <span
-                          className={`${styles.categoryPill} ${knownCategories.includes(goal.category) ? '' : styles.categoryPillUnknown}`}
-                          style={{ '--category-color': getCategoryColor(goal.category) } as React.CSSProperties}
-                        >
-                          {goal.category}
-                        </span>
+                        <h3 className={styles.goalTitle}>{goal.text}</h3>
+                        {goal.tag && (
+                          <span className={styles.tagPill} title={goal.tag}>
+                            {goal.tag}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      className={styles.restoreButton}
-                      onClick={() => handleRestore(goal.id)}
-                      aria-label={`Restore "${goal.title}" to active goals`}
-                    >
-                      Restore
-                    </button>
+                    <div className={styles.goalActions}>
+                      <button
+                        type="button"
+                        className={styles.restoreButton}
+                        onClick={() => handleToggleDone(goal.id)}
+                        aria-label={`Restore "${goal.text}" to active goals`}
+                      >
+                        Restore
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.deleteButton}
+                        onClick={() => handleDeleteGoal(goal.id)}
+                        aria-label={`Delete "${goal.text}"`}
+                      >
+                        <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
+                          <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
+          </section>
+        )}
+
+        {completedGoals.length === 0 && completedExpanded && (
+          <section className={styles.section}>
+            <div className={styles.emptyState}>
+              <p className={styles.emptyText}>No completed goals yet.</p>
+            </div>
           </section>
         )}
       </div>

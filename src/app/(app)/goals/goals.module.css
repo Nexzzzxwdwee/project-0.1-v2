@@ -103,37 +103,19 @@
 .goalCard {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
   padding: 1.5rem;
   background: #1c1917;
   border: 1px solid #292520;
   border-radius: 1rem;
   transition: all 200ms ease-out;
-  cursor: pointer;
-  position: relative;
 }
 
 .goalCard:hover {
   border-color: #44403c;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-}
-
-.goalCard:focus-visible {
-  outline: 2px solid #22c55e;
-  outline-offset: 2px;
-}
-
-.goalCardFocused {
-  transform: scale(1.01);
-  border-color: #22c55e;
-  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.2);
-}
-
-.goalCardCompleting {
-  opacity: 0.5;
-  transform: translateY(10px) scale(0.98);
-  transition: all 300ms ease-out;
 }
 
 .goalCardCompleted {
@@ -146,13 +128,6 @@
   text-decoration-color: rgba(34, 197, 94, 0.3);
 }
 
-.goalCardCompleted:hover .restoreButton {
-  opacity: 1;
-}
-
-.goalCardCompleted .restoreButton {
-  transition: opacity 150ms ease-out;
-}
 
 .goalContent {
   flex: 1;
@@ -178,10 +153,10 @@
   min-width: 0;
 }
 
-.categoryPill {
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid var(--category-color, #22c55e);
-  color: var(--category-color, #22c55e);
+.tagPill {
+  background: rgba(68, 64, 60, 0.1);
+  border: 1px solid #44403c;
+  color: #a8a29e;
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   font-size: 0.75rem;
@@ -189,12 +164,17 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   flex-shrink: 0;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.categoryPillUnknown {
-  background: rgba(68, 64, 60, 0.1);
-  border-color: #44403c;
-  color: #a8a29e;
+.goalActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 
@@ -224,20 +204,35 @@
   outline-offset: 2px;
 }
 
-.doneButtonPulsing {
-  animation: greenPulse 300ms ease-out;
+.deleteButton {
+  background: transparent;
+  border: 1px solid #292520;
+  color: #a8a29e;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 150ms ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-@keyframes greenPulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
-  }
+.deleteButton:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.deleteButton:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+}
+
+.deleteButton .icon {
+  width: 0.875rem;
+  height: 0.875rem;
 }
 
 /* Add Goal Card */
@@ -387,7 +382,6 @@
   cursor: pointer;
   transition: all 150ms ease-out;
   flex-shrink: 0;
-  opacity: 0;
 }
 
 .restoreButton:hover {
@@ -399,7 +393,6 @@
 .restoreButton:focus-visible {
   outline: 2px solid #a8a29e;
   outline-offset: 2px;
-  opacity: 1;
 }
 
 /* Empty State */
@@ -425,4 +418,10 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+.icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
 }

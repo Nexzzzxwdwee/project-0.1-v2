@@ -10,10 +10,13 @@ import {
   getDayPlan,
   saveDayPlan,
   mergePresetIntoDayPlan,
+  getUserProgress,
+  saveUserProgress,
   generateId,
   normalizeText,
   type Preset,
   type PresetItem,
+  type UserProgress,
 } from '@/lib/presets';
 
 interface OnboardingItem {
@@ -221,6 +224,21 @@ export default function OnboardingPage() {
 
       merged.activePresetId = presetId;
       saveDayPlan(merged);
+
+      // Ensure user progress exists
+      const existingProgress = getUserProgress();
+      if (!existingProgress) {
+        const defaultProgress: UserProgress = {
+          xp: 0,
+          rank: 'Novice',
+          xpToNext: 100,
+          bestStreak: 0,
+          currentStreak: 0,
+          lastSealedDate: null,
+          updatedAt: Date.now(),
+        };
+        saveUserProgress(defaultProgress);
+      }
 
       // Redirect to /today
       router.push('/today');

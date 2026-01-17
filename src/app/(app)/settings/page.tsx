@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import styles from './settings.module.css';
 import { P01_PREFIX, listKeys, getJSON } from '@/lib/p01Storage';
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   const handleExportData = () => {
@@ -51,9 +54,15 @@ export default function SettingsPage() {
     window.location.href = '/today';
   };
 
-  const handleLogout = () => {
-    // For now, just show alert (no auth system)
-    alert('Logout functionality will be available when authentication is implemented.');
+  const handleLogout = async () => {
+    const supabase = getSupabaseBrowserClient();
+    
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    
+    // Redirect to home page
+    router.push('/');
   };
 
   return (

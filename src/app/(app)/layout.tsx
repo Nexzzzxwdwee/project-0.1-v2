@@ -1,13 +1,75 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { getActivePresetId } from '@/lib/presets';
+import type { User } from '@supabase/supabase-js';
 import styles from './app-shell.module.css';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Check auth status on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) {
+        // If Supabase not configured, allow access (fallback mode)
+        setLoading(false);
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+
+      // If no session and Supabase is configured, redirect to initialize
+      if (!session) {
+        router.push('/initialize');
+        return;
+      }
+
+      // If authenticated but no activePresetId, redirect to onboarding
+      // Skip this check if already on onboarding page to prevent redirect loop
+      if (session && pathname !== '/onboarding') {
+        const activePresetId = getActivePresetId();
+        if (!activePresetId) {
+          router.push('/onboarding');
+          return;
+        }
+      }
+
+      setLoading(false);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
+        if (!session) {
+          router.push('/initialize');
+        } else if (session && pathname !== '/onboarding') {
+          // Check if user needs onboarding
+          const activePresetId = getActivePresetId();
+          if (!activePresetId) {
+            router.push('/onboarding');
+          }
+        }
+      });
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, [router, pathname]);
 
   const navItems = [
     { href: '/today', label: 'Today', icon: 'calendar-day' },
@@ -85,6 +147,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       })}
     </>
   );
+
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className={styles.mainContainer}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          height: '100vh',
+          color: '#a8a29e'
+        }}>
+          Loading...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.mainContainer}>

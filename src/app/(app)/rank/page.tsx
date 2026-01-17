@@ -8,9 +8,16 @@ export default function RankPage() {
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
 
   useEffect(() => {
-    // READ ONLY: Only read from localStorage, never write
-    const progress = getUserProgress();
-    setUserProgress(progress);
+    const loadData = async () => {
+      try {
+        // READ ONLY: Only read from storage, never write
+        const progress = await getUserProgress();
+        setUserProgress(progress);
+      } catch (error) {
+        console.error('Failed to load rank data:', error);
+      }
+    };
+    loadData();
   }, []);
 
   // Calculate progress bar percentage (VIEW ONLY, not stored)

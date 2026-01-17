@@ -15,6 +15,7 @@ import {
   saveDaySummary,
   getUserProgress,
   updateUserProgress,
+  setActivePresetId,
   type DayPlan,
   type DayPlanItem,
   type PresetId,
@@ -79,110 +80,122 @@ export default function TodayPage() {
   useEffect(() => {
     if (!mounted) return;
     
-    const today = getTodayDateString();
-    const plan = getDayPlan(today);
-    const loadedPresets = getPresets();
-    setPresets(loadedPresets);
-    
-    // Initialize UserProgress if missing
-    const userProgress = getUserProgress();
-    if (!userProgress) {
-      const defaultProgress = {
-        xp: 0,
-        rank: 'Novice',
-        xpToNext: 100,
-        bestStreak: 0,
-        currentStreak: 0,
-        lastSealedDate: null,
-        updatedAt: Date.now(),
-      };
-      updateUserProgress(() => defaultProgress);
-    }
-    
-    // Normalize items: ensure all items have unique IDs
-    let normalizedPlan = plan;
-    let needsSave = false;
-    const itemIds = new Set<string>();
-    
-    normalizedPlan = {
-      ...plan,
-      items: plan.items.map((item) => {
-        if (!item.id || itemIds.has(item.id)) {
-          // Generate new ID if missing or duplicate
-          const newId = generateId();
-          needsSave = true;
-          itemIds.add(newId);
-          return { ...item, id: newId };
+    const loadData = async () => {
+      try {
+        const today = getTodayDateString();
+        const plan = await getDayPlan(today);
+        const loadedPresets = await getPresets();
+        setPresets(loadedPresets);
+        
+        // Initialize UserProgress if missing
+        const userProgress = await getUserProgress();
+        if (!userProgress) {
+          const defaultProgress = {
+            xp: 0,
+            rank: 'Novice',
+            xpToNext: 100,
+            bestStreak: 0,
+            currentStreak: 0,
+            lastSealedDate: null,
+            updatedAt: Date.now(),
+          };
+          await updateUserProgress(() => defaultProgress);
         }
-        itemIds.add(item.id);
-        return item;
-      }),
-      archived: plan.archived.map((item) => {
-        if (!item.id || itemIds.has(item.id)) {
-          const newId = generateId();
-          needsSave = true;
-          itemIds.add(newId);
-          return { ...item, id: newId };
-        }
-        itemIds.add(item.id);
-        return item;
-      }),
-    };
-    
-    // If normalization occurred, save immediately
-    if (needsSave) {
-      saveDayPlan(normalizedPlan);
-    }
-    
-    // If no plan exists OR items.length === 0, initialize from preset
-    if (normalizedPlan.items.length === 0) {
-      // Choose activePresetId: use stored if present, else default to first preset
-      const activePresetId = normalizedPlan.activePresetId || 
-        (Object.keys(loadedPresets).length > 0 ? Object.keys(loadedPresets)[0] : null);
-      
-      if (activePresetId && loadedPresets[activePresetId]) {
-        const preset = loadedPresets[activePresetId];
-        const emptyPlan: DayPlan = {
-          date: today,
-          activePresetId: null,
-          presetUpdatedAt: null,
-          items: [],
-          archived: [],
-          isSealed: false,
+        
+        // Normalize items: ensure all items have unique IDs
+        let normalizedPlan = plan;
+        let needsSave = false;
+        const itemIds = new Set<string>();
+        
+        normalizedPlan = {
+          ...plan,
+          items: plan.items.map((item) => {
+            if (!item.id || itemIds.has(item.id)) {
+              // Generate new ID if missing or duplicate
+              const newId = generateId();
+              needsSave = true;
+              itemIds.add(newId);
+              return { ...item, id: newId };
+            }
+            itemIds.add(item.id);
+            return item;
+          }),
+          archived: plan.archived.map((item) => {
+            if (!item.id || itemIds.has(item.id)) {
+              const newId = generateId();
+              needsSave = true;
+              itemIds.add(newId);
+              return { ...item, id: newId };
+            }
+            itemIds.add(item.id);
+            return item;
+          }),
         };
         
-        // Merge preset into empty plan
-        const merged = mergePresetIntoDayPlan(preset, emptyPlan, {
-          keepCompletion: true,
-          keepManual: true,
-        });
+        // If normalization occurred, save immediately
+        if (needsSave) {
+          await saveDayPlan(normalizedPlan);
+        }
         
-        // Update activePresetId
-        merged.activePresetId = activePresetId;
+        // If no plan exists OR items.length === 0, initialize from preset
+        if (normalizedPlan.items.length === 0) {
+          // Choose activePresetId: use stored if present, else default to first preset
+          const activePresetId = normalizedPlan.activePresetId || 
+            (Object.keys(loadedPresets).length > 0 ? Object.keys(loadedPresets)[0] : null);
+          
+          if (activePresetId && loadedPresets[activePresetId]) {
+            const preset = loadedPresets[activePresetId];
+            const emptyPlan: DayPlan = {
+              date: today,
+              activePresetId: null,
+              presetUpdatedAt: null,
+              items: [],
+              archived: [],
+              isSealed: false,
+            };
+            
+            // Merge preset into empty plan
+            const merged = mergePresetIntoDayPlan(preset, emptyPlan, {
+              keepCompletion: true,
+              keepManual: true,
+            });
+            
+            // Update activePresetId
+            merged.activePresetId = activePresetId;
+            
+            setDayPlan(merged);
+            await saveDayPlan(merged);
+          } else {
+            // No presets available, just set the plan
+            setDayPlan(normalizedPlan);
+          }
+        } else {
+          // Plan exists with items, use normalized plan
+          setDayPlan(normalizedPlan);
+        }
         
-        setDayPlan(merged);
-        saveDayPlan(merged);
-      } else {
-        // No presets available, just set the plan
-        setDayPlan(normalizedPlan);
+        // Calculate streak
+        const currentStreak = await getStreak();
+        setStreak(currentStreak);
+      } catch (error) {
+        console.error('Failed to load day plan:', error);
       }
-    } else {
-      // Plan exists with items, use normalized plan
-      setDayPlan(normalizedPlan);
-    }
+    };
     
-    // Calculate streak
-    const currentStreak = getStreak();
-    setStreak(currentStreak);
+    loadData();
   }, [mounted]);
 
   // Save day plan whenever it changes
-  const updateDayPlan = (updater: (plan: DayPlan) => DayPlan) => {
+  const updateDayPlan = async (updater: (plan: DayPlan) => DayPlan) => {
     if (dayPlan.isSealed) return; // Don't allow changes when sealed
     
     const updated = updater(dayPlan);
     setDayPlan(updated);
-    saveDayPlan(updated);
+    try {
+      await saveDayPlan(updated);
+    } catch (error) {
+      console.error('Failed to save day plan:', error);
+    }
   };
 
   const habits = dayPlan.items.filter((item) => item.kind === 'habit');
@@ -373,7 +386,7 @@ export default function TodayPage() {
     }
   };
 
-  const handleSyncConfirm = (options: { keepCompletion: boolean; keepManual: boolean }) => {
+  const handleSyncConfirm = async (options: { keepCompletion: boolean; keepManual: boolean }) => {
     if (!pendingPresetId) return;
     
     const preset = presets[pendingPresetId];
@@ -390,7 +403,12 @@ export default function TodayPage() {
     merged.activePresetId = preset.id;
     
     setDayPlan(merged);
-    saveDayPlan(merged);
+    try {
+      await saveDayPlan(merged);
+      await setActivePresetId(preset.id);
+    } catch (error) {
+      console.error('Failed to save day plan:', error);
+    }
     setSyncModalOpen(false);
     setPendingPresetId(null);
   };
@@ -421,7 +439,7 @@ export default function TodayPage() {
     setSealModalOpen(true);
   };
 
-  const handleSealConfirm = () => {
+  const handleSealConfirm = async () => {
     if (dayPlan.isSealed) return;
     
     const today = getTodayDateString();
@@ -485,23 +503,27 @@ export default function TodayPage() {
       xpEarned,
     };
     
-    saveDaySummary(summary);
-    setDayPlan(updatedPlan);
-    saveDayPlan(updatedPlan);
-    
-    // Recalculate streak
-    const newStreak = getStreak();
-    setStreak(newStreak);
-    
-    // Update user progress with XP earned and streak
-    updateUserProgress((prev) => ({
-      ...prev,
-      xp: prev.xp + xpEarned,
-      lastSealedDate: today,
-      bestStreak: Math.max(prev.bestStreak, newStreak),
-      currentStreak: newStreak,
-      updatedAt: Date.now(),
-    }));
+    try {
+      await saveDaySummary(summary);
+      setDayPlan(updatedPlan);
+      await saveDayPlan(updatedPlan);
+      
+      // Recalculate streak
+      const newStreak = await getStreak();
+      setStreak(newStreak);
+      
+      // Update user progress with XP earned and streak
+      await updateUserProgress((prev) => ({
+        ...prev,
+        xp: prev.xp + xpEarned,
+        lastSealedDate: today,
+        bestStreak: Math.max(prev.bestStreak, newStreak),
+        currentStreak: newStreak,
+        updatedAt: Date.now(),
+      }));
+    } catch (error) {
+      console.error('Failed to seal day:', error);
+    }
     
     setSealModalOpen(false);
   };

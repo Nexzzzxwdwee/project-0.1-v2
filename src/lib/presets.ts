@@ -3,6 +3,7 @@
  */
 
 import { P01_PREFIX, getJSON, setJSON, listKeys } from './p01Storage';
+import { getStorage } from './storage';
 
 export type PresetId = string; // 'default' | 'trading' | 'recovery' but allow any string
 
@@ -71,6 +72,7 @@ export interface UserProgress {
   currentStreak: number; // Current active streak
   lastSealedDate: string | null; // YYYY-MM-DD of last sealed day
   updatedAt: number; // Timestamp
+  activePresetId?: PresetId | null; // Active preset ID (stored in user_progress for Supabase)
 }
 
 /**
@@ -147,19 +149,17 @@ function initializePresetsFromMock(): Record<PresetId, Preset> {
 }
 
 /**
- * Get all presets from localStorage
+ * Get all presets from storage
  * If missing, initialize from mock data
  */
-export function getPresets(): Record<PresetId, Preset> {
-  const presets = getJSON<Record<PresetId, Preset>>(
-    `${P01_PREFIX}presets`,
-    {}
-  );
+export async function getPresets(): Promise<Record<PresetId, Preset>> {
+  const storage = getStorage();
+  const presets = await storage.getPresets();
   
   // If empty, initialize from mock data
   if (Object.keys(presets).length === 0) {
     const initialized = initializePresetsFromMock();
-    savePresets(initialized);
+    await savePresets(initialized);
     return initialized;
   }
   
@@ -195,27 +195,19 @@ export function getPresets(): Record<PresetId, Preset> {
 }
 
 /**
- * Save presets to localStorage
+ * Save presets to storage
  */
-export function savePresets(record: Record<PresetId, Preset>): void {
-  setJSON(`${P01_PREFIX}presets`, record);
+export async function savePresets(record: Record<PresetId, Preset>): Promise<void> {
+  const storage = getStorage();
+  await storage.savePresets(record);
 }
 
 /**
  * Get day plan for a specific date
  */
-export function getDayPlan(date: string): DayPlan {
-  const plan = getJSON<DayPlan>(
-    `${P01_PREFIX}dayplan:${date}`,
-    {
-      date,
-      activePresetId: null,
-      presetUpdatedAt: null,
-      items: [],
-      archived: [],
-      isSealed: false,
-    }
-  );
+export async function getDayPlan(date: string): Promise<DayPlan> {
+  const storage = getStorage();
+  const plan = await storage.getDayPlan(date);
   
   // Ensure date matches
   if (plan.date !== date) {
@@ -233,24 +225,27 @@ export function getDayPlan(date: string): DayPlan {
 }
 
 /**
- * Save day plan to localStorage
+ * Save day plan to storage
  */
-export function saveDayPlan(plan: DayPlan): void {
-  setJSON(`${P01_PREFIX}dayplan:${plan.date}`, plan);
+export async function saveDayPlan(plan: DayPlan): Promise<void> {
+  const storage = getStorage();
+  await storage.saveDayPlan(plan);
 }
 
 /**
- * Get active preset ID from localStorage
+ * Get active preset ID from storage
  */
-export function getActivePresetId(): PresetId | null {
-  return getJSON<PresetId | null>(`${P01_PREFIX}activePresetId`, null);
+export async function getActivePresetId(): Promise<PresetId | null> {
+  const storage = getStorage();
+  return await storage.getActivePresetId();
 }
 
 /**
- * Set active preset ID in localStorage
+ * Set active preset ID in storage
  */
-export function setActivePresetId(presetId: PresetId): void {
-  setJSON(`${P01_PREFIX}activePresetId`, presetId);
+export async function setActivePresetId(presetId: PresetId): Promise<void> {
+  const storage = getStorage();
+  await storage.setActivePresetId(presetId);
 }
 
 /**
@@ -275,13 +270,14 @@ export function generateUniquePresetName(
 /**
  * Get all day plan dates that reference a specific preset
  */
-export function getDayPlansReferencingPreset(presetId: PresetId): DayPlan[] {
-  const dayPlanKeys = listKeys(`${P01_PREFIX}dayplan:`);
+export async function getDayPlansReferencingPreset(presetId: PresetId): Promise<DayPlan[]> {
+  const storage = getStorage();
+  const dates = await storage.listDayPlanDates();
   const plans: DayPlan[] = [];
 
-  for (const key of dayPlanKeys) {
-    const plan = getJSON<DayPlan | null>(key, null);
-    if (plan && plan.activePresetId === presetId) {
+  for (const date of dates) {
+    const plan = await storage.getDayPlan(date);
+    if (plan.activePresetId === presetId) {
       plans.push(plan);
     }
   }
@@ -292,14 +288,14 @@ export function getDayPlansReferencingPreset(presetId: PresetId): DayPlan[] {
 /**
  * Update activePresetId in all day plans that reference a deleted preset
  */
-export function updateDayPlansPresetReference(
+export async function updateDayPlansPresetReference(
   oldPresetId: PresetId,
   newPresetId: PresetId
-): void {
-  const plans = getDayPlansReferencingPreset(oldPresetId);
+): Promise<void> {
+  const plans = await getDayPlansReferencingPreset(oldPresetId);
   for (const plan of plans) {
     const updated = { ...plan, activePresetId: newPresetId };
-    saveDayPlan(updated);
+    await saveDayPlan(updated);
   }
 }
 
@@ -457,55 +453,35 @@ function addDays(dateStr: string, delta: number): string {
 /**
  * Get day summary for a specific date
  */
-export function getDaySummary(date: string): DaySummary | null {
-  return getJSON<DaySummary | null>(`${P01_PREFIX}daySummary:${date}`, null);
+export async function getDaySummary(date: string): Promise<DaySummary | null> {
+  const storage = getStorage();
+  return await storage.getDaySummary(date);
 }
 
 /**
- * Save day summary to localStorage
+ * Save day summary to storage
  */
-export function saveDaySummary(summary: DaySummary): void {
-  setJSON(`${P01_PREFIX}daySummary:${summary.date}`, summary);
+export async function saveDaySummary(summary: DaySummary): Promise<void> {
+  const storage = getStorage();
+  await storage.saveDaySummary(summary);
 }
 
 /**
  * Get all sealed day summaries (READ-ONLY)
  * Returns summaries sorted by date descending (newest first)
  */
-export function getAllSealedDaySummaries(): DaySummary[] {
+export async function getAllSealedDaySummaries(): Promise<DaySummary[]> {
   if (typeof window === 'undefined') return [];
   
-  const summaryKeys = listKeys(`${P01_PREFIX}daySummary:`);
-  const summaries: DaySummary[] = [];
-  
-  for (const key of summaryKeys) {
-    try {
-      const summary = getJSON<DaySummary | null>(key, null);
-      // Only include sealed summaries
-      if (summary && summary.isSealed) {
-        summaries.push(summary);
-      }
-    } catch (error) {
-      // Skip invalid entries
-      console.warn(`Failed to parse daySummary key "${key}":`, error);
-    }
-  }
-  
-  // Sort by date descending (newest first)
-  summaries.sort((a, b) => {
-    if (a.date > b.date) return -1;
-    if (a.date < b.date) return 1;
-    return 0;
-  });
-  
-  return summaries;
+  const storage = getStorage();
+  return await storage.getAllSealedDaySummaries();
 }
 
 /**
  * Calculate streak of consecutive sealed days with 100% operator score
  * Scans backward from today (or provided date)
  */
-export function getStreak(today?: string): number {
+export async function getStreak(today?: string): Promise<number> {
   if (typeof window === 'undefined') return 0;
   
   const todayDate = today || (() => {
@@ -517,7 +493,7 @@ export function getStreak(today?: string): number {
   let currentDate = todayDate;
   
   while (true) {
-    const summary = getDaySummary(currentDate);
+    const summary = await getDaySummary(currentDate);
     
     if (
       summary &&
@@ -537,38 +513,26 @@ export function getStreak(today?: string): number {
 }
 
 /**
- * Get user progress from localStorage
+ * Get user progress from storage
  */
-export function getUserProgress(): UserProgress | null {
-  return getJSON<UserProgress | null>(`${P01_PREFIX}userProgress`, null);
+export async function getUserProgress(): Promise<UserProgress | null> {
+  const storage = getStorage();
+  return await storage.getUserProgress();
 }
 
 /**
- * Save user progress to localStorage
+ * Save user progress to storage
  */
-export function saveUserProgress(progress: UserProgress): void {
-  setJSON(`${P01_PREFIX}userProgress`, progress);
+export async function saveUserProgress(progress: UserProgress): Promise<void> {
+  const storage = getStorage();
+  await storage.saveUserProgress(progress);
 }
 
 /**
  * Update user progress using an updater function
  */
-export function updateUserProgress(updater: (prev: UserProgress) => UserProgress): void {
-  const current = getUserProgress();
-  if (!current) {
-    // Initialize with default values
-    const defaultProgress: UserProgress = {
-      xp: 0,
-      rank: 'Novice',
-      xpToNext: 100,
-      bestStreak: 0,
-      currentStreak: 0,
-      lastSealedDate: null,
-      updatedAt: Date.now(),
-    };
-    saveUserProgress(updater(defaultProgress));
-  } else {
-    saveUserProgress(updater(current));
-  }
+export async function updateUserProgress(updater: (prev: UserProgress) => UserProgress): Promise<void> {
+  const storage = getStorage();
+  await storage.updateUserProgress(updater);
 }
 

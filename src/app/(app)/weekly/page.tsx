@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { getAllSealedDaySummaries, getUserProgress, type DaySummary, type DayStatus } from '@/lib/presets';
+import { getAllSealedDaySummaries, getUserProgress, type DaySummary, type DayStatus, type UserProgress } from '@/lib/presets';
 import styles from './weekly.module.css';
 
 interface DayData {
@@ -105,15 +105,22 @@ function getStatusLabel(status: DayStatus | 'INCOMPLETE'): string {
 export default function WeeklyPage() {
   const [weekOffset, setWeekOffset] = useState(0); // 0 = current week
   const [sealedSummaries, setSealedSummaries] = useState<DaySummary[]>([]);
-  const [userProgress, setUserProgress] = useState<ReturnType<typeof getUserProgress>>(null);
+  const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
 
   useEffect(() => {
-    // READ ONLY: Only read from localStorage, never write
-    const summaries = getAllSealedDaySummaries();
-    setSealedSummaries(summaries);
-    
-    const progress = getUserProgress();
-    setUserProgress(progress);
+    const loadData = async () => {
+      try {
+        // READ ONLY: Only read from storage, never write
+        const summaries = await getAllSealedDaySummaries();
+        setSealedSummaries(summaries);
+        
+        const progress = await getUserProgress();
+        setUserProgress(progress);
+      } catch (error) {
+        console.error('Failed to load weekly data:', error);
+      }
+    };
+    loadData();
   }, []);
 
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);

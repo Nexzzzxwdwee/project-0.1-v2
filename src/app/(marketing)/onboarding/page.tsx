@@ -160,7 +160,7 @@ export default function OnboardingPage() {
       }
 
       // Get existing presets
-      const allPresets = getPresets();
+      const allPresets = await getPresets();
       
       // Determine preset name and ID
       const presetName = 'Default';
@@ -197,14 +197,14 @@ export default function OnboardingPage() {
       }
 
       // Save presets
-      savePresets(allPresets);
+      await savePresets(allPresets);
 
       // Set active preset ID
-      setActivePresetId(presetId);
+      await setActivePresetId(presetId);
 
       // Initialize today's day plan
       const today = getTodayDateString();
-      const existingPlan = getDayPlan(today);
+      const existingPlan = await getDayPlan(today);
       const preset = allPresets[presetId];
 
       const emptyPlan = {
@@ -223,10 +223,10 @@ export default function OnboardingPage() {
       });
 
       merged.activePresetId = presetId;
-      saveDayPlan(merged);
+      await saveDayPlan(merged);
 
       // Ensure user progress exists
-      const existingProgress = getUserProgress();
+      const existingProgress = await getUserProgress();
       if (!existingProgress) {
         const defaultProgress: UserProgress = {
           xp: 0,
@@ -237,7 +237,7 @@ export default function OnboardingPage() {
           lastSealedDate: null,
           updatedAt: Date.now(),
         };
-        saveUserProgress(defaultProgress);
+        await saveUserProgress(defaultProgress);
       }
 
       // Redirect to /today

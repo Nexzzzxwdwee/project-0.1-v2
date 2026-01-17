@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { generateId } from '@/lib/presets';
-import { P01_PREFIX, getJSON, setJSON } from '@/lib/p01Storage';
+import { getStorage } from '@/lib/storage';
 import styles from './journal.module.css';
 
 export interface JournalEntry {
@@ -68,37 +68,6 @@ function countWords(text: string): number {
   return trimmed.split(/\s+/).filter((word) => word.length > 0).length;
 }
 
-/**
- * Get journal entries from localStorage
- */
-function getJournalEntries(): JournalEntry[] {
-  if (typeof window === 'undefined') return [];
-  return getJSON<JournalEntry[]>(`${P01_PREFIX}journalEntries`, []);
-}
-
-/**
- * Save journal entries to localStorage
- */
-function saveJournalEntries(entries: JournalEntry[]): void {
-  if (typeof window === 'undefined') return;
-  setJSON(`${P01_PREFIX}journalEntries`, entries);
-}
-
-/**
- * Get active entry ID from localStorage
- */
-function getActiveEntryId(): string | null {
-  if (typeof window === 'undefined') return null;
-  return getJSON<string | null>(`${P01_PREFIX}journalActiveEntryId`, null);
-}
-
-/**
- * Set active entry ID in localStorage
- */
-function saveActiveEntryId(id: string | null): void {
-  if (typeof window === 'undefined') return;
-  setJSON(`${P01_PREFIX}journalActiveEntryId`, id);
-}
 
 export default function JournalPage() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
@@ -111,8 +80,11 @@ export default function JournalPage() {
 
   // Load data on mount (after hydration)
   useEffect(() => {
-    const loadedEntries = getJournalEntries();
-    const loadedActiveId = getActiveEntryId();
+    const loadData = async () => {
+      try {
+        const storage = getStorage();
+        const loadedEntries = await storage.getJournalEntries();
+        const loadedActiveId = await storage.getActiveEntryId();
 
     // Auto-create entry if none exist
     if (loadedEntries.length === 0) {
@@ -125,27 +97,35 @@ export default function JournalPage() {
         date: today,
         content: '',
       };
-      loadedEntries.push(newEntry);
-      saveJournalEntries(loadedEntries);
-      saveActiveEntryId(newEntry.id);
-      setActiveEntryId(newEntry.id);
-    }
+          loadedEntries.push(newEntry);
+          await storage.saveJournalEntries(loadedEntries);
+          await storage.setActiveEntryId(newEntry.id);
+          setActiveEntryId(newEntry.id);
+        }
 
-    // Sort entries by updatedAt descending (newest first)
-    loadedEntries.sort((a, b) => b.updatedAt - a.updatedAt);
+        // Sort entries by updatedAt descending (newest first)
+        loadedEntries.sort((a, b) => b.updatedAt - a.updatedAt);
 
-    setEntries(loadedEntries);
+        setEntries(loadedEntries);
 
-    // Set active entry (prioritize loaded, fallback to first)
-    const activeId = loadedActiveId || (loadedEntries.length > 0 ? loadedEntries[0].id : null);
-    if (activeId && loadedEntries.find((e) => e.id === activeId)) {
-      saveActiveEntryId(activeId);
-      setActiveEntryId(activeId);
-    } else if (loadedEntries.length > 0) {
-      const firstId = loadedEntries[0].id;
-      saveActiveEntryId(firstId);
-      setActiveEntryId(firstId);
-    }
+        // Set active entry (prioritize loaded, fallback to first)
+        const activeId = loadedActiveId || (loadedEntries.length > 0 ? loadedEntries[0].id : null);
+        if (activeId && loadedEntries.find((e) => e.id === activeId)) {
+          await storage.setActiveEntryId(activeId);
+          setActiveEntryId(activeId);
+        } else if (loadedEntries.length > 0) {
+          const firstId = loadedEntries[0].id;
+          await storage.setActiveEntryId(firstId);
+          setActiveEntryId(firstId);
+        }
+        
+        setEntries(loadedEntries);
+      } catch (error) {
+        console.error('Failed to load journal entries:', error);
+      }
+    };
+    
+    loadData();
   }, []);
 
   // Get active entry
@@ -187,25 +167,31 @@ export default function JournalPage() {
       }
 
       // Set new timer
-      debounceTimerRef.current = setTimeout(() => {
-        const currentEntries = getJournalEntries();
-        const updated = currentEntries.map((entry) => {
-          if (entry.id === entryId) {
-            return {
-              ...entry,
-              content: newContent,
-              updatedAt: Date.now(),
-            };
-          }
-          return entry;
-        });
+      debounceTimerRef.current = setTimeout(async () => {
+        try {
+          const storage = getStorage();
+          const currentEntries = await storage.getJournalEntries();
+          const updated = currentEntries.map((entry) => {
+            if (entry.id === entryId) {
+              return {
+                ...entry,
+                content: newContent,
+                updatedAt: Date.now(),
+              };
+            }
+            return entry;
+          });
 
-        // Re-sort
-        updated.sort((a, b) => b.updatedAt - a.updatedAt);
+          // Re-sort
+          updated.sort((a, b) => b.updatedAt - a.updatedAt);
 
-        saveJournalEntries(updated);
-        setSaveStatus('saved');
-        debounceTimerRef.current = null;
+          await storage.saveJournalEntries(updated);
+          setSaveStatus('saved');
+          debounceTimerRef.current = null;
+        } catch (error) {
+          console.error('Failed to save journal entry:', error);
+          setSaveStatus('saved'); // Reset status even on error
+        }
       }, 600);
     },
     []
@@ -218,60 +204,70 @@ export default function JournalPage() {
   };
 
   // Create new entry
-  const handleNewEntry = () => {
-    const today = getTodayDateString();
-    const now = Date.now();
-    const newEntry: JournalEntry = {
-      id: generateId(),
-      createdAt: now,
-      updatedAt: now,
-      date: today,
-      content: '',
-    };
+  const handleNewEntry = async () => {
+    try {
+      const storage = getStorage();
+      const today = getTodayDateString();
+      const now = Date.now();
+      const newEntry: JournalEntry = {
+        id: generateId(),
+        createdAt: now,
+        updatedAt: now,
+        date: today,
+        content: '',
+      };
 
-    const updated = [newEntry, ...entries];
-    saveJournalEntries(updated);
-    setEntries(updated);
-    saveActiveEntryId(newEntry.id);
-    setActiveEntryId(newEntry.id);
+      const updated = [newEntry, ...entries];
+      await storage.saveJournalEntries(updated);
+      setEntries(updated);
+      await storage.setActiveEntryId(newEntry.id);
+      setActiveEntryId(newEntry.id);
 
-    // Focus textarea after a brief delay
-    setTimeout(() => {
-      textareaRef.current?.focus();
-    }, 0);
+      // Focus textarea after a brief delay
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 0);
+    } catch (error) {
+      console.error('Failed to create journal entry:', error);
+    }
   };
 
   // Delete entry
-  const handleDeleteEntry = () => {
+  const handleDeleteEntry = async () => {
     if (!activeEntryId) return;
 
     if (!confirm('Delete this entry? This cannot be undone.')) {
       return;
     }
 
-    const updated = entries.filter((e) => e.id !== activeEntryId);
-    saveJournalEntries(updated);
+    try {
+      const storage = getStorage();
+      const updated = entries.filter((e) => e.id !== activeEntryId);
+      await storage.saveJournalEntries(updated);
 
-    // Select next entry (prefer next in list, or previous, or null)
-    let nextId: string | null = null;
-    const currentIndex = filteredEntries.findIndex((e) => e.id === activeEntryId);
-    if (currentIndex >= 0) {
-      if (currentIndex < filteredEntries.length - 1) {
-        nextId = filteredEntries[currentIndex + 1].id;
-      } else if (currentIndex > 0) {
-        nextId = filteredEntries[currentIndex - 1].id;
-      } else if (updated.length > 0) {
-        nextId = updated[0].id;
+      // Select next entry (prefer next in list, or previous, or null)
+      let nextId: string | null = null;
+      const currentIndex = filteredEntries.findIndex((e) => e.id === activeEntryId);
+      if (currentIndex >= 0) {
+        if (currentIndex < filteredEntries.length - 1) {
+          nextId = filteredEntries[currentIndex + 1].id;
+        } else if (currentIndex > 0) {
+          nextId = filteredEntries[currentIndex - 1].id;
+        } else if (updated.length > 0) {
+          nextId = updated[0].id;
+        }
       }
-    }
 
-    setEntries(updated);
-    if (nextId) {
-      saveActiveEntryId(nextId);
-      setActiveEntryId(nextId);
-    } else {
-      saveActiveEntryId(null);
-      setActiveEntryId(null);
+      setEntries(updated);
+      if (nextId) {
+        await storage.setActiveEntryId(nextId);
+        setActiveEntryId(nextId);
+      } else {
+        await storage.setActiveEntryId(null);
+        setActiveEntryId(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete journal entry:', error);
     }
   };
 
@@ -284,9 +280,17 @@ export default function JournalPage() {
     };
   }, []);
 
-  // Save active entry ID to localStorage when it changes
+  // Save active entry ID to storage when it changes
   useEffect(() => {
-    saveActiveEntryId(activeEntryId);
+    const saveActive = async () => {
+      try {
+        const storage = getStorage();
+        await storage.setActiveEntryId(activeEntryId);
+      } catch (error) {
+        console.error('Failed to save active entry:', error);
+      }
+    };
+    saveActive();
   }, [activeEntryId]);
 
   // Word count for active entry

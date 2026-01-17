@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { getAllSealedDaySummaries, getUserProgress, type DaySummary, type DayStatus } from '@/lib/presets';
+import { getAllSealedDaySummaries, getUserProgress, type DaySummary, type DayStatus, type UserProgress } from '@/lib/presets';
 import styles from './history.module.css';
 
 interface ProcessedEntry {
@@ -79,16 +79,23 @@ function processSummary(summary: DaySummary): ProcessedEntry {
 
 export default function HistoryPage() {
   const [sealedSummaries, setSealedSummaries] = useState<DaySummary[]>([]);
-  const [userProgress, setUserProgress] = useState<ReturnType<typeof getUserProgress>>(null);
+  const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
-    // READ ONLY: Only read from localStorage, never write
-    const summaries = getAllSealedDaySummaries();
-    setSealedSummaries(summaries);
-    
-    const progress = getUserProgress();
-    setUserProgress(progress);
+    const loadData = async () => {
+      try {
+        // READ ONLY: Only read from storage, never write
+        const summaries = await getAllSealedDaySummaries();
+        setSealedSummaries(summaries);
+        
+        const progress = await getUserProgress();
+        setUserProgress(progress);
+      } catch (error) {
+        console.error('Failed to load history data:', error);
+      }
+    };
+    loadData();
   }, []);
 
   const processedEntries: ProcessedEntry[] = useMemo(() => {

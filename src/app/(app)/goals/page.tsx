@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { generateId } from '@/lib/presets';
-import { P01_PREFIX, getJSON, setJSON } from '@/lib/p01Storage';
+import { getStorage } from '@/lib/storage';
 import styles from './goals.module.css';
 
 export interface Goal {
@@ -15,21 +15,6 @@ export interface Goal {
   doneAt: number | null;
 }
 
-/**
- * Get goals from localStorage
- */
-function getGoals(): Goal[] {
-  if (typeof window === 'undefined') return [];
-  return getJSON<Goal[]>(`${P01_PREFIX}goals`, []);
-}
-
-/**
- * Save goals to localStorage
- */
-function saveGoals(goals: Goal[]): void {
-  if (typeof window === 'undefined') return;
-  setJSON(`${P01_PREFIX}goals`, goals);
-}
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -39,8 +24,16 @@ export default function GoalsPage() {
 
   // Load goals on mount (after hydration)
   useEffect(() => {
-    const loadedGoals = getGoals();
-    setGoals(loadedGoals);
+    const loadGoals = async () => {
+      try {
+        const storage = getStorage();
+        const loadedGoals = await storage.getGoals();
+        setGoals(loadedGoals);
+      } catch (error) {
+        console.error('Failed to load goals:', error);
+      }
+    };
+    loadGoals();
   }, []);
 
   // Separate active and completed goals, sorted
@@ -58,13 +51,18 @@ export default function GoalsPage() {
     });
 
   // Save goals helper
-  const updateGoals = (updatedGoals: Goal[]) => {
+  const updateGoals = async (updatedGoals: Goal[]) => {
     setGoals(updatedGoals);
-    saveGoals(updatedGoals);
+    try {
+      const storage = getStorage();
+      await storage.saveGoals(updatedGoals);
+    } catch (error) {
+      console.error('Failed to save goals:', error);
+    }
   };
 
   // Add new goal
-  const handleAddGoal = () => {
+  const handleAddGoal = async () => {
     const text = newGoalText.trim();
     if (!text) return;
 
@@ -86,7 +84,7 @@ export default function GoalsPage() {
   };
 
   // Toggle done status
-  const handleToggleDone = (id: string) => {
+  const handleToggleDone = async (id: string) => {
     const updated = goals.map((goal) => {
       if (goal.id === id) {
         const isNowDone = !goal.done;
@@ -103,7 +101,7 @@ export default function GoalsPage() {
   };
 
   // Delete goal
-  const handleDeleteGoal = (id: string) => {
+  const handleDeleteGoal = async (id: string) => {
     const goal = goals.find((g) => g.id === id);
     if (!goal) return;
 

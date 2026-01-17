@@ -264,38 +264,46 @@ export default function HabitsPage() {
 
   // Load presets on mount
   useEffect(() => {
-    // Read activePresetId FIRST before calling getPresets() to avoid it initializing mock data
-    const activePresetId = getActivePresetId();
-    const loadedPresets = getPresets();
-    setPresets(loadedPresets);
-    
-    const presetIds = Object.keys(loadedPresets);
-    
-    if (presetIds.length > 0) {
-      let initialPreset: Preset | undefined;
-      
-      // ALWAYS prioritize activePresetId if it exists and preset exists
-      // Do NOT treat "default" as special - only use it if activePresetId doesn't exist
-      if (activePresetId && loadedPresets[activePresetId]) {
-        initialPreset = loadedPresets[activePresetId];
-      } else if (presetIds.length > 0) {
-        // Fallback to first available preset (no special treatment for "default")
-        initialPreset = loadedPresets[presetIds[0]];
+    const loadData = async () => {
+      try {
+        // Read activePresetId FIRST before calling getPresets() to avoid it initializing mock data
+        const activePresetId = await getActivePresetId();
+        const loadedPresets = await getPresets();
+        setPresets(loadedPresets);
         
-        // If we have an activePresetId but preset doesn't exist, set it to the first available
-        if (activePresetId && !loadedPresets[activePresetId] && initialPreset) {
-          setActivePresetId(initialPreset.id);
+        const presetIds = Object.keys(loadedPresets);
+        
+        if (presetIds.length > 0) {
+          let initialPreset: Preset | undefined;
+          
+          // ALWAYS prioritize activePresetId if it exists and preset exists
+          // Do NOT treat "default" as special - only use it if activePresetId doesn't exist
+          if (activePresetId && loadedPresets[activePresetId]) {
+            initialPreset = loadedPresets[activePresetId];
+          } else if (presetIds.length > 0) {
+            // Fallback to first available preset (no special treatment for "default")
+            initialPreset = loadedPresets[presetIds[0]];
+            
+            // If we have an activePresetId but preset doesn't exist, set it to the first available
+            if (activePresetId && !loadedPresets[activePresetId] && initialPreset) {
+              await setActivePresetId(initialPreset.id);
+            }
+          }
+          
+          if (initialPreset) {
+            setActivePreset(initialPreset.id);
+            loadPresetData(initialPreset);
+          }
         }
+        
+        // Mark initial load as complete after a brief delay to avoid saving during load
+        setTimeout(() => setIsInitialLoad(false), 100);
+      } catch (error) {
+        console.error('Failed to load presets:', error);
       }
-      
-      if (initialPreset) {
-        setActivePreset(initialPreset.id);
-        loadPresetData(initialPreset);
-      }
-    }
+    };
     
-    // Mark initial load as complete after a brief delay to avoid saving during load
-    setTimeout(() => setIsInitialLoad(false), 100);
+    loadData();
   }, []);
 
   // Convert PresetItem[] to Habit[]/Task[] for display
@@ -317,72 +325,76 @@ export default function HabitsPage() {
     );
   };
 
-  // Commit current preset to localStorage (synchronous save)
+  // Commit current preset to storage (async save)
   // Uses refs to ensure we always have the latest habits/tasks/activePreset
   // Loads fresh presets from storage to avoid stale state
-  const commitActivePreset = useCallback(() => {
+  const commitActivePreset = useCallback(async () => {
     const currentPresetId = activePresetRef.current;
     const currentHabits = habitsRef.current;
     const currentTasks = tasksRef.current;
     
-    // Load fresh presets from storage (not from state)
-    const allPresets = getPresets();
-    if (Object.keys(allPresets).length === 0) return;
-    if (!allPresets[currentPresetId]) return;
-    
-    const currentPreset = allPresets[currentPresetId];
-    
-    // CRITICAL GUARD: Prevent overwriting non-empty preset with empty state
-    // 
-    // Why this exists:
-    // - React StrictMode in development double-renders components, causing unmount/remount cycles
-    // - During unmount cleanup, refs (habitsRef/tasksRef) may still be empty [] if state hasn't synced yet
-    // - Without this guard, commitActivePreset() would save empty arrays, overwriting valid preset data
-    // - This is especially dangerous during initial mount after onboarding saves a preset
-    //
-    // Future-proofing for Supabase:
-    // - When migrating to Supabase, this same guard prevents race conditions where:
-    //   - Local state is empty (loading) but server has data
-    //   - We should never overwrite server data with empty local state
-    // - Keep this guard even after migration - it's a safety net for any async state sync issues
-    if (currentHabits.length === 0 && currentTasks.length === 0 && 
-        ((currentPreset.habits?.length || 0) > 0 || (currentPreset.tasks?.length || 0) > 0)) {
-      return;
+    try {
+      // Load fresh presets from storage (not from state)
+      const allPresets = await getPresets();
+      if (Object.keys(allPresets).length === 0) return;
+      if (!allPresets[currentPresetId]) return;
+      
+      const currentPreset = allPresets[currentPresetId];
+      
+      // CRITICAL GUARD: Prevent overwriting non-empty preset with empty state
+      // 
+      // Why this exists:
+      // - React StrictMode in development double-renders components, causing unmount/remount cycles
+      // - During unmount cleanup, refs (habitsRef/tasksRef) may still be empty [] if state hasn't synced yet
+      // - Without this guard, commitActivePreset() would save empty arrays, overwriting valid preset data
+      // - This is especially dangerous during initial mount after onboarding saves a preset
+      //
+      // Future-proofing for Supabase:
+      // - When migrating to Supabase, this same guard prevents race conditions where:
+      //   - Local state is empty (loading) but server has data
+      //   - We should never overwrite server data with empty local state
+      // - Keep this guard even after migration - it's a safety net for any async state sync issues
+      if (currentHabits.length === 0 && currentTasks.length === 0 && 
+          ((currentPreset.habits?.length || 0) > 0 || (currentPreset.tasks?.length || 0) > 0)) {
+        return;
+      }
+      
+      const updatedPreset: Preset = {
+        ...currentPreset,
+        habits: currentHabits.map((h) => {
+          const original = currentPreset.habits.find(orig => orig.id === h.id);
+          return {
+            ...(original || {}),
+            id: h.id,
+            text: h.name,
+          };
+        }),
+        tasks: currentTasks.map((t) => {
+          const original = currentPreset.tasks.find(orig => orig.id === t.id);
+          return {
+            ...(original || {}),
+            id: t.id,
+            text: t.text,
+            time: t.time,
+          };
+        }),
+        updatedAt: Date.now(),
+      };
+      
+      // Update only the matching preset by ID, preserve all others
+      const updatedPresets = {
+        ...allPresets,
+        [currentPresetId]: updatedPreset,
+      };
+      
+      // Save to storage
+      await savePresets(updatedPresets);
+      
+      // Update state to reflect the save
+      setPresets(updatedPresets);
+    } catch (error) {
+      console.error('Failed to commit preset:', error);
     }
-    
-    const updatedPreset: Preset = {
-      ...currentPreset,
-      habits: currentHabits.map((h) => {
-        const original = currentPreset.habits.find(orig => orig.id === h.id);
-        return {
-          ...(original || {}),
-          id: h.id,
-          text: h.name,
-        };
-      }),
-      tasks: currentTasks.map((t) => {
-        const original = currentPreset.tasks.find(orig => orig.id === t.id);
-        return {
-          ...(original || {}),
-          id: t.id,
-          text: t.text,
-          time: t.time,
-        };
-      }),
-      updatedAt: Date.now(),
-    };
-    
-    // Update only the matching preset by ID, preserve all others
-    const updatedPresets = {
-      ...allPresets,
-      [currentPresetId]: updatedPreset,
-    };
-    
-    // Save to storage
-    savePresets(updatedPresets);
-    
-    // Update state to reflect the save
-    setPresets(updatedPresets);
   }, []);
 
   // Auto-save when habits or tasks change (debounced)
@@ -409,18 +421,22 @@ export default function HabitsPage() {
     };
   }, [isInitialLoad, commitActivePreset]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handlePresetChange = (presetId: PresetId) => {
-    // Always save current preset before switching (synchronous)
-    commitActivePreset();
+  const handlePresetChange = async (presetId: PresetId) => {
+    // Always save current preset before switching
+    await commitActivePreset();
     
-    // Load fresh presets from storage to get latest data
-    const allPresets = getPresets();
-    const preset = allPresets[presetId];
-    if (preset) {
-      setActivePreset(presetId);
-      loadPresetData(preset);
-      // Update presets state to reflect any changes from storage
-      setPresets(allPresets);
+    try {
+      // Load fresh presets from storage to get latest data
+      const allPresets = await getPresets();
+      const preset = allPresets[presetId];
+      if (preset) {
+        setActivePreset(presetId);
+        loadPresetData(preset);
+        // Update presets state to reflect any changes from storage
+        setPresets(allPresets);
+      }
+    } catch (error) {
+      console.error('Failed to change preset:', error);
     }
   };
 
@@ -482,12 +498,13 @@ export default function HabitsPage() {
     });
   };
 
-  const handleNewPreset = () => {
+  const handleNewPreset = async () => {
     // Save current preset first before creating new one
-    commitActivePreset();
+    await commitActivePreset();
     
-    // Create new preset
-    setPresets((prevPresets) => {
+    try {
+      // Load fresh presets
+      const prevPresets = await getPresets();
       const newPresetId = `preset_${Date.now()}`;
       const uniqueName = generateUniquePresetName('New Preset', prevPresets);
       
@@ -504,12 +521,14 @@ export default function HabitsPage() {
         [newPresetId]: newPreset,
       };
 
-      savePresets(updatedPresets);
+      await savePresets(updatedPresets);
+      await setActivePresetId(newPresetId);
       setActivePreset(newPresetId);
       loadPresetData(newPreset);
-      
-      return updatedPresets;
-    });
+      setPresets(updatedPresets);
+    } catch (error) {
+      console.error('Failed to create new preset:', error);
+    }
   };
 
   const handleRenamePreset = () => {
@@ -517,12 +536,13 @@ export default function HabitsPage() {
     setRenameModalOpen(true);
   };
 
-  const handleRenameConfirm = (newName: string) => {
+  const handleRenameConfirm = async (newName: string) => {
     if (!presets[activePreset]) return;
     
-    setPresets((prevPresets) => {
+    try {
+      const prevPresets = await getPresets();
       const currentPreset = prevPresets[activePreset];
-      if (!currentPreset) return prevPresets;
+      if (!currentPreset) return;
 
       // Generate unique name if needed
       const uniqueName = generateUniquePresetName(newName, prevPresets);
@@ -538,10 +558,12 @@ export default function HabitsPage() {
         [activePreset]: updatedPreset,
       };
 
-      savePresets(updatedPresets);
+      await savePresets(updatedPresets);
+      setPresets(updatedPresets);
       setRenameModalOpen(false);
-      return updatedPresets;
-    });
+    } catch (error) {
+      console.error('Failed to rename preset:', error);
+    }
   };
 
   const handleDeletePreset = () => {
@@ -549,55 +571,57 @@ export default function HabitsPage() {
     setDeleteModalOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!presets[activePreset]) return;
     
-    const presetToDeleteId = activePreset;
-    const presetIds = Object.keys(presets);
-    
-    // Find fallback preset
-    const remainingPresets = presetIds.filter((id) => id !== presetToDeleteId);
-    let fallbackPresetId: PresetId;
-    
-    if (remainingPresets.length > 0) {
-      fallbackPresetId = remainingPresets[0];
-    } else {
-      // Create a default preset if none remain
-      fallbackPresetId = 'default';
-      const defaultPreset: Preset = {
-        id: 'default',
-        name: 'Default',
-        habits: [],
-        tasks: [],
-        updatedAt: Date.now(),
-      };
+    try {
+      const presetToDeleteId = activePreset;
+      const currentPresets = await getPresets();
+      const presetIds = Object.keys(currentPresets);
       
-      // Update day plans that reference the deleted preset
-      updateDayPlansPresetReference(presetToDeleteId, fallbackPresetId);
+      // Find fallback preset
+      const remainingPresets = presetIds.filter((id) => id !== presetToDeleteId);
+      let fallbackPresetId: PresetId;
       
-      // Remove deleted preset and add default
-      setPresets((prevPresets) => {
-        const updatedPresets = { ...prevPresets };
+      if (remainingPresets.length > 0) {
+        fallbackPresetId = remainingPresets[0];
+      } else {
+        // Create a default preset if none remain
+        fallbackPresetId = 'default';
+        const defaultPreset: Preset = {
+          id: 'default',
+          name: 'Default',
+          habits: [],
+          tasks: [],
+          updatedAt: Date.now(),
+        };
+        
+        // Update day plans that reference the deleted preset
+        await updateDayPlansPresetReference(presetToDeleteId, fallbackPresetId);
+        
+        // Remove deleted preset and add default
+        const updatedPresets = { ...currentPresets };
         delete updatedPresets[presetToDeleteId];
         updatedPresets[fallbackPresetId] = defaultPreset;
-        savePresets(updatedPresets);
+        await savePresets(updatedPresets);
+        await setActivePresetId(fallbackPresetId);
+        setPresets(updatedPresets);
         setActivePreset(fallbackPresetId);
         loadPresetData(defaultPreset);
-        return updatedPresets;
-      });
-      
-      setDeleteModalOpen(false);
-      return;
-    }
+        
+        setDeleteModalOpen(false);
+        return;
+      }
 
-    // Update day plans that reference the deleted preset
-    updateDayPlansPresetReference(presetToDeleteId, fallbackPresetId);
+      // Update day plans that reference the deleted preset
+      await updateDayPlansPresetReference(presetToDeleteId, fallbackPresetId);
 
-    // Remove preset from storage
-    setPresets((prevPresets) => {
-      const updatedPresets = { ...prevPresets };
+      // Remove preset from storage
+      const updatedPresets = { ...currentPresets };
       delete updatedPresets[presetToDeleteId];
-      savePresets(updatedPresets);
+      await savePresets(updatedPresets);
+      await setActivePresetId(fallbackPresetId);
+      setPresets(updatedPresets);
       
       // Switch to fallback
       if (updatedPresets[fallbackPresetId]) {
@@ -605,10 +629,10 @@ export default function HabitsPage() {
         loadPresetData(updatedPresets[fallbackPresetId]);
       }
       
-      return updatedPresets;
-    });
-
-    setDeleteModalOpen(false);
+      setDeleteModalOpen(false);
+    } catch (error) {
+      console.error('Failed to delete preset:', error);
+    }
   };
 
   const activeHabitsCount = habits.filter((h) => !h.completed).length;

@@ -13,9 +13,10 @@ function InitializeForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userExistsError, setUserExistsError] = useState(false);
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
 
-  // Check for error in URL params
+  // Check for error and tab in URL params
   useEffect(() => {
     const errorParam = searchParams.get('error');
     if (errorParam === 'auth_failed') {
@@ -23,7 +24,20 @@ function InitializeForm() {
     } else if (errorParam === 'supabase_not_configured') {
       setError('Authentication service is not available. Please contact support.');
     }
+
+    // Set initial tab from query param
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'signup') {
+      setActiveTab('signup');
+    } else if (tabParam === 'signin') {
+      setActiveTab('signin');
+    }
   }, [searchParams]);
+
+  // Clear user exists error when switching tabs
+  useEffect(() => {
+    setUserExistsError(false);
+  }, [activeTab]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +93,24 @@ function InitializeForm() {
       });
 
       if (signUpError) {
-        setError(signUpError.message);
+        // Check if error indicates user already exists
+        const errorMessage = signUpError.message.toLowerCase();
+        const isUserExists = 
+          errorMessage.includes('user already registered') ||
+          errorMessage.includes('already registered') ||
+          errorMessage.includes('email already exists') ||
+          errorMessage.includes('user already exists') ||
+          signUpError.status === 422; // Common status for validation errors including existing user
+        
+        if (isUserExists) {
+          setUserExistsError(true);
+          setError(null);
+          // Switch to signin tab
+          setActiveTab('signin');
+        } else {
+          setError(signUpError.message);
+          setUserExistsError(false);
+        }
         setLoading(false);
         return;
       }
@@ -129,6 +160,7 @@ function InitializeForm() {
               onClick={() => {
                 setActiveTab('signin');
                 setError(null);
+                setUserExistsError(false);
               }}
             >
               Sign In
@@ -139,6 +171,7 @@ function InitializeForm() {
               onClick={() => {
                 setActiveTab('signup');
                 setError(null);
+                setUserExistsError(false);
               }}
             >
               Sign Up
@@ -148,7 +181,22 @@ function InitializeForm() {
           {/* Form Content */}
           <div className={styles.formContent}>
             <form className={styles.formLogin} onSubmit={handleSubmit}>
-              {/* Error Message */}
+              {/* User Exists Error Message */}
+              {userExistsError && (
+                <div style={{ 
+                  padding: '0.75rem', 
+                  background: 'rgba(239, 68, 68, 0.1)', 
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '0.5rem',
+                  marginBottom: '1rem',
+                  color: '#ef4444',
+                  fontSize: '0.875rem'
+                }}>
+                  Account already exists — please sign in
+                </div>
+              )}
+
+              {/* General Error Message */}
               {error && (
                 <div style={{ 
                   padding: '0.75rem', 

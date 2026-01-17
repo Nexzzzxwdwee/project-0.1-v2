@@ -28,7 +28,7 @@ export default function LandingPage() {
           </span>
           <span className={`${styles.statusText} ${styles.fontMono}`}>System Online v2.4</span>
         </div>
-        <Link href="/signup" className={styles.loginButton}>
+        <Link href="/initialize" className={styles.loginButton}>
           Login
         </Link>
       </header>

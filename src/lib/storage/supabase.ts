@@ -16,22 +16,57 @@ import type { StorageAdapter } from './types';
 import type { JournalEntry } from '@/app/(app)/journal/page';
 import type { Goal } from '@/app/(app)/goals/page';
 
+// Cache user ID to avoid repeated auth calls (prevents lock conflicts)
+let cachedUserId: string | null = null;
+let userIdPromise: Promise<string> | null = null;
+
 /**
- * Get current authenticated user ID
+ * Get current authenticated user ID (cached)
  * Throws if not authenticated
+ * 
+ * IMPORTANT: This caches the user ID to prevent repeated getUser() calls
+ * that can cause AbortError from auth locks. The cache is module-level
+ * and persists for the adapter instance lifetime.
  */
 async function getUserId(): Promise<string> {
-  const supabase = getSupabaseBrowserClient();
-  if (!supabase) {
-    throw new Error('Supabase client not configured');
+  // Return cached user ID if available
+  if (cachedUserId) {
+    return cachedUserId;
   }
 
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) {
-    throw new Error('User not authenticated');
+  // If there's an in-flight request, wait for it instead of creating a new one
+  if (userIdPromise) {
+    return userIdPromise;
   }
 
-  return user.id;
+  // Create new promise to fetch user ID
+  userIdPromise = (async () => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      userIdPromise = null;
+      throw new Error('Supabase client not configured');
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      userIdPromise = null;
+      throw new Error('User not authenticated');
+    }
+
+    cachedUserId = user.id;
+    userIdPromise = null;
+    return user.id;
+  })();
+
+  return userIdPromise;
+}
+
+/**
+ * Clear cached user ID (call when auth state changes)
+ */
+function clearUserIdCache(): void {
+  cachedUserId = null;
+  userIdPromise = null;
 }
 
 /**

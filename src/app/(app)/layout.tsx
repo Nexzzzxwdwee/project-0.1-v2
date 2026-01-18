@@ -14,62 +14,119 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
 
-  // Check auth status on mount
+  // Check auth status on mount (run once)
   useEffect(() => {
+    let mounted = true;
+
     const checkAuth = async () => {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) {
         // If Supabase not configured, allow access (fallback mode)
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          setAuthChecked(true);
+        }
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
+      try {
+        // Resolve session ONCE (prevents AbortError from concurrent calls)
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
 
-      // If no session and Supabase is configured, redirect to initialize
-      if (!session) {
-        router.push('/initialize');
-        return;
-      }
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Auth] Session check completed', { hasSession: !!session });
+        }
 
-      // If authenticated but no activePresetId, redirect to onboarding
-      // Skip this check if already on onboarding page to prevent redirect loop
-      if (session && pathname !== '/onboarding') {
-        const activePresetId = getActivePresetId();
-        if (!activePresetId) {
-          router.push('/onboarding');
+        setUser(session?.user ?? null);
+        setAuthChecked(true);
+
+        // Get current pathname (may differ from pathname state due to navigation)
+        const currentPath = window.location.pathname;
+
+        // Only redirect AFTER auth check completes
+        if (!session) {
+          if (currentPath !== '/initialize' && currentPath !== '/signup') {
+            router.push('/initialize');
+          }
+          setLoading(false);
           return;
         }
-      }
 
-      setLoading(false);
+        // If authenticated but no activePresetId, redirect to onboarding
+        // Skip this check if already on onboarding page to prevent redirect loop
+        if (session && currentPath !== '/onboarding') {
+          const activePresetId = await getActivePresetId();
+          if (!activePresetId && currentPath !== '/onboarding') {
+            router.push('/onboarding');
+            setLoading(false);
+            return;
+          }
+        }
+
+        setLoading(false);
+      } catch (error) {
+        if (mounted) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[Auth] Failed to check session:', error);
+          }
+          setLoading(false);
+          setAuthChecked(true);
+        }
+      }
     };
 
     checkAuth();
 
-    // Listen for auth changes
+    return () => {
+      mounted = false;
+    };
+  }, []); // Empty deps - run once on mount
+
+  // Listen for auth changes (register listener once)
+  useEffect(() => {
     const supabase = getSupabaseBrowserClient();
-    if (supabase) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null);
-        if (!session) {
+    if (!supabase || !authChecked) return; // Wait for initial check
+
+    let mounted = true;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return;
+
+      setUser(session?.user ?? null);
+
+      // Only redirect if auth was already checked (prevents race conditions)
+      // Get current pathname inside callback to avoid stale closure
+      const currentPath = window.location.pathname;
+      
+      if (!session) {
+        if (currentPath !== '/initialize' && currentPath !== '/signup') {
           router.push('/initialize');
-        } else if (session && pathname !== '/onboarding') {
-          // Check if user needs onboarding
-          const activePresetId = getActivePresetId();
-          if (!activePresetId) {
+        }
+      } else if (session && currentPath !== '/onboarding') {
+        // Check if user needs onboarding (async)
+        try {
+          const activePresetId = await getActivePresetId();
+          if (!activePresetId && currentPath !== '/onboarding') {
             router.push('/onboarding');
           }
+        } catch (error) {
+          // Silently handle error - don't redirect on error
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[Auth] Failed to check activePresetId:', error);
+          }
         }
-      });
+      }
+    });
 
-      return () => {
-        subscription.unsubscribe();
-      };
-    }
-  }, [router, pathname]);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [authChecked, router]); // Only re-register if authChecked changes (once)
 
   const navItems = [
     { href: '/today', label: 'Today', icon: 'calendar-day' },

@@ -50,3 +50,4 @@ export interface StorageAdapter {
   saveGoals(goals: Goal[]): Promise<void>;
 }
 
+

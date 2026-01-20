@@ -223,3 +223,4 @@ Stores the ID of the currently active/selected journal entry.
 - Type definitions are in `src/lib/presets.ts` for preset-related types
 - Type definitions for JournalEntry and Goal are in their respective page components
 
+

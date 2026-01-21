@@ -599,15 +599,19 @@ export default function HabitsPage() {
         // Update day plans that reference the deleted preset
         await updateDayPlansPresetReference(presetToDeleteId, fallbackPresetId);
         
-        // Remove deleted preset and add default
+        // Build updated presets object
         const updatedPresets = { ...currentPresets };
         delete updatedPresets[presetToDeleteId];
         updatedPresets[fallbackPresetId] = defaultPreset;
+        
+        // Save to storage first, then reload to ensure consistency
         await savePresets(updatedPresets);
+        const reloadedPresets = await getPresets();
+        
         await setActivePresetId(fallbackPresetId);
-        setPresets(updatedPresets);
+        setPresets(reloadedPresets);
         setActivePreset(fallbackPresetId);
-        loadPresetData(defaultPreset);
+        loadPresetData(reloadedPresets[fallbackPresetId] || defaultPreset);
         
         setDeleteModalOpen(false);
         return;
@@ -616,22 +620,30 @@ export default function HabitsPage() {
       // Update day plans that reference the deleted preset
       await updateDayPlansPresetReference(presetToDeleteId, fallbackPresetId);
 
-      // Remove preset from storage
+      // Build updated presets object
       const updatedPresets = { ...currentPresets };
       delete updatedPresets[presetToDeleteId];
+      
+      // Save to storage first, then reload to ensure consistency
       await savePresets(updatedPresets);
+      const reloadedPresets = await getPresets();
+      
+      // Update active preset if needed
       await setActivePresetId(fallbackPresetId);
-      setPresets(updatedPresets);
+      
+      // Update UI state with reloaded data
+      setPresets(reloadedPresets);
       
       // Switch to fallback
-      if (updatedPresets[fallbackPresetId]) {
+      if (reloadedPresets[fallbackPresetId]) {
         setActivePreset(fallbackPresetId);
-        loadPresetData(updatedPresets[fallbackPresetId]);
+        loadPresetData(reloadedPresets[fallbackPresetId]);
       }
       
       setDeleteModalOpen(false);
     } catch (error) {
       console.error('Failed to delete preset:', error);
+      alert('Failed to delete preset. Please try again.');
     }
   };
 

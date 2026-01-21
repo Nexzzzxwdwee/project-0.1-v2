@@ -111,9 +111,46 @@ export function supabaseAdapter(): StorageAdapter {
       if (!supabase) throw new Error('Supabase not configured');
 
       const userId = await getUserId();
-      const now = Date.now();
 
-      // Convert to array and upsert
+      // Fetch existing preset IDs for this user to determine what to delete
+      const { data: existingRows, error: fetchError } = await supabase
+        .from('presets')
+        .select('id')
+        .eq('user_id', userId);
+
+      if (fetchError) {
+        console.error('Failed to fetch existing presets:', fetchError);
+        throw fetchError;
+      }
+
+      const existingIds = new Set(existingRows?.map((row) => row.id) || []);
+      const newIds = new Set(Object.keys(presets));
+
+      // Compute IDs to delete: presets that exist in DB but not in the new presets object
+      const idsToDelete = Array.from(existingIds).filter((id) => !newIds.has(id));
+
+      // If RLS is enabled on presets table, a DELETE policy is required or deletion will fail.
+      if (idsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('presets')
+          .delete()
+          .eq('user_id', userId)
+          .in('id', idsToDelete);
+
+        if (deleteError) {
+          console.error('Failed to delete presets:', deleteError);
+          throw deleteError;
+        }
+      }
+
+      // Edge case: if presets object is empty, we've deleted everything, skip upsert
+      if (Object.keys(presets).length === 0) {
+        return;
+      }
+
+      // Convert to array and upsert remaining presets
+      // Note: created_at is omitted to avoid overwriting on updates
+      // Supabase should handle created_at via default value or trigger
       const rows = Object.values(presets).map((preset) => ({
         id: preset.id,
         user_id: userId,
@@ -121,16 +158,15 @@ export function supabaseAdapter(): StorageAdapter {
         habits: preset.habits,
         tasks: preset.tasks,
         updated_at: preset.updatedAt,
-        created_at: now, // Set on first create
       }));
 
-      const { error } = await supabase
+      const { error: upsertError } = await supabase
         .from('presets')
         .upsert(rows, { onConflict: 'id' });
 
-      if (error) {
-        console.error('Failed to save presets:', error);
-        throw error;
+      if (upsertError) {
+        console.error('Failed to save presets:', upsertError);
+        throw upsertError;
       }
     },
 

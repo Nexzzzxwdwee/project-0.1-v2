@@ -76,6 +76,15 @@ async function requireUserId(): Promise<string> {
   }
 }
 
+function toPresetRowId(userId: string, presetId: PresetId): string {
+  return `${userId}:${presetId}`;
+}
+
+function fromPresetRowId(userId: string, rowId: string): PresetId {
+  const prefix = `${userId}:`;
+  return rowId.startsWith(prefix) ? rowId.slice(prefix.length) : rowId;
+}
+
 /**
  * Clear cached user ID (call when auth state changes)
  */
@@ -95,6 +104,7 @@ export function supabaseAdapter(): StorageAdapter {
       if (!supabase) throw new Error('Supabase not configured');
 
       const userId = await getUserId();
+      const prefix = `${userId}:`;
       const { data, error } = await supabase
         .from('presets')
         .select('*')
@@ -106,15 +116,28 @@ export function supabaseAdapter(): StorageAdapter {
       }
 
       const presets: Record<PresetId, Preset> = {};
+      const presetMeta = new Map<PresetId, { isPrefixed: boolean; updatedAt: number }>();
       if (data) {
         for (const row of data) {
-          presets[row.id] = {
-            id: row.id,
-            name: row.name,
-            habits: row.habits || [],
-            tasks: row.tasks || [],
-            updatedAt: row.updated_at,
-          };
+          const logicalId = fromPresetRowId(userId, row.id);
+          const isPrefixed = row.id.startsWith(prefix);
+          const updatedAt = row.updated_at ?? 0;
+          const existing = presetMeta.get(logicalId);
+          const shouldReplace =
+            !existing ||
+            (isPrefixed && !existing.isPrefixed) ||
+            (isPrefixed === existing.isPrefixed && updatedAt >= existing.updatedAt);
+
+          if (shouldReplace) {
+            presets[logicalId] = {
+              id: logicalId,
+              name: row.name,
+              habits: row.habits || [],
+              tasks: row.tasks || [],
+              updatedAt: row.updated_at,
+            };
+            presetMeta.set(logicalId, { isPrefixed, updatedAt });
+          }
         }
       }
 
@@ -126,6 +149,7 @@ export function supabaseAdapter(): StorageAdapter {
       if (!supabase) throw new Error('Supabase not configured');
 
       const userId = await requireUserId();
+      const prefix = `${userId}:`;
 
       // Fetch existing preset IDs for this user to determine what to delete
       const { data: existingRows, error: fetchError } = await supabase
@@ -138,28 +162,34 @@ export function supabaseAdapter(): StorageAdapter {
         throw fetchError;
       }
 
-      const existingIds = new Set(existingRows?.map((row) => row.id) || []);
-      const newIds = new Set(Object.keys(presets));
+      const existingIds = existingRows?.map((row) => row.id) || [];
+      const newLogicalIds = new Set(Object.keys(presets));
 
-      // Compute IDs to delete: presets that exist in DB but not in the new presets object
-      const idsToDelete = Array.from(existingIds).filter((id) => !newIds.has(id));
-
-      // If RLS is enabled on presets table, a DELETE policy is required or deletion will fail.
-      if (idsToDelete.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('presets')
-          .delete()
-          .eq('user_id', userId)
-          .in('id', idsToDelete);
-
-        if (deleteError) {
-          console.error('Failed to delete presets:', deleteError);
-          throw deleteError;
+      // Compute IDs to delete:
+      // - presets removed from the new object
+      // - legacy (non-prefixed) IDs that should be migrated
+      const idsToDelete = Array.from(new Set(existingIds)).filter((rowId) => {
+        const logicalId = fromPresetRowId(userId, rowId);
+        if (!newLogicalIds.has(logicalId)) {
+          return true;
         }
-      }
+        return !rowId.startsWith(prefix);
+      });
 
-      // Edge case: if presets object is empty, we've deleted everything, skip upsert
+      // Edge case: if presets object is empty, delete everything and skip upsert
       if (Object.keys(presets).length === 0) {
+        if (idsToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('presets')
+            .delete()
+            .eq('user_id', userId)
+            .in('id', idsToDelete);
+
+          if (deleteError) {
+            console.error('Failed to delete presets:', deleteError);
+            throw deleteError;
+          }
+        }
         return;
       }
 
@@ -167,7 +197,7 @@ export function supabaseAdapter(): StorageAdapter {
       // Note: created_at is omitted to avoid overwriting on updates
       // Supabase should handle created_at via default value or trigger
       const rows = Object.values(presets).map((preset) => ({
-        id: preset.id,
+        id: toPresetRowId(userId, preset.id),
         user_id: userId,
         name: preset.name,
         habits: preset.habits,
@@ -182,6 +212,20 @@ export function supabaseAdapter(): StorageAdapter {
       if (upsertError) {
         console.error('Failed to save presets:', upsertError);
         throw upsertError;
+      }
+
+      // Cleanup legacy rows after successful upsert
+      if (idsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('presets')
+          .delete()
+          .eq('user_id', userId)
+          .in('id', idsToDelete);
+
+        if (deleteError) {
+          console.error('Failed to delete presets:', deleteError);
+          throw deleteError;
+        }
       }
     },
 

@@ -19,6 +19,7 @@ import {
   type UserProgress,
 } from '@/lib/presets';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { primeUserId } from '@/lib/storage/supabase';
 
 interface OnboardingItem {
   id: string;
@@ -171,6 +172,7 @@ export default function OnboardingPage() {
         setIsLoading(false);
         return;
       }
+      primeUserId(user.id);
 
       // Get existing presets
       const allPresets = await getPresets();

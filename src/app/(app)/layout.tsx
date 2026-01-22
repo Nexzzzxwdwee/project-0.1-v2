@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { getActivePresetId } from '@/lib/presets';
+import { clearUserIdCache } from '@/lib/storage/supabase';
 import type { User } from '@supabase/supabase-js';
 import styles from './app-shell.module.css';
 
@@ -97,6 +98,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
 
       setUser(session?.user ?? null);
+      clearUserIdCache();
 
       // Only redirect if auth was already checked (prevents race conditions)
       // Get current pathname inside callback to avoid stale closure

@@ -77,7 +77,8 @@ async function requireUserId(): Promise<string> {
 }
 
 function toPresetRowId(userId: string, presetId: PresetId): string {
-  return `${userId}:${presetId}`;
+  const prefix = `${userId}:`;
+  return presetId.startsWith(prefix) ? presetId : `${userId}:${presetId}`;
 }
 
 function fromPresetRowId(userId: string, rowId: string): PresetId {
@@ -88,8 +89,13 @@ function fromPresetRowId(userId: string, rowId: string): PresetId {
 /**
  * Clear cached user ID (call when auth state changes)
  */
-function clearUserIdCache(): void {
+export function clearUserIdCache(): void {
   cachedUserId = null;
+  userIdPromise = null;
+}
+
+export function primeUserId(userId: string): void {
+  cachedUserId = userId;
   userIdPromise = null;
 }
 

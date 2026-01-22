@@ -50,7 +50,7 @@ async function getUserId(): Promise<string> {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) {
       userIdPromise = null;
-      throw new Error('User not authenticated');
+      throw new Error('Not signed in — refresh and try again.');
     }
 
     cachedUserId = user.id;
@@ -59,6 +59,21 @@ async function getUserId(): Promise<string> {
   })();
 
   return userIdPromise;
+}
+
+/**
+ * Require a user ID for write operations
+ * Throws a friendly error if user is missing
+ */
+async function requireUserId(): Promise<string> {
+  try {
+    return await getUserId();
+  } catch (err) {
+    if (err instanceof Error && err.message) {
+      throw err;
+    }
+    throw new Error('Not signed in — refresh and try again.');
+  }
 }
 
 /**
@@ -110,7 +125,7 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
 
       // Fetch existing preset IDs for this user to determine what to delete
       const { data: existingRows, error: fetchError } = await supabase
@@ -177,7 +192,7 @@ export function supabaseAdapter(): StorageAdapter {
     },
 
     async setActivePresetId(presetId: PresetId): Promise<void> {
-      const userId = await getUserId();
+      await requireUserId();
       const progress = await this.getUserProgress();
       
       const updated: UserProgress = progress || {
@@ -240,7 +255,7 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
       const id = `${userId}:${plan.date}`;
 
       const { error } = await supabase
@@ -328,7 +343,7 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
       const id = `${userId}:${summary.date}`;
 
       const { error } = await supabase
@@ -435,7 +450,7 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
       const id = userId;
 
       const { error } = await supabase
@@ -460,6 +475,7 @@ export function supabaseAdapter(): StorageAdapter {
     },
 
     async updateUserProgress(updater: (prev: UserProgress) => UserProgress): Promise<void> {
+      await requireUserId();
       const current = await this.getUserProgress();
       if (!current) {
         const defaultProgress: UserProgress = {
@@ -507,7 +523,7 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
       const rows = entries.map((entry) => ({
         id: entry.id,
         user_id: userId,
@@ -552,7 +568,7 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
       const id = userId;
 
       const { error } = await supabase
@@ -602,7 +618,7 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
       const rows = goals.map((goal) => ({
         id: goal.id,
         user_id: userId,

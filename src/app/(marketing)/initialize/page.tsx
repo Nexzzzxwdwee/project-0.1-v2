@@ -11,6 +11,7 @@ function InitializeForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userExistsError, setUserExistsError] = useState(false);
@@ -255,7 +256,7 @@ function InitializeForm() {
                     </svg>
                   </div>
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     id="password"
                     className={styles.textInput}
                     placeholder="••••••••••••"
@@ -265,10 +266,21 @@ function InitializeForm() {
                     disabled={loading}
                     minLength={6}
                   />
-                  <button type="button" className={styles.inputIconRightButton} aria-label="Toggle password visibility">
-                    <svg className={styles.icon} viewBox="0 0 576 512" fill="currentColor">
-                      <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64c-7.1 0-13.9-1.2-20.3-3.3c-5.2-1.6-11.1 .3-14.5 4.8s-4.2 10.7-1.5 15.8c7.4 14.4 20.2 24.8 35.8 29.2c21.9 6.2 44.8 6.2 66.6 0c15.6-4.4 28.4-14.8 35.8-29.2c2.7-5.1 1.9-11.2-1.5-15.8s-9.3-6.4-14.5-4.8c-6.4 2.1-13.2 3.3-20.3 3.3c-35.3 0-64-28.7-64-64z" />
-                    </svg>
+                  <button
+                    type="button"
+                    className={styles.inputIconRightButton}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                  >
+                    {showPassword ? (
+                      <svg className={styles.icon} viewBox="0 0 640 512" fill="currentColor">
+                        <path d="M634 471L38 3.7C28.7-3.2 15.4-1.2 8.6 8.2S-1.2 30.8 8.2 37.6l78.2 61.2C33.8 141.6 2.5 196.1 1.4 198.1c-1.9 3.5-1.9 7.8 0 11.3C19.2 244 79.7 352 192 409.4c94.5 48 186.2 32.8 258.6-10.6l120.8 94.6c9.4 7.3 22.8 5.6 30.1-3.8s5.6-22.8-3.8-30.1zM320 160c28.2 0 54.1 10.2 74 27.2l-36.9 28.9c-10-6.2-21.8-9.8-34.1-9.8c-35.3 0-64 28.7-64 64c0 7.9 1.4 15.5 4 22.5l-38.1 29.8c-7.3-15-11.4-31.8-11.4-49.8c0-61.9 50.1-112 112-112zm0 272c-119.2 0-195.7-94.7-223.4-144c15.3-26.4 55.7-82.2 120.8-114.7l48.6 38c-24.5 18.7-40.3 48.1-40.3 81.1c0 56.5 45.7 102.2 102.2 102.2c20 0 38.7-5.7 54.5-15.5l49.7 38.9c-31.8 12.5-67.2 14.8-112.1 14.8zm318.6-226.7C620.8 180 560.3 72 448 14.6c-71.6-36.5-142.8-36.5-205.9-15.3l61.1 47.9c45.5-7.7 92.1 2.4 136.9 30.9c65.1 32.5 105.5 88.4 120.8 114.7c-8.2 14.5-27.2 44.3-58.5 72.1l45.2 35.4c40.8-35.8 63.8-71.9 71-84.5c1.9-3.5 1.9-7.8 0-11.3z" />
+                      </svg>
+                    ) : (
+                      <svg className={styles.icon} viewBox="0 0 576 512" fill="currentColor">
+                        <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64c-7.1 0-13.9-1.2-20.3-3.3c-5.2-1.6-11.1 .3-14.5 4.8s-4.2 10.7-1.5 15.8c7.4 14.4 20.2 24.8 35.8 29.2c21.9 6.2 44.8 6.2 66.6 0c15.6-4.4 28.4-14.8 35.8-29.2c2.7-5.1 1.9-11.2-1.5-15.8s-9.3-6.4-14.5-4.8c-6.4 2.1-13.2 3.3-20.3 3.3c-35.3 0-64-28.7-64-64z" />
+                      </svg>
+                    )}
                   </button>
                 </div>
               </div>

@@ -1,31 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import styles from './earnings.module.css';
+import { getStorage } from '@/lib/storage';
+import type { Transaction } from '@/lib/storage/types';
 
-interface Transaction {
-  id: number;
-  date: string;
-  type: 'income' | 'expense';
-  amount: number;
-  currency: string;
-  tag: string;
-  description: string;
-  note?: string;
-}
-
-const mockTransactions: Transaction[] = [
-  { id: 1, date: '2025-01-15', type: 'income', amount: 2500, currency: 'USD', tag: 'Trading', description: 'Crypto trading profit', note: 'BTC position closed' },
-  { id: 2, date: '2025-01-14', type: 'expense', amount: 180, currency: 'USD', tag: 'Subscriptions', description: 'Software subscriptions', note: 'Monthly tools' },
-  { id: 3, date: '2025-01-12', type: 'income', amount: 3200, currency: 'USD', tag: 'Work', description: 'Freelance project payment', note: 'Web development' },
-  { id: 4, date: '2025-01-10', type: 'expense', amount: 450, currency: 'USD', tag: 'Other', description: 'Equipment purchase', note: 'Monitor and keyboard' },
-  { id: 5, date: '2025-01-08', type: 'income', amount: 1750, currency: 'USD', tag: 'Sales', description: 'Product sales', note: 'Digital course' },
-  { id: 6, date: '2025-01-05', type: 'expense', amount: 125, currency: 'USD', tag: 'Trading', description: 'Trading fees', note: 'Exchange commissions' },
-  { id: 7, date: '2025-01-01', type: 'income', amount: 5000, currency: 'USD', tag: 'Work', description: 'Monthly salary', note: 'Employment income' },
-  { id: 8, date: '2024-12-28', type: 'expense', amount: 120, currency: 'USD', tag: 'Subscriptions', description: 'Cloud storage', note: 'Annual plan' },
-  { id: 9, date: '2024-12-25', type: 'expense', amount: 85, currency: 'USD', tag: 'Other', description: 'Office supplies', note: 'Desk organization' },
-  { id: 10, date: '2024-12-20', type: 'expense', amount: 320, currency: 'USD', tag: 'Trading', description: 'Trading loss', note: 'ETH position closed' },
-];
+/**
+ * Test checklist:
+ * - Add income/expense and see it in the list
+ * - Totals update for all time + this month
+ * - Delete a transaction and confirm persistence after reload
+ */
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -33,70 +18,145 @@ const formatDate = (dateString: string): string => {
   return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 };
 
-const formatMonth = (date: Date): string => {
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  return `${months[date.getMonth()]} ${date.getFullYear()}`;
-};
-
-type Currency = 'GBP' | 'USD' | 'EUR' | 'JPY' | 'CAD';
-
-const formatMoney = (amount: number, currency: Currency, showDecimals = false): string => {
+const formatMoney = (amount: number): string => {
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',
-    currency,
-    maximumFractionDigits: showDecimals ? 2 : 0,
-    minimumFractionDigits: showDecimals ? 2 : 0,
+    currency: 'GBP',
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
   }).format(amount);
 };
 
+const sortTransactions = (items: Transaction[]): Transaction[] => {
+  return [...items].sort((a, b) => {
+    if (a.date === b.date) {
+      const aUpdated = a.updated_at ?? 0;
+      const bUpdated = b.updated_at ?? 0;
+      return bUpdated - aUpdated;
+    }
+    return a.date > b.date ? -1 : 1;
+  });
+};
+
 export default function EarningsPage() {
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 0, 1)); // January 2025
-  const [baseCurrency, setBaseCurrency] = useState<Currency>('GBP');
-  const [entryType, setEntryType] = useState<'income' | 'expense'>('income');
-  const [entryAmount, setEntryAmount] = useState('');
-  const [entryCurrency, setEntryCurrency] = useState<Currency>('GBP');
-  const [entryDate, setEntryDate] = useState(new Date().toISOString().split('T')[0]);
-  const [entryTag, setEntryTag] = useState('');
-  const [entryNote, setEntryNote] = useState('');
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [transactions] = useState<Transaction[]>(mockTransactions);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [kind, setKind] = useState<'income' | 'expense'>('income');
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('');
+  const [note, setNote] = useState('');
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
 
-  const filteredTransactions = selectedTag
-    ? transactions.filter((t) => t.tag === selectedTag)
-    : transactions;
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const storage = getStorage();
+        const items = await storage.getTransactions();
+        if (mounted) {
+          setTransactions(sortTransactions(items));
+        }
+      } catch (err) {
+        console.error('[earnings-load]', err);
+        if (mounted) {
+          setError('Failed to load earnings. Please try again.');
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-  const totalIncome = filteredTransactions
-    .filter((t) => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const currentMonthKey = new Date().toISOString().slice(0, 7);
 
-  const totalExpenses = filteredTransactions
-    .filter((t) => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalsAllTime = useMemo(() => {
+    const income = transactions
+      .filter((t) => t.kind === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+    const expenses = transactions
+      .filter((t) => t.kind === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+    return { income, expenses, net: income - expenses };
+  }, [transactions]);
 
-  const netPnL = totalIncome - totalExpenses;
+  const totalsThisMonth = useMemo(() => {
+    const filtered = transactions.filter((t) => t.date.startsWith(currentMonthKey));
+    const income = filtered.filter((t) => t.kind === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const expenses = filtered.filter((t) => t.kind === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    return { income, expenses, net: income - expenses };
+  }, [transactions, currentMonthKey]);
 
-  const incomeCount = filteredTransactions.filter((t) => t.type === 'income').length;
-  const expenseCount = filteredTransactions.filter((t) => t.type === 'expense').length;
-
-  const handlePrevMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
-  };
-
-  const handleAddEntry = (e: React.FormEvent) => {
+  const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Form submission logic would go here
-    console.log('Add entry:', { entryType, entryAmount, entryCurrency, entryDate, entryTag, entryNote });
-    // Reset form
-    setEntryAmount('');
-    setEntryTag('');
-    setEntryNote('');
+    setError(null);
+
+    const parsedAmount = Number(amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setError('Amount must be greater than zero.');
+      return;
+    }
+    if (!category.trim()) {
+      setError('Category is required.');
+      return;
+    }
+    if (!date) {
+      setError('Date is required.');
+      return;
+    }
+
+    const now = Date.now();
+    const newItem: Transaction = {
+      id: crypto.randomUUID(),
+      kind,
+      amount: parsedAmount,
+      currency: 'GBP',
+      category: category.trim(),
+      note: note.trim() || undefined,
+      date,
+      created_at: now,
+      updated_at: now,
+    };
+
+    const next = sortTransactions([newItem, ...transactions]);
+    setSaving(true);
+    try {
+      const storage = getStorage();
+      await storage.saveTransactions(next);
+      setTransactions(next);
+      setAmount('');
+      setCategory('');
+      setNote('');
+    } catch (err) {
+      console.error('[earnings-save]', err);
+      setError('Failed to save transaction. Please try again. (details in console)');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const availableTags = Array.from(new Set(transactions.map((t) => t.tag)));
+  const handleDelete = async (id: string) => {
+    setError(null);
+    const next = sortTransactions(transactions.filter((item) => item.id !== id));
+    setSaving(true);
+    try {
+      const storage = getStorage();
+      await storage.saveTransactions(next);
+      setTransactions(next);
+    } catch (err) {
+      console.error('[earnings-delete]', err);
+      setError('Failed to delete transaction. Please try again. (details in console)');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -108,84 +168,55 @@ export default function EarningsPage() {
             <h1 className={styles.title}>Earnings</h1>
             <p className={styles.subtitle}>Track income, expenses, and net outcome.</p>
           </div>
-
-          {/* Date Range & Currency Selector */}
-          <div className={styles.headerControls}>
-            <div className={styles.controlGroup}>
-              <label htmlFor="month-nav" className={styles.controlLabel}>Period</label>
-              <div className={styles.monthSelector}>
-                <button
-                  type="button"
-                  className={styles.monthButton}
-                  onClick={handlePrevMonth}
-                  aria-label="Previous month"
-                >
-                  <svg className={styles.icon} viewBox="0 0 320 512" fill="currentColor">
-                    <path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z" />
-                  </svg>
-                </button>
-                <span className={styles.monthDisplay}>{formatMonth(currentMonth)}</span>
-                <button
-                  type="button"
-                  className={styles.monthButton}
-                  onClick={handleNextMonth}
-                  aria-label="Next month"
-                >
-                  <svg className={styles.icon} viewBox="0 0 320 512" fill="currentColor">
-                    <path d="M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className={styles.controlGroup}>
-              <label htmlFor="currency-select" className={styles.controlLabel}>Base Currency</label>
-              <select
-                id="currency-select"
-                className={styles.currencySelect}
-                value={baseCurrency}
-                onChange={(e) => setBaseCurrency(e.target.value as Currency)}
-              >
-                <option>USD</option>
-                <option>EUR</option>
-                <option>GBP</option>
-                <option>JPY</option>
-                <option>CAD</option>
-              </select>
-            </div>
-          </div>
         </header>
+
+        {error && (
+          <div className={styles.errorBanner} role="alert">
+            {error}
+          </div>
+        )}
 
         {/* Summary Row */}
         <section className={styles.section}>
           <div className={styles.summaryGrid}>
-            {/* Total Income */}
             <div className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>Total Income</span>
+              <span className={styles.summaryLabel}>Income (All time)</span>
               <div className={styles.summaryValue}>
-                <span className={styles.summaryAmount}>{formatMoney(totalIncome, baseCurrency)}</span>
+                <span className={styles.summaryAmount}>{formatMoney(totalsAllTime.income)}</span>
               </div>
-              <div className={styles.summaryCount}>{incomeCount} entries</div>
             </div>
-
-            {/* Total Expenses */}
             <div className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>Total Expenses</span>
+              <span className={styles.summaryLabel}>Expenses (All time)</span>
               <div className={styles.summaryValue}>
-                <span className={styles.summaryAmount}>{formatMoney(totalExpenses, baseCurrency)}</span>
+                <span className={styles.summaryAmount}>{formatMoney(totalsAllTime.expenses)}</span>
               </div>
-              <div className={styles.summaryCount}>{expenseCount} entries</div>
             </div>
-
-            {/* Net PnL */}
             <div className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>Net PnL</span>
+              <span className={styles.summaryLabel}>Net (All time)</span>
               <div className={styles.summaryValue}>
-                <span className={`${styles.summaryAmount} ${netPnL >= 0 ? styles.summaryAmountPositive : ''}`}>
-                  {netPnL >= 0 ? '+' : '-'}{formatMoney(Math.abs(netPnL), baseCurrency)}
+                <span className={`${styles.summaryAmount} ${totalsAllTime.net >= 0 ? styles.summaryAmountPositive : ''}`}>
+                  {totalsAllTime.net >= 0 ? '+' : '-'}{formatMoney(Math.abs(totalsAllTime.net))}
                 </span>
               </div>
-              <div className={`${styles.summaryCount} ${netPnL >= 0 ? styles.summaryCountPositive : ''}`}>
-                {netPnL >= 0 ? 'Positive' : 'Negative'}
+            </div>
+            <div className={styles.summaryCard}>
+              <span className={styles.summaryLabel}>Income (This month)</span>
+              <div className={styles.summaryValue}>
+                <span className={styles.summaryAmount}>{formatMoney(totalsThisMonth.income)}</span>
+              </div>
+            </div>
+            <div className={styles.summaryCard}>
+              <span className={styles.summaryLabel}>Expenses (This month)</span>
+              <div className={styles.summaryValue}>
+                <span className={styles.summaryAmount}>{formatMoney(totalsThisMonth.expenses)}</span>
+              </div>
+            </div>
+            <div className={styles.summaryCard}>
+              <span className={styles.summaryLabel}>Net (This month)</span>
+              <div className={styles.summaryValue}>
+                <span className={`${styles.summaryAmount} ${totalsThisMonth.net >= 0 ? styles.summaryAmountPositive : ''}`}>
+                  {totalsThisMonth.net >= 0 ? '+' : '-'}{formatMoney(Math.abs(totalsThisMonth.net))}
+                </span>
               </div>
             </div>
           </div>
@@ -194,33 +225,29 @@ export default function EarningsPage() {
         {/* Add Entry Form */}
         <section className={styles.section}>
           <div className={styles.addEntryCard}>
-            <h2 className={styles.addEntryTitle}>Add Entry</h2>
+            <h2 className={styles.addEntryTitle}>Add Transaction</h2>
 
             <form onSubmit={handleAddEntry} className={styles.addEntryForm}>
-              {/* Type Selection */}
               <div className={styles.formField}>
-                <label className={styles.fieldLabel}>Type</label>
+                <label className={styles.fieldLabel}>Kind</label>
                 <div className={styles.typeButtons}>
                   <button
                     type="button"
-                    className={`${styles.typeButton} ${entryType === 'income' ? styles.typeButtonActive : ''}`}
-                    onClick={() => setEntryType('income')}
-                    data-type="income"
+                    className={`${styles.typeButton} ${kind === 'income' ? styles.typeButtonActive : ''}`}
+                    onClick={() => setKind('income')}
                   >
                     Income
                   </button>
                   <button
                     type="button"
-                    className={`${styles.typeButton} ${entryType === 'expense' ? styles.typeButtonActiveExpense : ''}`}
-                    onClick={() => setEntryType('expense')}
-                    data-type="expense"
+                    className={`${styles.typeButton} ${kind === 'expense' ? styles.typeButtonActiveExpense : ''}`}
+                    onClick={() => setKind('expense')}
                   >
                     Expense
                   </button>
                 </div>
               </div>
 
-              {/* Amount */}
               <div className={styles.formField}>
                 <label htmlFor="entry-amount" className={styles.fieldLabel}>Amount</label>
                 <input
@@ -228,29 +255,28 @@ export default function EarningsPage() {
                   id="entry-amount"
                   className={styles.amountInput}
                   placeholder="0.00"
-                  value={entryAmount}
-                  onChange={(e) => setEntryAmount(e.target.value)}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
                   step="0.01"
+                  min="0"
                   required
+                  disabled={saving}
                 />
               </div>
 
-              {/* Currency & Date Row */}
               <div className={styles.formRow}>
                 <div className={styles.formField}>
-                  <label htmlFor="entry-currency" className={styles.fieldLabel}>Currency</label>
-                  <select
-                    id="entry-currency"
-                    className={styles.formSelect}
-                    value={entryCurrency}
-                    onChange={(e) => setEntryCurrency(e.target.value as Currency)}
-                  >
-                    <option>USD</option>
-                    <option>EUR</option>
-                    <option>GBP</option>
-                    <option>JPY</option>
-                    <option>CAD</option>
-                  </select>
+                  <label htmlFor="entry-category" className={styles.fieldLabel}>Category</label>
+                  <input
+                    type="text"
+                    id="entry-category"
+                    className={styles.formInput}
+                    placeholder="Category"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    required
+                    disabled={saving}
+                  />
                 </div>
                 <div className={styles.formField}>
                   <label htmlFor="entry-date" className={styles.fieldLabel}>Date</label>
@@ -258,28 +284,14 @@ export default function EarningsPage() {
                     type="date"
                     id="entry-date"
                     className={styles.formInput}
-                    value={entryDate}
-                    onChange={(e) => setEntryDate(e.target.value)}
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
                     required
+                    disabled={saving}
                   />
                 </div>
               </div>
 
-              {/* Tag Input */}
-              <div className={styles.formField}>
-                <label htmlFor="entry-tag" className={styles.fieldLabel}>Tag</label>
-                <input
-                  type="text"
-                  id="entry-tag"
-                  className={styles.formInput}
-                  placeholder="Type a tag..."
-                  value={entryTag}
-                  onChange={(e) => setEntryTag(e.target.value)}
-                  autoComplete="off"
-                />
-              </div>
-
-              {/* Note */}
               <div className={styles.formField}>
                 <label htmlFor="entry-note" className={styles.fieldLabel}>Note</label>
                 <input
@@ -287,39 +299,16 @@ export default function EarningsPage() {
                   id="entry-note"
                   className={styles.formInput}
                   placeholder="Optional note..."
-                  value={entryNote}
-                  onChange={(e) => setEntryNote(e.target.value)}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  disabled={saving}
                 />
               </div>
 
-              {/* Submit Button */}
-              <button type="submit" className={styles.submitButton}>
-                Add Entry
+              <button type="submit" className={styles.submitButton} disabled={saving}>
+                {saving ? 'Saving...' : 'Add Entry'}
               </button>
             </form>
-          </div>
-        </section>
-
-        {/* Tag Filter */}
-        <section className={styles.section}>
-          <div className={styles.tagFilters}>
-            <button
-              type="button"
-              className={`${styles.tagFilter} ${selectedTag === null ? styles.tagFilterActive : ''}`}
-              onClick={() => setSelectedTag(null)}
-            >
-              All
-            </button>
-            {availableTags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                className={`${styles.tagFilter} ${selectedTag === tag ? styles.tagFilterActive : ''}`}
-                onClick={() => setSelectedTag(tag)}
-              >
-                {tag}
-              </button>
-            ))}
           </div>
         </section>
 
@@ -327,42 +316,54 @@ export default function EarningsPage() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Transaction Log</h2>
 
-          <div className={styles.transactionList}>
-            {filteredTransactions.map((transaction) => (
-              <div key={transaction.id} className={styles.transactionItem}>
-                <div className={styles.transactionLeft}>
-                  <div className={styles.transactionDateGroup}>
-                    <span className={styles.transactionDate}>{formatDate(transaction.date)}</span>
-                    <span className={styles.transactionTag}>{transaction.tag}</span>
+          {loading ? (
+            <div className={styles.loadingState}>Loading transactions...</div>
+          ) : (
+            <div className={styles.transactionList}>
+              {transactions.length === 0 ? (
+                <div className={styles.emptyState}>No transactions yet.</div>
+              ) : (
+                transactions.map((transaction) => (
+                  <div key={transaction.id} className={styles.transactionItem}>
+                    <div className={styles.transactionLeft}>
+                      <div className={styles.transactionDateGroup}>
+                        <span className={styles.transactionDate}>{formatDate(transaction.date)}</span>
+                        <span className={styles.transactionTag}>{transaction.category}</span>
+                      </div>
+                      <div className={styles.transactionDetails}>
+                        <p className={styles.transactionDescription}>
+                          {transaction.kind === 'income' ? 'Income' : 'Expense'}
+                        </p>
+                        {transaction.note && (
+                          <p className={styles.transactionNote}>{transaction.note}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className={styles.transactionRight}>
+                      <div className={styles.transactionAmount}>
+                        <span
+                          className={`${styles.transactionAmountValue} ${transaction.kind === 'income' ? styles.transactionAmountIncome : ''}`}
+                        >
+                          {transaction.kind === 'income' ? '+' : '-'}{formatMoney(Math.abs(transaction.amount))}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.deleteButton}
+                        aria-label={`Delete transaction on ${transaction.date}`}
+                        onClick={() => handleDelete(transaction.id)}
+                        disabled={saving}
+                      >
+                        <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
+                          <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                  <div className={styles.transactionDetails}>
-                    <p className={styles.transactionDescription}>{transaction.description}</p>
-                    {transaction.note && (
-                      <p className={styles.transactionNote}>{transaction.note}</p>
-                    )}
-                  </div>
-                </div>
-                <div className={styles.transactionRight}>
-                  <div className={styles.transactionAmount}>
-                    <span
-                      className={`${styles.transactionAmountValue} ${transaction.type === 'income' ? styles.transactionAmountIncome : ''}`}
-                    >
-                      {transaction.type === 'income' ? '+' : '-'}{formatMoney(Math.abs(transaction.amount), transaction.currency as Currency)}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.deleteButton}
-                    aria-label={`Delete transaction: ${transaction.description}`}
-                  >
-                    <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
-                      <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+                ))
+              )}
+            </div>
+          )}
         </section>
 
         {/* Footer */}

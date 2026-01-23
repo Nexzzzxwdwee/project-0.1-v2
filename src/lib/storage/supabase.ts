@@ -12,7 +12,7 @@ import type {
   DaySummary,
   UserProgress,
 } from '@/lib/presets';
-import type { StorageAdapter } from './types';
+import type { StorageAdapter, Transaction } from './types';
 import type { JournalEntry } from '@/app/(app)/journal/page';
 import type { Goal } from '@/app/(app)/goals/page';
 
@@ -687,6 +687,111 @@ export function supabaseAdapter(): StorageAdapter {
       if (error) {
         console.error('Failed to save goals:', error);
         throw error;
+      }
+    },
+
+    // Earnings operations
+    async getTransactions(): Promise<Transaction[]> {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error('Supabase not configured');
+
+      const userId = await getUserId();
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('Failed to fetch transactions:', error);
+        throw error;
+      }
+
+      return (data || []).map((row) => ({
+        id: row.id,
+        user_id: row.user_id,
+        kind: row.kind,
+        amount: typeof row.amount === 'number' ? row.amount : Number(row.amount),
+        currency: row.currency,
+        category: row.category,
+        note: row.note || undefined,
+        date: row.date,
+        created_at: row.created_at ?? undefined,
+        updated_at: row.updated_at ?? undefined,
+      }));
+    },
+
+    async saveTransactions(items: Transaction[]): Promise<void> {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error('Supabase not configured');
+
+      const userId = await requireUserId();
+      const now = Date.now();
+
+      const { data: existingRows, error: fetchError } = await supabase
+        .from('transactions')
+        .select('id')
+        .eq('user_id', userId);
+
+      if (fetchError) {
+        console.error('Failed to fetch existing transactions:', fetchError);
+        throw fetchError;
+      }
+
+      const existingIds = new Set(existingRows?.map((row) => row.id) || []);
+      const newIds = new Set(items.map((item) => item.id));
+      const idsToDelete = Array.from(existingIds).filter((id) => !newIds.has(id));
+
+      if (items.length === 0) {
+        if (idsToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('transactions')
+            .delete()
+            .eq('user_id', userId)
+            .in('id', idsToDelete);
+
+          if (deleteError) {
+            console.error('Failed to delete transactions:', deleteError);
+            throw deleteError;
+          }
+        }
+        return;
+      }
+
+      const rows = items.map((item) => ({
+        id: item.id,
+        user_id: userId,
+        kind: item.kind,
+        amount: item.amount,
+        currency: item.currency,
+        category: item.category,
+        note: item.note || null,
+        date: item.date,
+        created_at: item.created_at ?? now,
+        updated_at: item.updated_at ?? now,
+      }));
+
+      const { error: upsertError } = await supabase
+        .from('transactions')
+        .upsert(rows, { onConflict: 'id' });
+
+      if (upsertError) {
+        console.error('Failed to save transactions:', upsertError);
+        throw upsertError;
+      }
+
+      if (idsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('transactions')
+          .delete()
+          .eq('user_id', userId)
+          .in('id', idsToDelete);
+
+        if (deleteError) {
+          console.error('Failed to delete transactions:', deleteError);
+          throw deleteError;
+        }
       }
     },
   };

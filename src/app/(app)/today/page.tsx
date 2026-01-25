@@ -76,6 +76,7 @@ export default function TodayPage() {
   const [rankState, setRankState] = useState<RankState | null>(null);
   const [rankError, setRankError] = useState<string | null>(null);
   const [rankLoading, setRankLoading] = useState(true);
+  const [sealError, setSealError] = useState<string | null>(null);
 
   // Mark as mounted to avoid hydration mismatch
   useEffect(() => {
@@ -494,11 +495,13 @@ export default function TodayPage() {
 
   const handleSealDay = () => {
     if (dayPlan.isSealed) return;
+    setSealError(null);
     setSealModalOpen(true);
   };
 
   const handleSealConfirm = async () => {
     if (dayPlan.isSealed) return;
+    setSealError(null);
     
     const today = getTodayDateString();
     const updatedPlan: DayPlan = {
@@ -562,15 +565,26 @@ export default function TodayPage() {
     };
     
     try {
-      await saveDaySummary(summary);
       setDayPlan(updatedPlan);
       await saveDayPlan(updatedPlan);
-      
-      // Recalculate streak
-      const newStreak = await getStreak();
+    } catch (error) {
+      console.error('Failed to save sealed day plan:', error);
+      setSealError('Could not save sealed day. Please try again.');
+      setSealModalOpen(false);
+      return;
+    }
+
+    let newStreak = streak;
+    try {
+      await saveDaySummary(summary);
+      newStreak = await getStreak();
       setStreak(newStreak);
-      
-      // Update user progress with XP earned and streak
+    } catch (error) {
+      console.error('Failed to save day summary:', error);
+      setSealError('Day sealed, but summary failed to save.');
+    }
+
+    try {
       await updateUserProgress((prev) => {
         const nextXp = prev.xp + xpEarned;
         const derivedRank = computeRankFromXP(nextXp);
@@ -601,7 +615,8 @@ export default function TodayPage() {
         setRankError('Rank data unavailable. Please refresh.');
       }
     } catch (error) {
-      console.error('Failed to seal day:', error);
+      console.error('Failed to update rank after seal:', error);
+      setSealError('Day sealed, but rank update failed.');
     }
     
     setSealModalOpen(false);
@@ -762,6 +777,11 @@ export default function TodayPage() {
             </div>
           </div>
         </div>
+        {sealError && (
+          <div className={styles.sealError} role="alert">
+            {sealError}
+          </div>
+        )}
       </section>
 
       {/* Preset Selector */}

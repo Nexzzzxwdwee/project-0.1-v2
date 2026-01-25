@@ -89,6 +89,12 @@ function fromPresetRowId(userId: string, rowId: string): PresetId {
   return rowId.startsWith(prefix) ? rowId.slice(prefix.length) : rowId;
 }
 
+function normalizePresetId(userId: string, presetId: string | null | undefined): string | null {
+  if (!presetId) return null;
+  const prefix = `${userId}:`;
+  return presetId.startsWith(prefix) ? presetId.slice(prefix.length) : presetId;
+}
+
 /**
  * Clear cached user ID (call when auth state changes)
  */
@@ -245,7 +251,8 @@ export function supabaseAdapter(): StorageAdapter {
     },
 
     async setActivePresetId(presetId: PresetId): Promise<void> {
-      await requireUserId();
+      const userId = await requireUserId();
+      const normalizedPresetId = normalizePresetId(userId, presetId);
       const progress = await this.getUserProgress();
       
       const rankState = computeRankFromXP(progress?.xp ?? 0);
@@ -257,10 +264,10 @@ export function supabaseAdapter(): StorageAdapter {
         currentStreak: 0,
         lastSealedDate: null,
         updatedAt: Date.now(),
-        activePresetId: presetId,
+        activePresetId: normalizedPresetId,
       };
 
-      updated.activePresetId = presetId;
+      updated.activePresetId = normalizedPresetId;
       updated.updatedAt = Date.now();
       await this.saveUserProgress(updated);
     },
@@ -491,6 +498,8 @@ export function supabaseAdapter(): StorageAdapter {
       const rankState = computeRankFromXP(data.xp ?? 0);
       const xpToNext = rankState.nextThreshold ? Math.max(rankState.nextThreshold - (data.xp ?? 0), 0) : 0;
 
+      const normalizedActivePresetId = normalizePresetId(userId, data.active_preset_id);
+
       return {
         xp: data.xp,
         rankKey: data.rank || rankState.rankKey,
@@ -499,7 +508,7 @@ export function supabaseAdapter(): StorageAdapter {
         currentStreak: data.current_streak,
         lastSealedDate: data.last_sealed_date,
         updatedAt: data.updated_at,
-        activePresetId: data.active_preset_id,
+        activePresetId: normalizedActivePresetId,
       };
     },
 
@@ -510,6 +519,7 @@ export function supabaseAdapter(): StorageAdapter {
       const userId = await requireUserId();
       const id = userId;
 
+      const normalizedActivePresetId = normalizePresetId(userId, progress.activePresetId || null);
       const { error } = await supabase
         .from('user_progress')
         .upsert({
@@ -521,7 +531,7 @@ export function supabaseAdapter(): StorageAdapter {
           best_streak: progress.bestStreak,
           current_streak: progress.currentStreak,
           last_sealed_date: progress.lastSealedDate,
-          active_preset_id: progress.activePresetId || null,
+          active_preset_id: normalizedActivePresetId,
           updated_at: progress.updatedAt,
         }, { onConflict: 'id' });
 

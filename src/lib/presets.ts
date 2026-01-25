@@ -66,7 +66,7 @@ export interface DaySummary {
 
 export interface UserProgress {
   xp: number; // Total accumulated XP
-  rank: string; // Current rank name
+  rankKey: string; // Current rank key
   xpToNext: number; // XP needed for next rank
   bestStreak: number; // All-time best streak
   currentStreak: number; // Current active streak

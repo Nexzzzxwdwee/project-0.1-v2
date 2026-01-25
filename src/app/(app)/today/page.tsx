@@ -21,9 +21,11 @@ import {
   type PresetId,
   type DaySummary,
   type DayStatus,
+  type UserProgress,
 } from '@/lib/presets';
 import SealDayModal from '@/components/ui/SealDayModal';
 import TimePicker from '@/components/ui/TimePicker';
+import { computeRankFromXP, type RankState } from '@/lib/rank/rankEngine';
 
 function formatTime(time: string | undefined): string {
   if (!time) return '';
@@ -70,6 +72,10 @@ export default function TodayPage() {
   const [taskText, setTaskText] = useState('');
   const [sealModalOpen, setSealModalOpen] = useState(false);
   const [streak, setStreak] = useState(0);
+  const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
+  const [rankState, setRankState] = useState<RankState | null>(null);
+  const [rankError, setRankError] = useState<string | null>(null);
+  const [rankLoading, setRankLoading] = useState(true);
 
   // Mark as mounted to avoid hydration mismatch
   useEffect(() => {
@@ -81,26 +87,68 @@ export default function TodayPage() {
     if (!mounted) return;
     
     const loadData = async () => {
+      setRankError(null);
+      setRankLoading(true);
       try {
         const today = getTodayDateString();
         const plan = await getDayPlan(today);
         const loadedPresets = await getPresets();
         setPresets(loadedPresets);
         
-        // Initialize UserProgress if missing
-        const userProgress = await getUserProgress();
-        if (!userProgress) {
-          const defaultProgress = {
+        // Initialize UserProgress if missing (rank source of truth)
+        let progress: UserProgress | null = null;
+        try {
+          progress = await getUserProgress();
+        } catch (error) {
+          console.error('Failed to load rank data:', error);
+          setRankError('Rank data unavailable. Please refresh.');
+        }
+
+        if (!progress) {
+          const rankState = computeRankFromXP(0);
+          const defaultProgress: UserProgress = {
             xp: 0,
-            rank: 'Novice',
-            xpToNext: 100,
+            rankKey: rankState.rankKey,
+            xpToNext: rankState.nextThreshold ? rankState.nextThreshold : 0,
             bestStreak: 0,
             currentStreak: 0,
             lastSealedDate: null,
             updatedAt: Date.now(),
           };
-          await updateUserProgress(() => defaultProgress);
+          try {
+            await updateUserProgress(() => defaultProgress);
+            progress = defaultProgress;
+          } catch (error) {
+            console.error('Failed to initialize rank data:', error);
+            setRankError('Rank data unavailable. Please refresh.');
+          }
         }
+
+        if (progress) {
+          const derivedRank = computeRankFromXP(progress.xp);
+          const xpToNext = derivedRank.nextThreshold
+            ? Math.max(derivedRank.nextThreshold - progress.xp, 0)
+            : 0;
+
+          if (progress.rankKey !== derivedRank.rankKey || progress.xpToNext !== xpToNext) {
+            try {
+              await updateUserProgress((prev) => ({
+                ...prev,
+                rankKey: derivedRank.rankKey,
+                xpToNext,
+                updatedAt: Date.now(),
+              }));
+              progress = { ...progress, rankKey: derivedRank.rankKey, xpToNext };
+            } catch (error) {
+              console.error('Failed to update rank state:', error);
+              setRankError('Rank data unavailable. Please refresh.');
+            }
+          }
+
+          setUserProgress(progress);
+          setRankState(derivedRank);
+        }
+        setRankLoading(false);
         
         // Normalize items: ensure all items have unique IDs
         let normalizedPlan = plan;
@@ -179,6 +227,7 @@ export default function TodayPage() {
         setStreak(currentStreak);
       } catch (error) {
         console.error('Failed to load day plan:', error);
+        setRankLoading(false);
       }
     };
     
@@ -292,6 +341,14 @@ export default function TodayPage() {
       };
     }
   }, [operatorPct, dayPlan.isSealed]);
+
+  const rankXp = userProgress?.xp ?? 0;
+  const derivedRank = computeRankFromXP(rankXp);
+  const effectiveRank = rankState ?? derivedRank;
+  const xpToNext = effectiveRank.nextThreshold
+    ? Math.max(effectiveRank.nextThreshold - rankXp, 0)
+    : 0;
+  const rankProgressPct = rankLoading ? 0 : effectiveRank.progressPct;
 
   const getCurrentDate = () => {
     const date = new Date();
@@ -514,14 +571,32 @@ export default function TodayPage() {
       setStreak(newStreak);
       
       // Update user progress with XP earned and streak
-      await updateUserProgress((prev) => ({
-        ...prev,
-        xp: prev.xp + xpEarned,
-        lastSealedDate: today,
-        bestStreak: Math.max(prev.bestStreak, newStreak),
-        currentStreak: newStreak,
-        updatedAt: Date.now(),
-      }));
+      let nextProgress: UserProgress | null = null;
+      await updateUserProgress((prev) => {
+        const nextXp = prev.xp + xpEarned;
+        const derivedRank = computeRankFromXP(nextXp);
+        const xpToNext = derivedRank.nextThreshold
+          ? Math.max(derivedRank.nextThreshold - nextXp, 0)
+          : 0;
+
+        nextProgress = {
+          ...prev,
+          xp: nextXp,
+          rankKey: derivedRank.rankKey,
+          xpToNext,
+          lastSealedDate: today,
+          bestStreak: Math.max(prev.bestStreak, newStreak),
+          currentStreak: newStreak,
+          updatedAt: Date.now(),
+        };
+
+        return nextProgress;
+      });
+
+      if (nextProgress) {
+        setUserProgress(nextProgress);
+        setRankState(computeRankFromXP(nextProgress.xp));
+      }
     } catch (error) {
       console.error('Failed to seal day:', error);
     }
@@ -575,18 +650,32 @@ export default function TodayPage() {
             </svg>
           </div>
           <div className={styles.rankTitleRow}>
-            <span className={styles.rankTitle}>Recruit</span>
-            <span className={styles.rankLevel}>Lvl 4</span>
+            <span className={styles.rankTitle}>
+              {rankLoading ? 'Loading...' : effectiveRank.rankName}
+            </span>
+            {effectiveRank.nextRankName && (
+              <span className={styles.rankLevel}>Next: {effectiveRank.nextRankName}</span>
+            )}
           </div>
           <div className={styles.xpBar}>
-            <div className={styles.xpFill} style={{ width: '75%' }}></div>
+            <div className={styles.xpFill} style={{ width: `${rankProgressPct}%` }}></div>
           </div>
           <div className={styles.xpText}>
-            <span>750 / 1000 XP</span>
-            <span>Next: Operator</span>
+            <span>{rankXp.toLocaleString()} XP</span>
+            <span>
+              {effectiveRank.nextRankName
+                ? `${xpToNext.toLocaleString()} XP to ${effectiveRank.nextRankName}`
+                : 'MAX RANK'}
+            </span>
           </div>
         </Link>
       </header>
+
+      {rankError && (
+        <div className={styles.rankError} role="alert">
+          {rankError}
+        </div>
+      )}
 
       {/* Daily Status Card */}
       <section className={styles.statusSection}>

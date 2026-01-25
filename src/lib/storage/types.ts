@@ -51,6 +51,7 @@ export interface StorageAdapter {
   getUserProgress(): Promise<UserProgress | null>;
   saveUserProgress(progress: UserProgress): Promise<void>;
   updateUserProgress(updater: (prev: UserProgress) => UserProgress): Promise<void>;
+  setUserProgress(patch: Partial<UserProgress>): Promise<UserProgress>;
 
   // Journal operations
   getJournalEntries(): Promise<JournalEntry[]>;

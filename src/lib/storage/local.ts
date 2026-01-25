@@ -11,6 +11,7 @@ import type {
   DaySummary,
   UserProgress,
 } from '@/lib/presets';
+import { computeRankFromXP } from '@/lib/rank/rankEngine';
 import type { StorageAdapter, Transaction } from './types';
 import type { JournalEntry } from '@/app/(app)/journal/page';
 import type { Goal } from '@/app/(app)/goals/page';
@@ -124,10 +125,11 @@ export function localStorageAdapter(): StorageAdapter {
     async updateUserProgress(updater: (prev: UserProgress) => UserProgress): Promise<void> {
       const current = await this.getUserProgress();
       if (!current) {
+        const rankState = computeRankFromXP(0);
         const defaultProgress: UserProgress = {
           xp: 0,
-          rank: 'Novice',
-          xpToNext: 100,
+          rankKey: rankState.rankKey,
+          xpToNext: rankState.nextThreshold ? rankState.nextThreshold : 0,
           bestStreak: 0,
           currentStreak: 0,
           lastSealedDate: null,
@@ -137,6 +139,24 @@ export function localStorageAdapter(): StorageAdapter {
       } else {
         await this.saveUserProgress(updater(current));
       }
+    },
+
+    async setUserProgress(patch: Partial<UserProgress>): Promise<UserProgress> {
+      let updated: UserProgress | null = null;
+      await this.updateUserProgress((prev) => {
+        updated = {
+          ...prev,
+          ...patch,
+          updatedAt: patch.updatedAt ?? Date.now(),
+        };
+        return updated;
+      });
+
+      if (!updated) {
+        throw new Error('Failed to update user progress');
+      }
+
+      return updated;
     },
 
     // Journal operations

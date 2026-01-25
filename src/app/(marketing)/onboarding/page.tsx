@@ -20,6 +20,7 @@ import {
 } from '@/lib/presets';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { primeUserId } from '@/lib/storage/supabase';
+import { computeRankFromXP } from '@/lib/rank/rankEngine';
 
 interface OnboardingItem {
   id: string;
@@ -243,10 +244,11 @@ export default function OnboardingPage() {
       // Ensure user progress exists
       const existingProgress = await getUserProgress();
       if (!existingProgress) {
+        const rankState = computeRankFromXP(0);
         const defaultProgress: UserProgress = {
           xp: 0,
-          rank: 'Novice',
-          xpToNext: 100,
+          rankKey: rankState.rankKey,
+          xpToNext: rankState.nextThreshold ? rankState.nextThreshold : 0,
           bestStreak: 0,
           currentStreak: 0,
           lastSealedDate: null,

@@ -571,7 +571,6 @@ export default function TodayPage() {
       setStreak(newStreak);
       
       // Update user progress with XP earned and streak
-      let nextProgress: UserProgress | null = null;
       await updateUserProgress((prev) => {
         const nextXp = prev.xp + xpEarned;
         const derivedRank = computeRankFromXP(nextXp);
@@ -579,7 +578,7 @@ export default function TodayPage() {
           ? Math.max(derivedRank.nextThreshold - nextXp, 0)
           : 0;
 
-        nextProgress = {
+        return {
           ...prev,
           xp: nextXp,
           rankKey: derivedRank.rankKey,
@@ -589,13 +588,17 @@ export default function TodayPage() {
           currentStreak: newStreak,
           updatedAt: Date.now(),
         };
-
-        return nextProgress;
       });
 
-      if (nextProgress) {
-        setUserProgress(nextProgress);
-        setRankState(computeRankFromXP(nextProgress.xp));
+      try {
+        const refreshed = await getUserProgress();
+        if (refreshed) {
+          setUserProgress(refreshed);
+          setRankState(computeRankFromXP(refreshed.xp));
+        }
+      } catch (error) {
+        console.error('Failed to refresh rank data:', error);
+        setRankError('Rank data unavailable. Please refresh.');
       }
     } catch (error) {
       console.error('Failed to seal day:', error);

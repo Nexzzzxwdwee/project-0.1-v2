@@ -237,12 +237,18 @@ export default function TodayPage() {
 
   // Save day plan whenever it changes
   const updateDayPlan = async (updater: (plan: DayPlan) => DayPlan) => {
-    if (dayPlan.isSealed) return; // Don't allow changes when sealed
-    
-    const updated = updater(dayPlan);
-    setDayPlan(updated);
+    let nextPlan: DayPlan | null = null;
+
+    setDayPlan((prev) => {
+      if (prev.isSealed) return prev; // Don't allow changes when sealed
+      nextPlan = updater(prev);
+      return nextPlan;
+    });
+
+    if (!nextPlan) return;
+
     try {
-      await saveDayPlan(updated);
+      await saveDayPlan(nextPlan);
     } catch (error) {
       console.error('Failed to save day plan:', error);
     }

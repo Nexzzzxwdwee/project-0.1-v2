@@ -201,6 +201,7 @@ export default function TodayPage() {
   const habits = dayPlan.items.filter((item) => item.kind === 'habit');
   const tasks = dayPlan.items.filter((item) => item.kind === 'task');
   const activeHabits = habits.filter((h) => !h.completed).length;
+  const streakLabel = streak === 1 ? '1 day streak' : `${streak} day streak`;
 
   // Calculate operator score (preset-sourced habits only)
   const operatorItems = useMemo(() => {
@@ -647,18 +648,14 @@ export default function TodayPage() {
                 <span className={styles.statUnit}>Days</span>
               </div>
               <div className={styles.streakRow}>
-                {streak === 0 ? (
-                  <span className={styles.streakSubtitle}>No streak — 100% operator days.</span>
-                ) : streak > 0 && dayPlan.isSealed && operatorPct === 100 ? (
-                  <>
-                    <svg className={styles.icon} viewBox="0 0 384 512" fill="currentColor" style={{ color: '#eab308' }}>
-                      <path d="M153.6 29.9l16-21.3C173.6 3.2 180 0 186.7 0C198.4 0 208 9.6 208 21.3V43.5c0 8.7 3.5 17 9.7 23.1L278.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L350.3 66.6c6.2-6.1 9.7-14.4 9.7-23.1V21.3C360 9.6 369.6 0 381.3 0c6.7 0 13.1 3.2 17.1 8.6l16 21.3c6 8 9.4 17.5 9.4 27.1V384c0 70.7-57.3 128-128 128H128C57.3 512 0 454.7 0 384V57.7c0-9.6 3.4-19.1 9.4-27.1l16-21.3C29.5 3.2 35.9 0 42.7 0C54.4 0 64 9.6 64 21.3V43.5c0 8.7 3.5 17 9.7 23.1L134.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L153.6 29.9z" />
-                    </svg>
-                    <span className={styles.streakSubtitle}>Consecutive 100% operator days.</span>
-                  </>
-                ) : (
-                  <span className={styles.streakSubtitle}>Last streak: {streak} (seal today to continue).</span>
-                )}
+                <div className={`${styles.streakMeta} ${streak === 0 ? styles.streakMetaMuted : ''}`}>
+                  <svg className={styles.streakIcon} viewBox="0 0 384 512" fill="currentColor" aria-hidden="true">
+                    <path d="M153.6 29.9l16-21.3C173.6 3.2 180 0 186.7 0C198.4 0 208 9.6 208 21.3V43.5c0 8.7 3.5 17 9.7 23.1L278.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L350.3 66.6c6.2-6.1 9.7-14.4 9.7-23.1V21.3C360 9.6 369.6 0 381.3 0c6.7 0 13.1 3.2 17.1 8.6l16 21.3c6 8 9.4 17.5 9.4 27.1V384c0 70.7-57.3 128-128 128H128C57.3 512 0 454.7 0 384V57.7c0-9.6 3.4-19.1 9.4-27.1l16-21.3C29.5 3.2 35.9 0 42.7 0C54.4 0 64 9.6 64 21.3V43.5c0 8.7 3.5 17 9.7 23.1L134.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L153.6 29.9z" />
+                  </svg>
+                  <span className={styles.streakLabel}>100% Days</span>
+                  <span className={styles.streakDot} aria-hidden="true"></span>
+                  <span className={styles.streakValue}>{streakLabel}</span>
+                </div>
               </div>
             </div>
 
@@ -718,47 +715,68 @@ export default function TodayPage() {
           </div>
 
           <div className={styles.habitsList}>
-            {habits.map((habit) => (
-              <label key={habit.id} className={styles.habitItem}>
-                <InteractiveCheckbox
-                  checked={habit.completed}
-                  onChange={() => toggleItem(habit.id)}
-                  label={`Toggle ${habit.text}`}
-                  id={`habit-${habit.id}`}
-                  noLabel={true}
-                  disabled={dayPlan.isSealed}
-                />
-                <div className={`${styles.habitContent} ${habit.completed ? styles.habitCompleted : ''}`}>
-                  {editingItemId === habit.id ? (
-                    <input
-                      type="text"
-                      className={styles.editInput}
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      onBlur={saveEdit}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveEdit();
-                        if (e.key === 'Escape') cancelEdit();
-                      }}
-                      autoFocus
-                    />
-                  ) : (
-                    <span
-                      className={styles.habitName}
-                      onDoubleClick={() => startEdit(habit)}
-                      title={dayPlan.isSealed ? '' : 'Double-click to edit'}
-                    >
-                      {habit.text}
-                    </span>
-                  )}
-                  {habit.completed && (
-                    <div className={styles.habitDoneBadge}>
-                      <span>DONE</span>
-                    </div>
-                  )}
-                </div>
-              </label>
-            ))}
+            {habits.map((habit) => {
+              const isSealed = dayPlan.isSealed;
+              const habitRowClasses = [
+                styles.habitContent,
+                styles.row,
+                habit.completed ? styles.rowDone : '',
+                habit.completed ? styles.habitCompleted : '',
+                isSealed && habit.completed ? styles.rowDoneSealed : '',
+                isSealed && habit.completed ? styles.sealedGlow : '',
+                isSealed && !habit.completed ? styles.rowLocked : '',
+              ]
+                .filter(Boolean)
+                .join(' ');
+
+              return (
+                <label key={habit.id} className={styles.habitItem}>
+                  <InteractiveCheckbox
+                    checked={habit.completed}
+                    onChange={() => toggleItem(habit.id)}
+                    label={`Toggle ${habit.text}`}
+                    id={`habit-${habit.id}`}
+                    noLabel={true}
+                    disabled={dayPlan.isSealed}
+                  />
+                  <div className={habitRowClasses}>
+                    {editingItemId === habit.id ? (
+                      <input
+                        type="text"
+                        className={styles.editInput}
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onBlur={saveEdit}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEdit();
+                          if (e.key === 'Escape') cancelEdit();
+                        }}
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className={styles.habitName}
+                        onDoubleClick={() => startEdit(habit)}
+                        title={dayPlan.isSealed ? '' : 'Double-click to edit'}
+                      >
+                        {habit.text}
+                      </span>
+                    )}
+                    {habit.completed && dayPlan.isSealed && (
+                      <div className={`${styles.habitDoneBadge} ${styles.doneBadge}`}>
+                        <span>DONE</span>
+                        <svg className={styles.checkIcon} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                          <path
+                            d="M16.7071 5.29289C17.0976 5.68342 17.0976 6.31658 16.7071 6.70711L8.70711 14.7071C8.31658 15.0976 7.68342 15.0976 7.29289 14.7071L3.29289 10.7071C2.90237 10.3166 2.90237 9.68342 3.29289 9.29289C3.68342 8.90237 4.31658 8.90237 4.70711 9.29289L8 12.5858L15.2929 5.29289C15.6834 4.90237 16.3166 4.90237 16.7071 5.29289Z"
+                            fill="currentColor"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </label>
+              );
+            })}
           </div>
         </section>
 
@@ -805,105 +823,132 @@ export default function TodayPage() {
 
           {/* Task List */}
           <div className={styles.tasksList}>
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                role="button"
-                tabIndex={editingItemId === task.id ? -1 : 0}
-                aria-pressed={task.completed}
-                aria-label={task.completed ? 'Mark task incomplete' : 'Mark task complete'}
-                className={`${styles.taskItem} ${task.completed ? styles.taskCompleted : ''} ${editingItemId === task.id ? styles.taskItemEditing : ''}`}
-                onClick={() => {
-                  if (editingItemId !== task.id && !dayPlan.isSealed) {
-                    toggleItem(task.id);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (editingItemId === task.id || dayPlan.isSealed) return;
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    toggleItem(task.id);
-                  }
-                }}
-              >
-                <div onClick={(e) => e.stopPropagation()}>
-                  <InteractiveCheckbox
-                    checked={task.completed}
-                    onChange={() => toggleItem(task.id)}
-                    label={task.completed ? 'Mark task incomplete' : 'Mark task complete'}
-                    id={`task-${task.id}`}
-                    disabled={dayPlan.isSealed}
-                  />
-                </div>
-                {editingItemId === task.id ? (
-                  <>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <TimePicker
-                        value={editTime}
-                        onChange={setEditTime}
-                        placeholder="Set time"
-                        className={styles.editTimePicker}
-                      />
-                    </div>
-                    <input
-                      type="text"
-                      className={styles.editTextInput}
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      onBlur={saveEdit}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveEdit();
-                        if (e.key === 'Escape') cancelEdit();
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      autoFocus
+            {tasks.map((task) => {
+              const isSealed = dayPlan.isSealed;
+              const taskRowClasses = [
+                styles.taskItem,
+                styles.row,
+                task.completed ? styles.rowDone : '',
+                task.completed ? styles.taskCompleted : '',
+                isSealed && task.completed ? styles.rowDoneSealed : '',
+                isSealed && task.completed ? styles.sealedGlow : '',
+                isSealed && !task.completed ? styles.rowLocked : '',
+                editingItemId === task.id ? styles.taskItemEditing : '',
+              ]
+                .filter(Boolean)
+                .join(' ');
+
+              return (
+                <div
+                  key={task.id}
+                  role="button"
+                  tabIndex={editingItemId === task.id ? -1 : 0}
+                  aria-pressed={task.completed}
+                  aria-label={task.completed ? 'Mark task incomplete' : 'Mark task complete'}
+                  className={taskRowClasses}
+                  onClick={() => {
+                    if (editingItemId !== task.id && !dayPlan.isSealed) {
+                      toggleItem(task.id);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (editingItemId === task.id || dayPlan.isSealed) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleItem(task.id);
+                    }
+                  }}
+                >
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <InteractiveCheckbox
+                      checked={task.completed}
+                      onChange={() => toggleItem(task.id)}
+                      label={task.completed ? 'Mark task incomplete' : 'Mark task complete'}
+                      id={`task-${task.id}`}
+                      disabled={dayPlan.isSealed}
                     />
-                  </>
-                ) : (
-                  <>
-                    <div
+                  </div>
+                  {editingItemId === task.id ? (
+                    <>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <TimePicker
+                          value={editTime}
+                          onChange={setEditTime}
+                          placeholder="Set time"
+                          className={styles.editTimePicker}
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        className={styles.editTextInput}
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onBlur={saveEdit}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEdit();
+                          if (e.key === 'Escape') cancelEdit();
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!dayPlan.isSealed) {
+                            startEdit(task);
+                          }
+                        }}
+                        className={styles.taskTimeWrapper}
+                        title={dayPlan.isSealed ? '' : 'Click to set time'}
+                      >
+                        {task.time && (
+                          <span className={styles.taskTime}>{formatTime(task.time)}</span>
+                        )}
+                      </div>
+                      <span
+                        className={styles.taskText}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          startEdit(task);
+                        }}
+                        title={dayPlan.isSealed ? '' : 'Double-click to edit'}
+                      >
+                        {task.text}
+                      </span>
+                    </>
+                  )}
+                  {task.completed && dayPlan.isSealed && (
+                    <div className={`${styles.taskDoneBadge} ${styles.doneBadge}`}>
+                      <span>DONE</span>
+                      <svg className={styles.checkIcon} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path
+                          d="M16.7071 5.29289C17.0976 5.68342 17.0976 6.31658 16.7071 6.70711L8.70711 14.7071C8.31658 15.0976 7.68342 15.0976 7.29289 14.7071L3.29289 10.7071C2.90237 10.3166 2.90237 9.68342 3.29289 9.29289C3.68342 8.90237 4.31658 8.90237 4.70711 9.29289L8 12.5858L15.2929 5.29289C15.6834 4.90237 16.3166 4.90237 16.7071 5.29289Z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                  {!dayPlan.isSealed && (
+                    <button
+                      type="button"
+                      className={styles.taskDelete}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!dayPlan.isSealed) {
-                          startEdit(task);
-                        }
+                        deleteItem(task.id);
                       }}
-                      className={styles.taskTimeWrapper}
-                      title={dayPlan.isSealed ? '' : 'Click to set time'}
+                      aria-label="Delete task"
                     >
-                      {task.time && (
-                        <span className={styles.taskTime}>{formatTime(task.time)}</span>
-                      )}
-                    </div>
-                    <span
-                      className={styles.taskText}
-                      onDoubleClick={(e) => {
-                        e.stopPropagation();
-                        startEdit(task);
-                      }}
-                      title={dayPlan.isSealed ? '' : 'Double-click to edit'}
-                    >
-                      {task.text}
-                    </span>
-                  </>
-                )}
-                {!dayPlan.isSealed && (
-                  <button
-                    type="button"
-                    className={styles.taskDelete}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteItem(task.id);
-                    }}
-                    aria-label="Delete task"
-                  >
-                    <svg className={styles.icon} viewBox="0 0 384 512" fill="currentColor">
-                      <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            ))}
+                      <svg className={styles.icon} viewBox="0 0 384 512" fill="currentColor">
+                        <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
       </div>

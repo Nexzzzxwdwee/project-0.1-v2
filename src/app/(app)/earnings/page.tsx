@@ -39,6 +39,7 @@ const sortTransactions = (items: Transaction[]): Transaction[] => {
 };
 
 export default function EarningsPage() {
+  const isDev = process.env.NODE_ENV === 'development';
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -59,7 +60,9 @@ export default function EarningsPage() {
           setTransactions(sortTransactions(items));
         }
       } catch (err) {
-        console.error('[earnings-load]', err);
+        if (isDev) {
+          console.error('[earnings-load]', err);
+        }
         if (mounted) {
           setError('Failed to load earnings. Please try again.');
         }
@@ -135,7 +138,9 @@ export default function EarningsPage() {
       setCategory('');
       setNote('');
     } catch (err) {
-      console.error('[earnings-save]', err);
+      if (isDev) {
+        console.error('[earnings-save]', err);
+      }
       setError('Failed to save transaction. Please try again. (details in console)');
     } finally {
       setSaving(false);
@@ -151,7 +156,9 @@ export default function EarningsPage() {
       await storage.saveTransactions(next);
       setTransactions(next);
     } catch (err) {
-      console.error('[earnings-delete]', err);
+      if (isDev) {
+        console.error('[earnings-delete]', err);
+      }
       setError('Failed to delete transaction. Please try again. (details in console)');
     } finally {
       setSaving(false);

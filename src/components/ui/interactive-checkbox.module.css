@@ -3,6 +3,9 @@
 .label {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
   cursor: pointer;
   position: relative;
 }
@@ -18,8 +21,8 @@
 }
 
 .box {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.65rem;
+  height: 1.65rem;
   border-radius: 50%;
   border: 1px solid #292520;
   background: #0c0a09;
@@ -47,6 +50,8 @@
 .boxChecked {
   border-color: #22c55e;
   background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.18),
+    0 0 14px rgba(34, 197, 94, 0.35);
 }
 
 .label:hover .boxChecked,
@@ -69,12 +74,13 @@
 
 /* Checkmark */
 .checkmark {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 0.85rem;
+  height: 0.85rem;
   color: #0c0a09;
   opacity: 0;
   transform: scale(0.8);
   transition: opacity 200ms ease-out, transform 200ms ease-out;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.2));
 }
 
 .boxChecked .checkmark {

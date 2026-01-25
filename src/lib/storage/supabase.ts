@@ -16,6 +16,8 @@ import type { StorageAdapter, Transaction } from './types';
 import type { JournalEntry } from '@/app/(app)/journal/page';
 import type { Goal } from '@/app/(app)/goals/page';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 // Cache user ID to avoid repeated auth calls (prevents lock conflicts)
 let cachedUserId: string | null = null;
 let userIdPromise: Promise<string> | null = null;
@@ -695,15 +697,35 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      let userId: string;
+      try {
+        userId = await getUserId();
+      } catch (error) {
+        if (isDev) {
+          console.warn('[transactions] Skipping load until auth is ready.', error);
+        }
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
-        .eq('user_id', userId)
-        .order('date', { ascending: false })
-        .order('updated_at', { ascending: false });
+        .eq('user_id', userId);
 
       if (error) {
+        const message = typeof error.message === 'string' ? error.message : '';
+        const code = typeof error.code === 'string' ? error.code : '';
+        const missingTable =
+          code === '42P01' ||
+          message.toLowerCase().includes('relation') && message.toLowerCase().includes('transactions');
+
+        if (missingTable) {
+          if (isDev) {
+            console.warn('[transactions] Table missing, returning empty list.', error);
+          }
+          return [];
+        }
+
         console.error('Failed to fetch transactions:', error);
         throw error;
       }

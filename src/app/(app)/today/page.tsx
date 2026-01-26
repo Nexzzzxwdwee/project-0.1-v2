@@ -78,6 +78,11 @@ export default function TodayPage() {
   const [rankLoading, setRankLoading] = useState(true);
   const [sealError, setSealError] = useState<string | null>(null);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const dayPlanRef = useRef(dayPlan);
+
+  useEffect(() => {
+    dayPlanRef.current = dayPlan;
+  }, [dayPlan]);
 
   // Mark as mounted to avoid hydration mismatch
   useEffect(() => {
@@ -238,16 +243,12 @@ export default function TodayPage() {
 
   // Save day plan whenever it changes
   const updateDayPlan = async (updater: (plan: DayPlan) => DayPlan) => {
-    let nextPlan: DayPlan | null = null;
+    const current = dayPlanRef.current;
+    if (current.isSealed) return; // Don't allow changes when sealed
 
-    setDayPlan((prev) => {
-      if (prev.isSealed) return prev; // Don't allow changes when sealed
-      nextPlan = updater(prev);
-      return nextPlan;
-    });
-
-    const planToSave = nextPlan;
-    if (!planToSave) return;
+    const planToSave = updater(current);
+    dayPlanRef.current = planToSave;
+    setDayPlan(planToSave);
 
     saveQueueRef.current = saveQueueRef.current
       .catch(() => undefined)

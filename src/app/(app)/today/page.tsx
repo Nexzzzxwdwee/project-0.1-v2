@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import styles from './today.module.css';
 import InteractiveCheckbox from '@/components/ui/InteractiveCheckbox';
@@ -77,6 +77,7 @@ export default function TodayPage() {
   const [rankError, setRankError] = useState<string | null>(null);
   const [rankLoading, setRankLoading] = useState(true);
   const [sealError, setSealError] = useState<string | null>(null);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   // Mark as mounted to avoid hydration mismatch
   useEffect(() => {
@@ -245,13 +246,20 @@ export default function TodayPage() {
       return nextPlan;
     });
 
-    if (!nextPlan) return;
+    const planToSave = nextPlan;
+    if (!planToSave) return;
 
-    try {
-      await saveDayPlan(nextPlan);
-    } catch (error) {
-      console.error('Failed to save day plan:', error);
-    }
+    saveQueueRef.current = saveQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        try {
+          await saveDayPlan(planToSave);
+        } catch (error) {
+          console.error('Failed to save day plan:', error);
+        }
+      });
+
+    await saveQueueRef.current;
   };
 
   const habits = dayPlan.items.filter((item) => item.kind === 'habit');

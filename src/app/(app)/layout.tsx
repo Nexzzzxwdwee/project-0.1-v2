@@ -16,6 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   // Check auth status on mount (run once)
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         if (mounted) {
           setLoading(false);
           setAuthChecked(true);
+          setInitialLoad(false);
         }
         return;
       }
@@ -69,6 +71,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
 
         setLoading(false);
+        setInitialLoad(false);
       } catch (error) {
         if (mounted) {
           if (process.env.NODE_ENV === 'development') {
@@ -76,6 +79,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           }
           setLoading(false);
           setAuthChecked(true);
+          setInitialLoad(false);
         }
       }
     };
@@ -208,7 +212,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 
   // Show loading state while checking auth
-  if (loading) {
+  if (loading && initialLoad) {
     return (
       <div className={styles.mainContainer}>
         <div style={{ 

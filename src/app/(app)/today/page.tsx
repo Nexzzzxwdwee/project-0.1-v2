@@ -637,28 +637,9 @@ export default function TodayPage() {
     setSealModalOpen(false);
   };
 
-  // Get active preset for display (only after mount to avoid hydration mismatch)
-  const activePreset = mounted && dayPlan.activePresetId ? presets[dayPlan.activePresetId] : null;
-  const pendingPreset = mounted && pendingPresetId ? presets[pendingPresetId] : null;
-
-  // Don't render preset-dependent UI until mounted
-  if (!mounted) {
-    return (
-      <div className={styles.page}>
-        <header className={styles.header}>
-          <div>
-            <h1 className={styles.title}>Project 0.1</h1>
-            <div className={styles.dateRow}>
-              <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
-                <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192z" />
-              </svg>
-              <span className={styles.dateText}>{getCurrentDate()}</span>
-            </div>
-          </div>
-        </header>
-      </div>
-    );
-  }
+  // Get active preset for display
+  const activePreset = dayPlan.activePresetId ? presets[dayPlan.activePresetId] : null;
+  const pendingPreset = pendingPresetId ? presets[pendingPresetId] : null;
 
   return (
     <div className={styles.page}>

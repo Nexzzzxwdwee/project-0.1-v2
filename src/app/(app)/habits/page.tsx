@@ -469,7 +469,7 @@ export default function HabitsPage() {
       const newTask: Task = {
         id: generateId(),
         text: newTaskText.trim(),
-        time: newTaskTime || '09:00',
+        time: newTaskTime || '',
         completed: false,
       };
       setTasks((prev) => [...prev, newTask]);

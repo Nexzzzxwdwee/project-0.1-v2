@@ -51,9 +51,38 @@ async function getUserId(): Promise<string> {
     }
 
     const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) {
+    if (error) {
       userIdPromise = null;
-      throw new Error('Not signed in — refresh and try again.');
+      throw error;
+    }
+
+    if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        cachedUserId = session.user.id;
+        userIdPromise = null;
+        return session.user.id;
+      }
+
+      // Wait briefly for auth state to hydrate
+      const waitedUserId = await new Promise<string>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          subscription?.unsubscribe();
+          reject(new Error('Not signed in — refresh and try again.'));
+        }, 1500);
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+          if (nextSession?.user) {
+            clearTimeout(timeoutId);
+            subscription.unsubscribe();
+            resolve(nextSession.user.id);
+          }
+        });
+      });
+
+      cachedUserId = waitedUserId;
+      userIdPromise = null;
+      return waitedUserId;
     }
 
     cachedUserId = user.id;

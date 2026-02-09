@@ -51,9 +51,8 @@ async function getUserId(): Promise<string> {
     }
 
     const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) {
-      userIdPromise = null;
-      throw error;
+    if (error && process.env.NODE_ENV === 'development') {
+      console.warn('[Auth] getUser returned error, falling back to session.', error);
     }
 
     if (!user) {
@@ -69,7 +68,7 @@ async function getUserId(): Promise<string> {
         const timeoutId = setTimeout(() => {
           subscription?.unsubscribe();
           reject(new Error('Not signed in — refresh and try again.'));
-        }, 1500);
+        }, 2000);
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
           if (nextSession?.user) {

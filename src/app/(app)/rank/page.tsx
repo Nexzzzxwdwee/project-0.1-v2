@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getUserProgress, type UserProgress } from '@/lib/presets';
+import { computeRankFromXP } from '@/lib/rank/rankEngine';
 import styles from './rank.module.css';
 
 export default function RankPage() {
@@ -20,21 +21,18 @@ export default function RankPage() {
     loadData();
   }, []);
 
-  // Calculate progress bar percentage (VIEW ONLY, not stored)
-  const calculateProgressPercent = (): number => {
-    if (!userProgress) return 0;
-    const total = userProgress.xp + userProgress.xpToNext;
-    if (total === 0) return 0;
-    return (userProgress.xp / total) * 100;
-  };
-
-  const progressPercent = calculateProgressPercent();
+  const rankState = useMemo(() => computeRankFromXP(userProgress?.xp ?? 0), [userProgress?.xp]);
+  const xpToNext = rankState.nextThreshold
+    ? Math.max(rankState.nextThreshold - (userProgress?.xp ?? 0), 0)
+    : 0;
+  const progressPercent = rankState.progressPct;
+  const currentRankName = rankState.rankName;
 
   // Default values for empty state
-  const displayData = userProgress || {
-    rank: 'Recruit',
+  const displayData: UserProgress = userProgress || {
+    rankKey: rankState.rankKey,
     xp: 0,
-    xpToNext: 1000,
+    xpToNext,
     bestStreak: 0,
     currentStreak: 0,
     lastSealedDate: null,
@@ -81,7 +79,7 @@ export default function RankPage() {
                   <span className={styles.rankLabel}>Current Rank</span>
                   <span className={styles.currentBadge}>CURRENT</span>
                 </div>
-                <h2 className={styles.rankName}>{displayData.rank}</h2>
+                <h2 className={styles.rankName}>{currentRankName}</h2>
               </div>
               <div className={styles.rankIcon}>
                 <svg
@@ -113,9 +111,7 @@ export default function RankPage() {
               </div>
               <div className={styles.statCard}>
                 <div className={styles.statLabel}>XP to Next</div>
-                <div className={styles.statValue}>
-                  {displayData.xpToNext.toLocaleString()}
-                </div>
+                <div className={styles.statValue}>{xpToNext.toLocaleString()}</div>
               </div>
               <div className={styles.statCard}>
                 <div className={styles.statLabel}>Current Streak</div>
@@ -132,7 +128,7 @@ export default function RankPage() {
                 <span className={styles.progressLabel}>Progress to Next Rank</span>
                 <span className={styles.progressValue}>
                   {displayData.xp.toLocaleString()} /{' '}
-                  {(displayData.xp + displayData.xpToNext).toLocaleString()} XP
+                  {(rankState.nextThreshold ?? displayData.xp).toLocaleString()} XP
                 </span>
               </div>
               <div className={styles.progressBar}>
@@ -156,14 +152,14 @@ export default function RankPage() {
             {/* Rank 1: Recruit */}
             <div
               className={`${styles.rankCard} ${
-                displayData.rank === 'Recruit' ? styles.rankCardCurrent : ''
+                currentRankName === 'Recruit' ? styles.rankCardCurrent : ''
               }`}
             >
               <div className={styles.rankCardHeader}>
                 <div>
                   <div className={styles.rankCardLabelRow}>
                     <span className={styles.rankCardLabel}>Rank 1</span>
-                    {displayData.rank === 'Recruit' && (
+                    {currentRankName === 'Recruit' && (
                       <span className={styles.rankCardCurrentBadge}>CURRENT</span>
                     )}
                   </div>
@@ -197,7 +193,7 @@ export default function RankPage() {
                   <div
                     className={styles.rankCardProgressFill}
                     style={{
-                      width: displayData.rank === 'Recruit' ? `${progressPercent}%` : '0%',
+                      width: currentRankName === 'Recruit' ? `${progressPercent}%` : '0%',
                       backgroundColor: '#eab308',
                     }}
                   ></div>
@@ -208,14 +204,14 @@ export default function RankPage() {
             {/* Rank 2: Operator */}
             <div
               className={`${styles.rankCard} ${
-                displayData.rank === 'Operator' ? styles.rankCardCurrent : ''
+                currentRankName === 'Operator' ? styles.rankCardCurrent : ''
               }`}
             >
               <div className={styles.rankCardHeader}>
                 <div>
                   <div className={styles.rankCardLabelRow}>
                     <span className={styles.rankCardLabel}>Rank 2</span>
-                    {displayData.rank === 'Operator' && (
+                    {currentRankName === 'Operator' && (
                       <span className={styles.rankCardCurrentBadge}>CURRENT</span>
                     )}
                   </div>

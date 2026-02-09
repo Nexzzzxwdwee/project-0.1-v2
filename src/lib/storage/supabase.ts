@@ -12,9 +12,12 @@ import type {
   DaySummary,
   UserProgress,
 } from '@/lib/presets';
-import type { StorageAdapter } from './types';
+import type { StorageAdapter, Transaction } from './types';
 import type { JournalEntry } from '@/app/(app)/journal/page';
 import type { Goal } from '@/app/(app)/goals/page';
+import { computeRankFromXP } from '@/lib/rank/rankEngine';
+
+const isDev = process.env.NODE_ENV === 'development';
 
 // Cache user ID to avoid repeated auth calls (prevents lock conflicts)
 let cachedUserId: string | null = null;
@@ -48,9 +51,37 @@ async function getUserId(): Promise<string> {
     }
 
     const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) {
+    if (error && process.env.NODE_ENV === 'development') {
+      console.warn('[Auth] getUser returned error, falling back to session.', error);
+    }
+
+    if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        cachedUserId = session.user.id;
+        userIdPromise = null;
+        return session.user.id;
+      }
+
+      // Wait briefly for auth state to hydrate
+      const waitedUserId = await new Promise<string>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          subscription?.unsubscribe();
+          reject(new Error('Not signed in — refresh and try again.'));
+        }, 2000);
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+          if (nextSession?.user) {
+            clearTimeout(timeoutId);
+            subscription.unsubscribe();
+            resolve(nextSession.user.id);
+          }
+        });
+      });
+
+      cachedUserId = waitedUserId;
       userIdPromise = null;
-      throw new Error('User not authenticated');
+      return waitedUserId;
     }
 
     cachedUserId = user.id;
@@ -62,10 +93,46 @@ async function getUserId(): Promise<string> {
 }
 
 /**
+ * Require a user ID for write operations
+ * Throws a friendly error if user is missing
+ */
+async function requireUserId(): Promise<string> {
+  try {
+    return await getUserId();
+  } catch (err) {
+    if (err instanceof Error && err.message) {
+      throw err;
+    }
+    throw new Error('Not signed in — refresh and try again.');
+  }
+}
+
+function toPresetRowId(userId: string, presetId: PresetId): string {
+  const prefix = `${userId}:`;
+  return presetId.startsWith(prefix) ? presetId : `${userId}:${presetId}`;
+}
+
+function fromPresetRowId(userId: string, rowId: string): PresetId {
+  const prefix = `${userId}:`;
+  return rowId.startsWith(prefix) ? rowId.slice(prefix.length) : rowId;
+}
+
+function normalizePresetId(userId: string, presetId: string | null | undefined): string | null {
+  if (!presetId) return null;
+  const prefix = `${userId}:`;
+  return presetId.startsWith(prefix) ? presetId.slice(prefix.length) : presetId;
+}
+
+/**
  * Clear cached user ID (call when auth state changes)
  */
-function clearUserIdCache(): void {
+export function clearUserIdCache(): void {
   cachedUserId = null;
+  userIdPromise = null;
+}
+
+export function primeUserId(userId: string): void {
+  cachedUserId = userId;
   userIdPromise = null;
 }
 
@@ -80,6 +147,7 @@ export function supabaseAdapter(): StorageAdapter {
       if (!supabase) throw new Error('Supabase not configured');
 
       const userId = await getUserId();
+      const prefix = `${userId}:`;
       const { data, error } = await supabase
         .from('presets')
         .select('*')
@@ -91,15 +159,28 @@ export function supabaseAdapter(): StorageAdapter {
       }
 
       const presets: Record<PresetId, Preset> = {};
+      const presetMeta = new Map<PresetId, { isPrefixed: boolean; updatedAt: number }>();
       if (data) {
         for (const row of data) {
-          presets[row.id] = {
-            id: row.id,
-            name: row.name,
-            habits: row.habits || [],
-            tasks: row.tasks || [],
-            updatedAt: row.updated_at,
-          };
+          const logicalId = fromPresetRowId(userId, row.id);
+          const isPrefixed = row.id.startsWith(prefix);
+          const updatedAt = row.updated_at ?? 0;
+          const existing = presetMeta.get(logicalId);
+          const shouldReplace =
+            !existing ||
+            (isPrefixed && !existing.isPrefixed) ||
+            (isPrefixed === existing.isPrefixed && updatedAt >= existing.updatedAt);
+
+          if (shouldReplace) {
+            presets[logicalId] = {
+              id: logicalId,
+              name: row.name,
+              habits: row.habits || [],
+              tasks: row.tasks || [],
+              updatedAt: row.updated_at,
+            };
+            presetMeta.set(logicalId, { isPrefixed, updatedAt });
+          }
         }
       }
 
@@ -110,7 +191,8 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
+      const prefix = `${userId}:`;
 
       // Fetch existing preset IDs for this user to determine what to delete
       const { data: existingRows, error: fetchError } = await supabase
@@ -123,28 +205,34 @@ export function supabaseAdapter(): StorageAdapter {
         throw fetchError;
       }
 
-      const existingIds = new Set(existingRows?.map((row) => row.id) || []);
-      const newIds = new Set(Object.keys(presets));
+      const existingIds = existingRows?.map((row) => row.id) || [];
+      const newLogicalIds = new Set(Object.keys(presets));
 
-      // Compute IDs to delete: presets that exist in DB but not in the new presets object
-      const idsToDelete = Array.from(existingIds).filter((id) => !newIds.has(id));
-
-      // If RLS is enabled on presets table, a DELETE policy is required or deletion will fail.
-      if (idsToDelete.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('presets')
-          .delete()
-          .eq('user_id', userId)
-          .in('id', idsToDelete);
-
-        if (deleteError) {
-          console.error('Failed to delete presets:', deleteError);
-          throw deleteError;
+      // Compute IDs to delete:
+      // - presets removed from the new object
+      // - legacy (non-prefixed) IDs that should be migrated
+      const idsToDelete = Array.from(new Set(existingIds)).filter((rowId) => {
+        const logicalId = fromPresetRowId(userId, rowId);
+        if (!newLogicalIds.has(logicalId)) {
+          return true;
         }
-      }
+        return !rowId.startsWith(prefix);
+      });
 
-      // Edge case: if presets object is empty, we've deleted everything, skip upsert
+      // Edge case: if presets object is empty, delete everything and skip upsert
       if (Object.keys(presets).length === 0) {
+        if (idsToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('presets')
+            .delete()
+            .eq('user_id', userId)
+            .in('id', idsToDelete);
+
+          if (deleteError) {
+            console.error('Failed to delete presets:', deleteError);
+            throw deleteError;
+          }
+        }
         return;
       }
 
@@ -152,7 +240,7 @@ export function supabaseAdapter(): StorageAdapter {
       // Note: created_at is omitted to avoid overwriting on updates
       // Supabase should handle created_at via default value or trigger
       const rows = Object.values(presets).map((preset) => ({
-        id: preset.id,
+        id: toPresetRowId(userId, preset.id),
         user_id: userId,
         name: preset.name,
         habits: preset.habits,
@@ -168,6 +256,20 @@ export function supabaseAdapter(): StorageAdapter {
         console.error('Failed to save presets:', upsertError);
         throw upsertError;
       }
+
+      // Cleanup legacy rows after successful upsert
+      if (idsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('presets')
+          .delete()
+          .eq('user_id', userId)
+          .in('id', idsToDelete);
+
+        if (deleteError) {
+          console.error('Failed to delete presets:', deleteError);
+          throw deleteError;
+        }
+      }
     },
 
     async getActivePresetId(): Promise<PresetId | null> {
@@ -177,21 +279,23 @@ export function supabaseAdapter(): StorageAdapter {
     },
 
     async setActivePresetId(presetId: PresetId): Promise<void> {
-      const userId = await getUserId();
+      const userId = await requireUserId();
+      const normalizedPresetId = normalizePresetId(userId, presetId);
       const progress = await this.getUserProgress();
       
+      const rankState = computeRankFromXP(progress?.xp ?? 0);
       const updated: UserProgress = progress || {
         xp: 0,
-        rank: 'Novice',
-        xpToNext: 100,
+        rankKey: rankState.rankKey,
+        xpToNext: rankState.nextThreshold ? rankState.nextThreshold : 0,
         bestStreak: 0,
         currentStreak: 0,
         lastSealedDate: null,
         updatedAt: Date.now(),
-        activePresetId: presetId,
+        activePresetId: normalizedPresetId,
       };
 
-      updated.activePresetId = presetId;
+      updated.activePresetId = normalizedPresetId;
       updated.updatedAt = Date.now();
       await this.saveUserProgress(updated);
     },
@@ -240,7 +344,7 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
       const id = `${userId}:${plan.date}`;
 
       const { error } = await supabase
@@ -328,7 +432,7 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
       const id = `${userId}:${summary.date}`;
 
       const { error } = await supabase
@@ -419,15 +523,20 @@ export function supabaseAdapter(): StorageAdapter {
         return null;
       }
 
+      const rankState = computeRankFromXP(data.xp ?? 0);
+      const xpToNext = rankState.nextThreshold ? Math.max(rankState.nextThreshold - (data.xp ?? 0), 0) : 0;
+
+      const normalizedActivePresetId = normalizePresetId(userId, data.active_preset_id);
+
       return {
         xp: data.xp,
-        rank: data.rank,
-        xpToNext: data.xp_to_next,
+        rankKey: data.rank || rankState.rankKey,
+        xpToNext: data.xp_to_next ?? xpToNext,
         bestStreak: data.best_streak,
         currentStreak: data.current_streak,
         lastSealedDate: data.last_sealed_date,
         updatedAt: data.updated_at,
-        activePresetId: data.active_preset_id,
+        activePresetId: normalizedActivePresetId,
       };
     },
 
@@ -435,21 +544,22 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
       const id = userId;
 
+      const normalizedActivePresetId = normalizePresetId(userId, progress.activePresetId || null);
       const { error } = await supabase
         .from('user_progress')
         .upsert({
           id,
           user_id: userId,
           xp: progress.xp,
-          rank: progress.rank,
+          rank: progress.rankKey,
           xp_to_next: progress.xpToNext,
           best_streak: progress.bestStreak,
           current_streak: progress.currentStreak,
           last_sealed_date: progress.lastSealedDate,
-          active_preset_id: progress.activePresetId || null,
+          active_preset_id: normalizedActivePresetId,
           updated_at: progress.updatedAt,
         }, { onConflict: 'id' });
 
@@ -460,12 +570,14 @@ export function supabaseAdapter(): StorageAdapter {
     },
 
     async updateUserProgress(updater: (prev: UserProgress) => UserProgress): Promise<void> {
+      await requireUserId();
       const current = await this.getUserProgress();
       if (!current) {
+        const rankState = computeRankFromXP(0);
         const defaultProgress: UserProgress = {
           xp: 0,
-          rank: 'Novice',
-          xpToNext: 100,
+          rankKey: rankState.rankKey,
+          xpToNext: rankState.nextThreshold ? rankState.nextThreshold : 0,
           bestStreak: 0,
           currentStreak: 0,
           lastSealedDate: null,
@@ -475,6 +587,24 @@ export function supabaseAdapter(): StorageAdapter {
       } else {
         await this.saveUserProgress(updater(current));
       }
+    },
+
+    async setUserProgress(patch: Partial<UserProgress>): Promise<UserProgress> {
+      let updated: UserProgress | null = null;
+      await this.updateUserProgress((prev) => {
+        updated = {
+          ...prev,
+          ...patch,
+          updatedAt: patch.updatedAt ?? Date.now(),
+        };
+        return updated;
+      });
+
+      if (!updated) {
+        throw new Error('Failed to update user progress');
+      }
+
+      return updated;
     },
 
     // Journal operations
@@ -507,7 +637,7 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
       const rows = entries.map((entry) => ({
         id: entry.id,
         user_id: userId,
@@ -552,7 +682,7 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
       const id = userId;
 
       const { error } = await supabase
@@ -602,7 +732,7 @@ export function supabaseAdapter(): StorageAdapter {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');
 
-      const userId = await getUserId();
+      const userId = await requireUserId();
       const rows = goals.map((goal) => ({
         id: goal.id,
         user_id: userId,
@@ -621,6 +751,131 @@ export function supabaseAdapter(): StorageAdapter {
       if (error) {
         console.error('Failed to save goals:', error);
         throw error;
+      }
+    },
+
+    // Earnings operations
+    async getTransactions(): Promise<Transaction[]> {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error('Supabase not configured');
+
+      let userId: string;
+      try {
+        userId = await getUserId();
+      } catch (error) {
+        if (isDev) {
+          console.warn('[transactions] Skipping load until auth is ready.', error);
+        }
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (error) {
+        const message = typeof error.message === 'string' ? error.message : '';
+        const code = typeof error.code === 'string' ? error.code : '';
+        const missingTable =
+          code === '42P01' ||
+          message.toLowerCase().includes('relation') && message.toLowerCase().includes('transactions');
+
+        if (missingTable) {
+          if (isDev) {
+            console.warn('[transactions] Table missing, returning empty list.', error);
+          }
+          return [];
+        }
+
+        console.error('Failed to fetch transactions:', error);
+        throw error;
+      }
+
+      return (data || []).map((row) => ({
+        id: row.id,
+        user_id: row.user_id,
+        kind: row.kind,
+        amount: typeof row.amount === 'number' ? row.amount : Number(row.amount),
+        currency: row.currency,
+        category: row.category,
+        note: row.note || undefined,
+        date: row.date,
+        created_at: row.created_at ?? undefined,
+        updated_at: row.updated_at ?? undefined,
+      }));
+    },
+
+    async saveTransactions(items: Transaction[]): Promise<void> {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error('Supabase not configured');
+
+      const userId = await requireUserId();
+      const now = Date.now();
+
+      const { data: existingRows, error: fetchError } = await supabase
+        .from('transactions')
+        .select('id')
+        .eq('user_id', userId);
+
+      if (fetchError) {
+        console.error('Failed to fetch existing transactions:', fetchError);
+        throw fetchError;
+      }
+
+      const existingIds = new Set(existingRows?.map((row) => row.id) || []);
+      const newIds = new Set(items.map((item) => item.id));
+      const idsToDelete = Array.from(existingIds).filter((id) => !newIds.has(id));
+
+      if (items.length === 0) {
+        if (idsToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('transactions')
+            .delete()
+            .eq('user_id', userId)
+            .in('id', idsToDelete);
+
+          if (deleteError) {
+            console.error('Failed to delete transactions:', deleteError);
+            throw deleteError;
+          }
+        }
+        return;
+      }
+
+      const rows = items.map((item) => ({
+        id: item.id,
+        user_id: userId,
+        kind: item.kind,
+        amount: item.amount,
+        currency: item.currency,
+        category: item.category,
+        note: item.note || null,
+        date: item.date,
+        created_at: item.created_at ?? now,
+        updated_at: item.updated_at ?? now,
+      }));
+
+      const { error: upsertError } = await supabase
+        .from('transactions')
+        .upsert(rows, { onConflict: 'id' });
+
+      if (upsertError) {
+        console.error('Failed to save transactions:', upsertError);
+        throw upsertError;
+      }
+
+      if (idsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('transactions')
+          .delete()
+          .eq('user_id', userId)
+          .in('id', idsToDelete);
+
+        if (deleteError) {
+          console.error('Failed to delete transactions:', deleteError);
+          throw deleteError;
+        }
       }
     },
   };

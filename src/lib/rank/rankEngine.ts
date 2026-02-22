@@ -7,13 +7,13 @@ export type RankState = {
   nextThreshold: number | null;
 };
 
-type RankDefinition = {
+export type RankDefinition = {
   key: string;
   name: string;
   threshold: number;
 };
 
-const RANKS: RankDefinition[] = [
+export const RANK_DEFS: RankDefinition[] = [
   { key: 'recruit', name: 'Recruit', threshold: 0 },
   { key: 'operator', name: 'Operator', threshold: 100 },
   { key: 'advanced', name: 'Advanced', threshold: 250 },
@@ -24,7 +24,7 @@ const RANKS: RankDefinition[] = [
 
 export function computeRankFromXP(xp: number): RankState {
   const safeXp = Number.isFinite(xp) && xp > 0 ? xp : 0;
-  const ranks = [...RANKS].sort((a, b) => a.threshold - b.threshold);
+  const ranks = [...RANK_DEFS].sort((a, b) => a.threshold - b.threshold);
 
   let currentIndex = 0;
   for (let i = 0; i < ranks.length; i += 1) {

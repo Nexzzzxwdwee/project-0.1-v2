@@ -28,7 +28,6 @@ export default function RankPage() {
   const progressPercent = rankState.progressPct;
   const currentRankName = rankState.rankName;
   const currentRankKey = rankState.rankKey;
-  const currentXp = userProgress?.xp ?? 0;
   const currentRankIndex = RANK_DEFS.findIndex((rank) => rank.key === currentRankKey);
 
   const rankDescriptions: Record<string, string> = {
@@ -176,8 +175,6 @@ export default function RankPage() {
               const fillPercent = isCurrent ? progressPercent : isUnlocked ? 100 : 0;
               const color = rankColors[rank.key] || '#a8a29e';
               const description = rankDescriptions[rank.key] || 'Progression milestone.';
-              const xpNeeded = Math.max(rank.threshold - currentXp, 0);
-
               return (
                 <div
                   key={rank.key}
@@ -212,7 +209,7 @@ export default function RankPage() {
                     <div className={styles.rankCardProgressHeader}>
                       <span className={styles.rankCardProgressLabel}>Requirement</span>
                       <span className={styles.rankCardProgressValue} style={{ color }}>
-                        {xpNeeded.toLocaleString()} XP
+                        {rank.threshold.toLocaleString()} XP
                       </span>
                     </div>
                     <div className={styles.rankCardProgressBar}>

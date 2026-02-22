@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import styles from './earnings.module.css';
 import { getStorage } from '@/lib/storage';
 import type { Transaction } from '@/lib/storage/types';
+import { onAuthReady } from '@/lib/supabase/browser';
 
 /**
  * Test checklist:
@@ -50,33 +51,37 @@ export default function EarningsPage() {
   const [note, setNote] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
 
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const storage = getStorage();
+      const items = await storage.getTransactions();
+      setTransactions(sortTransactions(items));
+    } catch (err) {
+      if (isDev) {
+        console.error('[earnings-load]', err);
+      }
+      setError('Failed to load earnings. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [isDev]);
+
   useEffect(() => {
     let mounted = true;
-    const load = async () => {
-      try {
-        const storage = getStorage();
-        const items = await storage.getTransactions();
-        if (mounted) {
-          setTransactions(sortTransactions(items));
-        }
-      } catch (err) {
-        if (isDev) {
-          console.error('[earnings-load]', err);
-        }
-        if (mounted) {
-          setError('Failed to load earnings. Please try again.');
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
+    const guardedLoad = async () => {
+      if (!mounted) return;
+      await load();
     };
-    load();
+    guardedLoad();
+    const unsubscribe = onAuthReady(() => {
+      guardedLoad();
+    });
     return () => {
       mounted = false;
+      unsubscribe();
     };
-  }, []);
+  }, [load]);
 
   const currentMonthKey = new Date().toISOString().slice(0, 7);
 

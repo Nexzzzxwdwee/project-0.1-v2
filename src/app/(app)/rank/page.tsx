@@ -1,25 +1,31 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getUserProgress, type UserProgress } from '@/lib/presets';
 import { computeRankFromXP, RANK_DEFS } from '@/lib/rank/rankEngine';
 import styles from './rank.module.css';
+import { onAuthReady } from '@/lib/supabase/browser';
 
 export default function RankPage() {
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // READ ONLY: Only read from storage, never write
-        const progress = await getUserProgress();
-        setUserProgress(progress);
-      } catch (error) {
-        console.error('Failed to load rank data:', error);
-      }
-    };
-    loadData();
+  const loadData = useCallback(async () => {
+    try {
+      // READ ONLY: Only read from storage, never write
+      const progress = await getUserProgress();
+      setUserProgress(progress);
+    } catch (error) {
+      console.error('Failed to load rank data:', error);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+    const unsubscribe = onAuthReady(() => {
+      loadData();
+    });
+    return unsubscribe;
+  }, [loadData]);
 
   const rankState = useMemo(() => computeRankFromXP(userProgress?.xp ?? 0), [userProgress?.xp]);
   const xpToNext = rankState.nextThreshold

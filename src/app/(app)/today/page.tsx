@@ -26,6 +26,7 @@ import {
 import SealDayModal from '@/components/ui/SealDayModal';
 import TimePicker from '@/components/ui/TimePicker';
 import { computeRankFromXP, type RankState } from '@/lib/rank/rankEngine';
+import { onAuthReady } from '@/lib/supabase/browser';
 
 function formatTime(time: string | undefined): string {
   if (!time) return '';
@@ -239,6 +240,10 @@ export default function TodayPage() {
     };
     
     loadData();
+    const unsubscribe = onAuthReady(() => {
+      loadData();
+    });
+    return unsubscribe;
   }, [mounted]);
 
   // Save day plan whenever it changes

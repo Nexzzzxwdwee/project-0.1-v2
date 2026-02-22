@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getAllSealedDaySummaries, getUserProgress, type DaySummary, type DayStatus, type UserProgress } from '@/lib/presets';
 import styles from './weekly.module.css';
+import { onAuthReady } from '@/lib/supabase/browser';
 
 interface DayData {
   day: string;
@@ -107,21 +108,26 @@ export default function WeeklyPage() {
   const [sealedSummaries, setSealedSummaries] = useState<DaySummary[]>([]);
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // READ ONLY: Only read from storage, never write
-        const summaries = await getAllSealedDaySummaries();
-        setSealedSummaries(summaries);
-        
-        const progress = await getUserProgress();
-        setUserProgress(progress);
-      } catch (error) {
-        console.error('Failed to load weekly data:', error);
-      }
-    };
-    loadData();
+  const loadData = useCallback(async () => {
+    try {
+      // READ ONLY: Only read from storage, never write
+      const summaries = await getAllSealedDaySummaries();
+      setSealedSummaries(summaries);
+
+      const progress = await getUserProgress();
+      setUserProgress(progress);
+    } catch (error) {
+      console.error('Failed to load weekly data:', error);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+    const unsubscribe = onAuthReady(() => {
+      loadData();
+    });
+    return unsubscribe;
+  }, [loadData]);
 
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
   const weekRangeText = useMemo(() => formatWeekRange(weekDates), [weekDates]);

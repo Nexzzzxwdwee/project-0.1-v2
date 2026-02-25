@@ -136,6 +136,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { href: '/today', label: 'Today', icon: 'calendar-day' },
+    { href: '/tomorrow', label: 'Tomorrow', icon: 'calendar-day' },
     { href: '/history', label: 'History', icon: 'clock-rotate-left' },
     { href: '/weekly', label: 'Weekly', icon: 'calendar-week' },
     { href: '/journal', label: 'Journal', icon: 'book' },

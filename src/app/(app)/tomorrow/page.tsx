@@ -112,8 +112,12 @@ export default function TomorrowPage() {
   }, [enqueueSave]);
 
   const seedFromPreset = useCallback(async (existingPlan: DayPlan) => {
-    const hasTasks = existingPlan.items.some((item) => item.kind === 'task');
-    if (hasTasks) {
+    const existingTasks = existingPlan.items.filter((item) => item.kind === 'task');
+    const existingHabits = existingPlan.items.filter((item) => item.kind === 'habit');
+    const needsTasks = existingTasks.length === 0;
+    const needsHabits = existingHabits.length === 0;
+
+    if (!needsTasks && !needsHabits) {
       return { plan: existingPlan, seeded: false };
     }
 
@@ -124,31 +128,50 @@ export default function TomorrowPage() {
 
     const presets = await getPresets();
     const preset = presets[activePresetId];
-    if (!preset || preset.tasks.length === 0) {
+    if (!preset) {
       return { plan: existingPlan, seeded: false };
     }
 
     const now = Date.now();
-    const seededTasks: DayPlanItem[] = preset.tasks.map((task) => ({
-      id: generateId(),
-      kind: 'task',
-      text: task.text,
-      time: task.time || '',
-      completed: false,
-      source: 'preset',
-      presetId: preset.id,
-      presetItemId: task.id,
-      userEdited: false,
-      createdAt: now,
-    }));
+    const seededHabits: DayPlanItem[] = needsHabits
+      ? preset.habits.map((habit) => ({
+          id: generateId(),
+          kind: 'habit',
+          text: habit.text,
+          completed: false,
+          source: 'preset',
+          presetId: preset.id,
+          presetItemId: habit.id,
+          userEdited: false,
+          createdAt: now,
+        }))
+      : existingHabits;
 
-    const nonTasks = existingPlan.items.filter((item) => item.kind !== 'task');
+    const seededTasks: DayPlanItem[] = needsTasks
+      ? preset.tasks.map((task) => ({
+          id: generateId(),
+          kind: 'task',
+          text: task.text,
+          time: task.time || '',
+          completed: false,
+          source: 'preset',
+          presetId: preset.id,
+          presetItemId: task.id,
+          userEdited: false,
+          createdAt: now,
+        }))
+      : existingTasks;
+
+    if (seededHabits.length === 0 && seededTasks.length === 0) {
+      return { plan: existingPlan, seeded: false };
+    }
+
     return {
       plan: {
         ...existingPlan,
-        activePresetId: preset.id,
+        activePresetId: existingPlan.activePresetId ?? preset.id,
         presetUpdatedAt: preset.updatedAt,
-        items: [...nonTasks, ...seededTasks],
+        items: [...seededHabits, ...seededTasks],
       },
       seeded: true,
     };
@@ -246,6 +269,9 @@ export default function TomorrowPage() {
           <div>
             <h1 className={styles.title}>Tomorrow</h1>
             <p className={styles.subtitle}>Plan tasks for {longDate}</p>
+            <p className={styles.subtleNote}>
+              Habits carry over from your preset automatically.
+            </p>
           </div>
           <div className={styles.headerMeta}>
             <span className={styles.badge}>Tasks only</span>

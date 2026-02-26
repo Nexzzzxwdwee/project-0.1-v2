@@ -41,3 +41,24 @@ export function getSupabaseBrowserClient(): SupabaseClient | undefined {
 
   return supabaseClient;
 }
+
+/**
+ * Subscribe to auth readiness (fires when a user session exists).
+ * Returns an unsubscribe function.
+ */
+export function onAuthReady(callback: () => void): () => void {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    return () => {};
+  }
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
+      callback();
+    }
+  });
+
+  return () => {
+    subscription.unsubscribe();
+  };
+}

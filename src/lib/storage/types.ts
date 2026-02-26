@@ -13,6 +13,19 @@ import type {
 import type { JournalEntry } from '@/app/(app)/journal/page';
 import type { Goal } from '@/app/(app)/goals/page';
 
+export type Transaction = {
+  id: string;
+  user_id?: string;
+  kind: 'income' | 'expense';
+  amount: number;
+  currency: 'GBP';
+  category: string;
+  note?: string;
+  date: string;
+  created_at?: number;
+  updated_at?: number;
+};
+
 /**
  * Storage adapter interface
  * All methods are async to support Supabase
@@ -38,6 +51,7 @@ export interface StorageAdapter {
   getUserProgress(): Promise<UserProgress | null>;
   saveUserProgress(progress: UserProgress): Promise<void>;
   updateUserProgress(updater: (prev: UserProgress) => UserProgress): Promise<void>;
+  setUserProgress(patch: Partial<UserProgress>): Promise<UserProgress>;
 
   // Journal operations
   getJournalEntries(): Promise<JournalEntry[]>;
@@ -48,6 +62,10 @@ export interface StorageAdapter {
   // Goal operations
   getGoals(): Promise<Goal[]>;
   saveGoals(goals: Goal[]): Promise<void>;
+
+  // Earnings operations
+  getTransactions(): Promise<Transaction[]>;
+  saveTransactions(items: Transaction[]): Promise<void>;
 }
 
 

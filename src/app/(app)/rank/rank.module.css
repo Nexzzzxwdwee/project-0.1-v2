@@ -297,6 +297,9 @@
   border-radius: 1rem;
   padding: 1.5rem;
   transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .rankCard:hover {
@@ -359,10 +362,11 @@
   font-size: 0.875rem;
   color: #a8a29e;
   margin-bottom: 1rem;
+  min-height: 2.5rem;
 }
 
 .rankCardProgress {
-  margin-top: 0.75rem;
+  margin-top: auto;
 }
 
 .rankCardProgressHeader {

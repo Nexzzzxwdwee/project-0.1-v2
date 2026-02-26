@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getAllSealedDaySummaries, getUserProgress, type DaySummary, type DayStatus, type UserProgress } from '@/lib/presets';
 import styles from './history.module.css';
+import { onAuthReady } from '@/lib/supabase/browser';
 
 interface ProcessedEntry {
   id: string; // date
@@ -82,21 +83,26 @@ export default function HistoryPage() {
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // READ ONLY: Only read from storage, never write
-        const summaries = await getAllSealedDaySummaries();
-        setSealedSummaries(summaries);
-        
-        const progress = await getUserProgress();
-        setUserProgress(progress);
-      } catch (error) {
-        console.error('Failed to load history data:', error);
-      }
-    };
-    loadData();
+  const loadData = useCallback(async () => {
+    try {
+      // READ ONLY: Only read from storage, never write
+      const summaries = await getAllSealedDaySummaries();
+      setSealedSummaries(summaries);
+
+      const progress = await getUserProgress();
+      setUserProgress(progress);
+    } catch (error) {
+      console.error('Failed to load history data:', error);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+    const unsubscribe = onAuthReady(() => {
+      loadData();
+    });
+    return unsubscribe;
+  }, [loadData]);
 
   const processedEntries: ProcessedEntry[] = useMemo(() => {
     return sealedSummaries.map(processSummary);

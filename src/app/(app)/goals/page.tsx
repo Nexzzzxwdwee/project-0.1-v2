@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { generateId } from '@/lib/presets';
 import { getStorage } from '@/lib/storage';
 import styles from './goals.module.css';
+import { onAuthReady } from '@/lib/supabase/browser';
 
 export interface Goal {
   id: string;
@@ -22,19 +23,24 @@ export default function GoalsPage() {
   const [newGoalTag, setNewGoalTag] = useState('');
   const [completedExpanded, setCompletedExpanded] = useState(false);
 
-  // Load goals on mount (after hydration)
-  useEffect(() => {
-    const loadGoals = async () => {
-      try {
-        const storage = getStorage();
-        const loadedGoals = await storage.getGoals();
-        setGoals(loadedGoals);
-      } catch (error) {
-        console.error('Failed to load goals:', error);
-      }
-    };
-    loadGoals();
+  const loadGoals = useCallback(async () => {
+    try {
+      const storage = getStorage();
+      const loadedGoals = await storage.getGoals();
+      setGoals(loadedGoals);
+    } catch (error) {
+      console.error('Failed to load goals:', error);
+    }
   }, []);
+
+  // Load goals on mount (after hydration) and on auth readiness.
+  useEffect(() => {
+    loadGoals();
+    const unsubscribe = onAuthReady(() => {
+      loadGoals();
+    });
+    return unsubscribe;
+  }, [loadGoals]);
 
   // Separate active and completed goals, sorted
   const activeGoals = goals

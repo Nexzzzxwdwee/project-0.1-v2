@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './onboarding.module.css';
 import {
@@ -18,6 +18,9 @@ import {
   type PresetItem,
   type UserProgress,
 } from '@/lib/presets';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { primeUserId } from '@/lib/storage/supabase';
+import { computeRankFromXP } from '@/lib/rank/rankEngine';
 
 interface OnboardingItem {
   id: string;
@@ -50,7 +53,7 @@ function getTodayDateString(): string {
 export default function OnboardingPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; details?: string } | null>(null);
   const [onboardingHabits, setOnboardingHabits] = useState<OnboardingItem[]>(
     mockHabits.map((h) => ({
       id: generateId(),
@@ -154,10 +157,23 @@ export default function OnboardingPage() {
         }));
 
       if (habits.length === 0 && tasks.length === 0) {
-        setError('Please add at least one habit or task.');
+        setError({ message: 'Please add at least one habit or task.' });
         setIsLoading(false);
         return;
       }
+
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) {
+        throw new Error('Supabase not configured');
+      }
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        setError({ message: 'Not signed in — refresh and try again.' });
+        setIsLoading(false);
+        return;
+      }
+      primeUserId(user.id);
 
       // Get existing presets
       const allPresets = await getPresets();
@@ -228,10 +244,11 @@ export default function OnboardingPage() {
       // Ensure user progress exists
       const existingProgress = await getUserProgress();
       if (!existingProgress) {
+        const rankState = computeRankFromXP(0);
         const defaultProgress: UserProgress = {
           xp: 0,
-          rank: 'Novice',
-          xpToNext: 100,
+          rankKey: rankState.rankKey,
+          xpToNext: rankState.nextThreshold ? rankState.nextThreshold : 0,
           bestStreak: 0,
           currentStreak: 0,
           lastSealedDate: null,
@@ -243,8 +260,17 @@ export default function OnboardingPage() {
       // Redirect to /today
       router.push('/today');
     } catch (err) {
-      console.error('Failed to initialize:', err);
-      setError('Failed to save. Please try again.');
+      const message =
+        err instanceof Error
+          ? err.message
+          : (err && typeof err === 'object' && 'message' in err)
+            ? String((err as { message: unknown }).message)
+            : 'Unknown error';
+      console.error('[onboarding-init]', err);
+      setError({
+        message: 'Failed to save. Please try again. (details in console)',
+        details: message,
+      });
       setIsLoading(false);
     }
   };
@@ -417,7 +443,10 @@ export default function OnboardingPage() {
             <div className={styles.footerBlur}></div>
             {error && (
               <div className={styles.errorMessage} role="alert">
-                {error}
+                <div>{error.message}</div>
+                {error.details && (
+                  <small>{error.details}</small>
+                )}
               </div>
             )}
             <button

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import styles from './today.module.css';
 import InteractiveCheckbox from '@/components/ui/InteractiveCheckbox';
@@ -21,9 +21,12 @@ import {
   type PresetId,
   type DaySummary,
   type DayStatus,
+  type UserProgress,
 } from '@/lib/presets';
 import SealDayModal from '@/components/ui/SealDayModal';
 import TimePicker from '@/components/ui/TimePicker';
+import { computeRankFromXP, type RankState } from '@/lib/rank/rankEngine';
+import { onAuthReady } from '@/lib/supabase/browser';
 
 function formatTime(time: string | undefined): string {
   if (!time) return '';
@@ -70,6 +73,17 @@ export default function TodayPage() {
   const [taskText, setTaskText] = useState('');
   const [sealModalOpen, setSealModalOpen] = useState(false);
   const [streak, setStreak] = useState(0);
+  const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
+  const [rankState, setRankState] = useState<RankState | null>(null);
+  const [rankError, setRankError] = useState<string | null>(null);
+  const [rankLoading, setRankLoading] = useState(true);
+  const [sealError, setSealError] = useState<string | null>(null);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const dayPlanRef = useRef(dayPlan);
+
+  useEffect(() => {
+    dayPlanRef.current = dayPlan;
+  }, [dayPlan]);
 
   // Mark as mounted to avoid hydration mismatch
   useEffect(() => {
@@ -81,26 +95,68 @@ export default function TodayPage() {
     if (!mounted) return;
     
     const loadData = async () => {
+      setRankError(null);
+      setRankLoading(true);
       try {
         const today = getTodayDateString();
         const plan = await getDayPlan(today);
         const loadedPresets = await getPresets();
         setPresets(loadedPresets);
         
-        // Initialize UserProgress if missing
-        const userProgress = await getUserProgress();
-        if (!userProgress) {
-          const defaultProgress = {
+        // Initialize UserProgress if missing (rank source of truth)
+        let progress: UserProgress | null = null;
+        try {
+          progress = await getUserProgress();
+        } catch (error) {
+          console.error('Failed to load rank data:', error);
+          setRankError('Rank data unavailable. Please refresh.');
+        }
+
+        if (!progress) {
+          const rankState = computeRankFromXP(0);
+          const defaultProgress: UserProgress = {
             xp: 0,
-            rank: 'Novice',
-            xpToNext: 100,
+            rankKey: rankState.rankKey,
+            xpToNext: rankState.nextThreshold ? rankState.nextThreshold : 0,
             bestStreak: 0,
             currentStreak: 0,
             lastSealedDate: null,
             updatedAt: Date.now(),
           };
-          await updateUserProgress(() => defaultProgress);
+          try {
+            await updateUserProgress(() => defaultProgress);
+            progress = defaultProgress;
+          } catch (error) {
+            console.error('Failed to initialize rank data:', error);
+            setRankError('Rank data unavailable. Please refresh.');
+          }
         }
+
+        if (progress) {
+          const derivedRank = computeRankFromXP(progress.xp);
+          const xpToNext = derivedRank.nextThreshold
+            ? Math.max(derivedRank.nextThreshold - progress.xp, 0)
+            : 0;
+
+          if (progress.rankKey !== derivedRank.rankKey || progress.xpToNext !== xpToNext) {
+            try {
+              await updateUserProgress((prev) => ({
+                ...prev,
+                rankKey: derivedRank.rankKey,
+                xpToNext,
+                updatedAt: Date.now(),
+              }));
+              progress = { ...progress, rankKey: derivedRank.rankKey, xpToNext };
+            } catch (error) {
+              console.error('Failed to update rank state:', error);
+              setRankError('Rank data unavailable. Please refresh.');
+            }
+          }
+
+          setUserProgress(progress);
+          setRankState(derivedRank);
+        }
+        setRankLoading(false);
         
         // Normalize items: ensure all items have unique IDs
         let normalizedPlan = plan;
@@ -179,28 +235,43 @@ export default function TodayPage() {
         setStreak(currentStreak);
       } catch (error) {
         console.error('Failed to load day plan:', error);
+        setRankLoading(false);
       }
     };
     
     loadData();
+    const unsubscribe = onAuthReady(() => {
+      loadData();
+    });
+    return unsubscribe;
   }, [mounted]);
 
   // Save day plan whenever it changes
   const updateDayPlan = async (updater: (plan: DayPlan) => DayPlan) => {
-    if (dayPlan.isSealed) return; // Don't allow changes when sealed
-    
-    const updated = updater(dayPlan);
-    setDayPlan(updated);
-    try {
-      await saveDayPlan(updated);
-    } catch (error) {
-      console.error('Failed to save day plan:', error);
-    }
+    const current = dayPlanRef.current;
+    if (current.isSealed) return; // Don't allow changes when sealed
+
+    const planToSave = updater(current);
+    dayPlanRef.current = planToSave;
+    setDayPlan(planToSave);
+
+    saveQueueRef.current = saveQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        try {
+          await saveDayPlan(planToSave);
+        } catch (error) {
+          console.error('Failed to save day plan:', error);
+        }
+      });
+
+    await saveQueueRef.current;
   };
 
   const habits = dayPlan.items.filter((item) => item.kind === 'habit');
   const tasks = dayPlan.items.filter((item) => item.kind === 'task');
   const activeHabits = habits.filter((h) => !h.completed).length;
+  const streakLabel = streak === 1 ? '1 day streak' : `${streak} day streak`;
 
   // Calculate operator score (preset-sourced habits only)
   const operatorItems = useMemo(() => {
@@ -291,6 +362,14 @@ export default function TodayPage() {
       };
     }
   }, [operatorPct, dayPlan.isSealed]);
+
+  const rankXp = userProgress?.xp ?? 0;
+  const derivedRank = computeRankFromXP(rankXp);
+  const effectiveRank = rankState ?? derivedRank;
+  const xpToNext = effectiveRank.nextThreshold
+    ? Math.max(effectiveRank.nextThreshold - rankXp, 0)
+    : 0;
+  const rankProgressPct = rankLoading ? 0 : effectiveRank.progressPct;
 
   const getCurrentDate = () => {
     const date = new Date();
@@ -436,11 +515,13 @@ export default function TodayPage() {
 
   const handleSealDay = () => {
     if (dayPlan.isSealed) return;
+    setSealError(null);
     setSealModalOpen(true);
   };
 
   const handleSealConfirm = async () => {
     if (dayPlan.isSealed) return;
+    setSealError(null);
     
     const today = getTodayDateString();
     const updatedPlan: DayPlan = {
@@ -504,52 +585,66 @@ export default function TodayPage() {
     };
     
     try {
-      await saveDaySummary(summary);
       setDayPlan(updatedPlan);
       await saveDayPlan(updatedPlan);
-      
-      // Recalculate streak
-      const newStreak = await getStreak();
-      setStreak(newStreak);
-      
-      // Update user progress with XP earned and streak
-      await updateUserProgress((prev) => ({
-        ...prev,
-        xp: prev.xp + xpEarned,
-        lastSealedDate: today,
-        bestStreak: Math.max(prev.bestStreak, newStreak),
-        currentStreak: newStreak,
-        updatedAt: Date.now(),
-      }));
     } catch (error) {
-      console.error('Failed to seal day:', error);
+      console.error('Failed to save sealed day plan:', error);
+      setSealError('Could not save sealed day. Please try again.');
+      setSealModalOpen(false);
+      return;
+    }
+
+    let newStreak = streak;
+    try {
+      await saveDaySummary(summary);
+      newStreak = await getStreak();
+      setStreak(newStreak);
+    } catch (error) {
+      console.error('Failed to save day summary:', error);
+      setSealError('Day sealed, but summary failed to save.');
+    }
+
+    try {
+      await updateUserProgress((prev) => {
+        const nextXp = prev.xp + xpEarned;
+        const derivedRank = computeRankFromXP(nextXp);
+        const xpToNext = derivedRank.nextThreshold
+          ? Math.max(derivedRank.nextThreshold - nextXp, 0)
+          : 0;
+
+        return {
+          ...prev,
+          xp: nextXp,
+          rankKey: derivedRank.rankKey,
+          xpToNext,
+          lastSealedDate: today,
+          bestStreak: Math.max(prev.bestStreak, newStreak),
+          currentStreak: newStreak,
+          updatedAt: Date.now(),
+        };
+      });
+
+      try {
+        const refreshed = await getUserProgress();
+        if (refreshed) {
+          setUserProgress(refreshed);
+          setRankState(computeRankFromXP(refreshed.xp));
+        }
+      } catch (error) {
+        console.error('Failed to refresh rank data:', error);
+        setRankError('Rank data unavailable. Please refresh.');
+      }
+    } catch (error) {
+      console.error('Failed to update rank after seal:', error);
+      setSealError('Day sealed, but rank update failed.');
     }
     
     setSealModalOpen(false);
   };
 
-  // Get active preset for display (only after mount to avoid hydration mismatch)
-  const activePreset = mounted && dayPlan.activePresetId ? presets[dayPlan.activePresetId] : null;
-  const pendingPreset = mounted && pendingPresetId ? presets[pendingPresetId] : null;
-
-  // Don't render preset-dependent UI until mounted
-  if (!mounted) {
-    return (
-      <div className={styles.page}>
-        <header className={styles.header}>
-          <div>
-            <h1 className={styles.title}>Project 0.1</h1>
-            <div className={styles.dateRow}>
-              <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
-                <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192z" />
-              </svg>
-              <span className={styles.dateText}>{getCurrentDate()}</span>
-            </div>
-          </div>
-        </header>
-      </div>
-    );
-  }
+  // Get active preset for display
+  const activePreset = dayPlan.activePresetId ? presets[dayPlan.activePresetId] : null;
+  const pendingPreset = pendingPresetId ? presets[pendingPresetId] : null;
 
   return (
     <div className={styles.page}>
@@ -574,18 +669,32 @@ export default function TodayPage() {
             </svg>
           </div>
           <div className={styles.rankTitleRow}>
-            <span className={styles.rankTitle}>Recruit</span>
-            <span className={styles.rankLevel}>Lvl 4</span>
+            <span className={styles.rankTitle}>
+              {rankLoading ? 'Loading...' : effectiveRank.rankName}
+            </span>
+            {effectiveRank.nextRankName && (
+              <span className={styles.rankLevel}>Next: {effectiveRank.nextRankName}</span>
+            )}
           </div>
           <div className={styles.xpBar}>
-            <div className={styles.xpFill} style={{ width: '75%' }}></div>
+            <div className={styles.xpFill} style={{ width: `${rankProgressPct}%` }}></div>
           </div>
           <div className={styles.xpText}>
-            <span>750 / 1000 XP</span>
-            <span>Next: Operator</span>
+            <span>{rankXp.toLocaleString()} XP</span>
+            <span>
+              {effectiveRank.nextRankName
+                ? `${xpToNext.toLocaleString()} XP to ${effectiveRank.nextRankName}`
+                : 'MAX RANK'}
+            </span>
           </div>
         </Link>
       </header>
+
+      {rankError && (
+        <div className={styles.rankError} role="alert">
+          {rankError}
+        </div>
+      )}
 
       {/* Daily Status Card */}
       <section className={styles.statusSection}>
@@ -647,18 +756,14 @@ export default function TodayPage() {
                 <span className={styles.statUnit}>Days</span>
               </div>
               <div className={styles.streakRow}>
-                {streak === 0 ? (
-                  <span className={styles.streakSubtitle}>No streak — 100% operator days.</span>
-                ) : streak > 0 && dayPlan.isSealed && operatorPct === 100 ? (
-                  <>
-                    <svg className={styles.icon} viewBox="0 0 384 512" fill="currentColor" style={{ color: '#eab308' }}>
-                      <path d="M153.6 29.9l16-21.3C173.6 3.2 180 0 186.7 0C198.4 0 208 9.6 208 21.3V43.5c0 8.7 3.5 17 9.7 23.1L278.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L350.3 66.6c6.2-6.1 9.7-14.4 9.7-23.1V21.3C360 9.6 369.6 0 381.3 0c6.7 0 13.1 3.2 17.1 8.6l16 21.3c6 8 9.4 17.5 9.4 27.1V384c0 70.7-57.3 128-128 128H128C57.3 512 0 454.7 0 384V57.7c0-9.6 3.4-19.1 9.4-27.1l16-21.3C29.5 3.2 35.9 0 42.7 0C54.4 0 64 9.6 64 21.3V43.5c0 8.7 3.5 17 9.7 23.1L134.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L153.6 29.9z" />
-                    </svg>
-                    <span className={styles.streakSubtitle}>Consecutive 100% operator days.</span>
-                  </>
-                ) : (
-                  <span className={styles.streakSubtitle}>Last streak: {streak} (seal today to continue).</span>
-                )}
+                <div className={`${styles.streakMeta} ${streak === 0 ? styles.streakMetaMuted : ''}`}>
+                  <svg className={styles.streakIcon} viewBox="0 0 384 512" fill="currentColor" aria-hidden="true">
+                    <path d="M153.6 29.9l16-21.3C173.6 3.2 180 0 186.7 0C198.4 0 208 9.6 208 21.3V43.5c0 8.7 3.5 17 9.7 23.1L278.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L350.3 66.6c6.2-6.1 9.7-14.4 9.7-23.1V21.3C360 9.6 369.6 0 381.3 0c6.7 0 13.1 3.2 17.1 8.6l16 21.3c6 8 9.4 17.5 9.4 27.1V384c0 70.7-57.3 128-128 128H128C57.3 512 0 454.7 0 384V57.7c0-9.6 3.4-19.1 9.4-27.1l16-21.3C29.5 3.2 35.9 0 42.7 0C54.4 0 64 9.6 64 21.3V43.5c0 8.7 3.5 17 9.7 23.1L134.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L153.6 29.9z" />
+                  </svg>
+                  <span className={styles.streakLabel}>100% Days</span>
+                  <span className={styles.streakDot} aria-hidden="true"></span>
+                  <span className={styles.streakValue}>{streakLabel}</span>
+                </div>
               </div>
             </div>
 
@@ -673,6 +778,11 @@ export default function TodayPage() {
             </div>
           </div>
         </div>
+        {sealError && (
+          <div className={styles.sealError} role="alert">
+            {sealError}
+          </div>
+        )}
       </section>
 
       {/* Preset Selector */}
@@ -718,47 +828,68 @@ export default function TodayPage() {
           </div>
 
           <div className={styles.habitsList}>
-            {habits.map((habit) => (
-              <label key={habit.id} className={styles.habitItem}>
-                <InteractiveCheckbox
-                  checked={habit.completed}
-                  onChange={() => toggleItem(habit.id)}
-                  label={`Toggle ${habit.text}`}
-                  id={`habit-${habit.id}`}
-                  noLabel={true}
-                  disabled={dayPlan.isSealed}
-                />
-                <div className={`${styles.habitContent} ${habit.completed ? styles.habitCompleted : ''}`}>
-                  {editingItemId === habit.id ? (
-                    <input
-                      type="text"
-                      className={styles.editInput}
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      onBlur={saveEdit}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveEdit();
-                        if (e.key === 'Escape') cancelEdit();
-                      }}
-                      autoFocus
-                    />
-                  ) : (
-                    <span
-                      className={styles.habitName}
-                      onDoubleClick={() => startEdit(habit)}
-                      title={dayPlan.isSealed ? '' : 'Double-click to edit'}
-                    >
-                      {habit.text}
-                    </span>
-                  )}
-                  {habit.completed && (
-                    <div className={styles.habitDoneBadge}>
-                      <span>DONE</span>
-                    </div>
-                  )}
-                </div>
-              </label>
-            ))}
+            {habits.map((habit) => {
+              const isSealed = dayPlan.isSealed;
+              const habitRowClasses = [
+                styles.habitContent,
+                styles.row,
+                habit.completed ? styles.rowDone : '',
+                habit.completed ? styles.habitCompleted : '',
+                isSealed && habit.completed ? styles.rowDoneSealed : '',
+                isSealed && habit.completed ? styles.sealedGlow : '',
+                isSealed && !habit.completed ? styles.rowLocked : '',
+              ]
+                .filter(Boolean)
+                .join(' ');
+
+              return (
+                <label key={habit.id} className={styles.habitItem}>
+                  <InteractiveCheckbox
+                    checked={habit.completed}
+                    onChange={() => toggleItem(habit.id)}
+                    label={`Toggle ${habit.text}`}
+                    id={`habit-${habit.id}`}
+                    noLabel={true}
+                    disabled={dayPlan.isSealed}
+                  />
+                  <div className={habitRowClasses}>
+                    {editingItemId === habit.id ? (
+                      <input
+                        type="text"
+                        className={styles.editInput}
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onBlur={saveEdit}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEdit();
+                          if (e.key === 'Escape') cancelEdit();
+                        }}
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className={styles.habitName}
+                        onDoubleClick={() => startEdit(habit)}
+                        title={dayPlan.isSealed ? '' : 'Double-click to edit'}
+                      >
+                        {habit.text}
+                      </span>
+                    )}
+                    {habit.completed && dayPlan.isSealed && (
+                      <div className={`${styles.habitDoneBadge} ${styles.doneBadge}`}>
+                        <span>DONE</span>
+                        <svg className={styles.checkIcon} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                          <path
+                            d="M16.7071 5.29289C17.0976 5.68342 17.0976 6.31658 16.7071 6.70711L8.70711 14.7071C8.31658 15.0976 7.68342 15.0976 7.29289 14.7071L3.29289 10.7071C2.90237 10.3166 2.90237 9.68342 3.29289 9.29289C3.68342 8.90237 4.31658 8.90237 4.70711 9.29289L8 12.5858L15.2929 5.29289C15.6834 4.90237 16.3166 4.90237 16.7071 5.29289Z"
+                            fill="currentColor"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </label>
+              );
+            })}
           </div>
         </section>
 
@@ -805,105 +936,132 @@ export default function TodayPage() {
 
           {/* Task List */}
           <div className={styles.tasksList}>
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                role="button"
-                tabIndex={editingItemId === task.id ? -1 : 0}
-                aria-pressed={task.completed}
-                aria-label={task.completed ? 'Mark task incomplete' : 'Mark task complete'}
-                className={`${styles.taskItem} ${task.completed ? styles.taskCompleted : ''} ${editingItemId === task.id ? styles.taskItemEditing : ''}`}
-                onClick={() => {
-                  if (editingItemId !== task.id && !dayPlan.isSealed) {
-                    toggleItem(task.id);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (editingItemId === task.id || dayPlan.isSealed) return;
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    toggleItem(task.id);
-                  }
-                }}
-              >
-                <div onClick={(e) => e.stopPropagation()}>
-                  <InteractiveCheckbox
-                    checked={task.completed}
-                    onChange={() => toggleItem(task.id)}
-                    label={task.completed ? 'Mark task incomplete' : 'Mark task complete'}
-                    id={`task-${task.id}`}
-                    disabled={dayPlan.isSealed}
-                  />
-                </div>
-                {editingItemId === task.id ? (
-                  <>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <TimePicker
-                        value={editTime}
-                        onChange={setEditTime}
-                        placeholder="Set time"
-                        className={styles.editTimePicker}
-                      />
-                    </div>
-                    <input
-                      type="text"
-                      className={styles.editTextInput}
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      onBlur={saveEdit}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveEdit();
-                        if (e.key === 'Escape') cancelEdit();
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      autoFocus
+            {tasks.map((task) => {
+              const isSealed = dayPlan.isSealed;
+              const taskRowClasses = [
+                styles.taskItem,
+                styles.row,
+                task.completed ? styles.rowDone : '',
+                task.completed ? styles.taskCompleted : '',
+                isSealed && task.completed ? styles.rowDoneSealed : '',
+                isSealed && task.completed ? styles.sealedGlow : '',
+                isSealed && !task.completed ? styles.rowLocked : '',
+                editingItemId === task.id ? styles.taskItemEditing : '',
+              ]
+                .filter(Boolean)
+                .join(' ');
+
+              return (
+                <div
+                  key={task.id}
+                  role="button"
+                  tabIndex={editingItemId === task.id ? -1 : 0}
+                  aria-pressed={task.completed}
+                  aria-label={task.completed ? 'Mark task incomplete' : 'Mark task complete'}
+                  className={taskRowClasses}
+                  onClick={() => {
+                    if (editingItemId !== task.id && !dayPlan.isSealed) {
+                      toggleItem(task.id);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (editingItemId === task.id || dayPlan.isSealed) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleItem(task.id);
+                    }
+                  }}
+                >
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <InteractiveCheckbox
+                      checked={task.completed}
+                      onChange={() => toggleItem(task.id)}
+                      label={task.completed ? 'Mark task incomplete' : 'Mark task complete'}
+                      id={`task-${task.id}`}
+                      disabled={dayPlan.isSealed}
                     />
-                  </>
-                ) : (
-                  <>
-                    <div
+                  </div>
+                  {editingItemId === task.id ? (
+                    <>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <TimePicker
+                          value={editTime}
+                          onChange={setEditTime}
+                          placeholder="Set time"
+                          className={styles.editTimePicker}
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        className={styles.editTextInput}
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onBlur={saveEdit}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEdit();
+                          if (e.key === 'Escape') cancelEdit();
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!dayPlan.isSealed) {
+                            startEdit(task);
+                          }
+                        }}
+                        className={styles.taskTimeWrapper}
+                        title={dayPlan.isSealed ? '' : 'Click to set time'}
+                      >
+                        {task.time && (
+                          <span className={styles.taskTime}>{formatTime(task.time)}</span>
+                        )}
+                      </div>
+                      <span
+                        className={styles.taskText}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          startEdit(task);
+                        }}
+                        title={dayPlan.isSealed ? '' : 'Double-click to edit'}
+                      >
+                        {task.text}
+                      </span>
+                    </>
+                  )}
+                  {task.completed && dayPlan.isSealed && (
+                    <div className={`${styles.taskDoneBadge} ${styles.doneBadge}`}>
+                      <span>DONE</span>
+                      <svg className={styles.checkIcon} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path
+                          d="M16.7071 5.29289C17.0976 5.68342 17.0976 6.31658 16.7071 6.70711L8.70711 14.7071C8.31658 15.0976 7.68342 15.0976 7.29289 14.7071L3.29289 10.7071C2.90237 10.3166 2.90237 9.68342 3.29289 9.29289C3.68342 8.90237 4.31658 8.90237 4.70711 9.29289L8 12.5858L15.2929 5.29289C15.6834 4.90237 16.3166 4.90237 16.7071 5.29289Z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                  {!dayPlan.isSealed && (
+                    <button
+                      type="button"
+                      className={styles.taskDelete}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!dayPlan.isSealed) {
-                          startEdit(task);
-                        }
+                        deleteItem(task.id);
                       }}
-                      className={styles.taskTimeWrapper}
-                      title={dayPlan.isSealed ? '' : 'Click to set time'}
+                      aria-label="Delete task"
                     >
-                      {task.time && (
-                        <span className={styles.taskTime}>{formatTime(task.time)}</span>
-                      )}
-                    </div>
-                    <span
-                      className={styles.taskText}
-                      onDoubleClick={(e) => {
-                        e.stopPropagation();
-                        startEdit(task);
-                      }}
-                      title={dayPlan.isSealed ? '' : 'Double-click to edit'}
-                    >
-                      {task.text}
-                    </span>
-                  </>
-                )}
-                {!dayPlan.isSealed && (
-                  <button
-                    type="button"
-                    className={styles.taskDelete}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteItem(task.id);
-                    }}
-                    aria-label="Delete task"
-                  >
-                    <svg className={styles.icon} viewBox="0 0 384 512" fill="currentColor">
-                      <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            ))}
+                      <svg className={styles.icon} viewBox="0 0 384 512" fill="currentColor">
+                        <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
       </div>

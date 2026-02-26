@@ -16,6 +16,7 @@ import {
 } from '@/lib/presets';
 import RenamePresetModal from '@/components/ui/RenamePresetModal';
 import DeletePresetModal from '@/components/ui/DeletePresetModal';
+import { onAuthReady } from '@/lib/supabase/browser';
 
 interface Habit {
   id: string; // presetItemId
@@ -262,49 +263,53 @@ export default function HabitsPage() {
     activePresetRef.current = activePreset;
   }, [activePreset]);
 
-  // Load presets on mount
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Read activePresetId FIRST before calling getPresets() to avoid it initializing mock data
-        const activePresetId = await getActivePresetId();
-        const loadedPresets = await getPresets();
-        setPresets(loadedPresets);
-        
-        const presetIds = Object.keys(loadedPresets);
-        
-        if (presetIds.length > 0) {
-          let initialPreset: Preset | undefined;
-          
-          // ALWAYS prioritize activePresetId if it exists and preset exists
-          // Do NOT treat "default" as special - only use it if activePresetId doesn't exist
-          if (activePresetId && loadedPresets[activePresetId]) {
-            initialPreset = loadedPresets[activePresetId];
-          } else if (presetIds.length > 0) {
-            // Fallback to first available preset (no special treatment for "default")
-            initialPreset = loadedPresets[presetIds[0]];
-            
-            // If we have an activePresetId but preset doesn't exist, set it to the first available
-            if (activePresetId && !loadedPresets[activePresetId] && initialPreset) {
-              await setActivePresetId(initialPreset.id);
-            }
-          }
-          
-          if (initialPreset) {
-            setActivePreset(initialPreset.id);
-            loadPresetData(initialPreset);
+  const loadData = useCallback(async () => {
+    try {
+      // Read activePresetId FIRST before calling getPresets() to avoid it initializing mock data
+      const activePresetId = await getActivePresetId();
+      const loadedPresets = await getPresets();
+      setPresets(loadedPresets);
+
+      const presetIds = Object.keys(loadedPresets);
+
+      if (presetIds.length > 0) {
+        let initialPreset: Preset | undefined;
+
+        // ALWAYS prioritize activePresetId if it exists and preset exists
+        // Do NOT treat "default" as special - only use it if activePresetId doesn't exist
+        if (activePresetId && loadedPresets[activePresetId]) {
+          initialPreset = loadedPresets[activePresetId];
+        } else if (presetIds.length > 0) {
+          // Fallback to first available preset (no special treatment for "default")
+          initialPreset = loadedPresets[presetIds[0]];
+
+          // If we have an activePresetId but preset doesn't exist, set it to the first available
+          if (activePresetId && !loadedPresets[activePresetId] && initialPreset) {
+            await setActivePresetId(initialPreset.id);
           }
         }
-        
-        // Mark initial load as complete after a brief delay to avoid saving during load
-        setTimeout(() => setIsInitialLoad(false), 100);
-      } catch (error) {
-        console.error('Failed to load presets:', error);
+
+        if (initialPreset) {
+          setActivePreset(initialPreset.id);
+          loadPresetData(initialPreset);
+        }
       }
-    };
-    
-    loadData();
+
+      // Mark initial load as complete after a brief delay to avoid saving during load
+      setTimeout(() => setIsInitialLoad(false), 100);
+    } catch (error) {
+      console.error('Failed to load presets:', error);
+    }
   }, []);
+
+  // Load presets on mount and when auth is ready.
+  useEffect(() => {
+    loadData();
+    const unsubscribe = onAuthReady(() => {
+      loadData();
+    });
+    return unsubscribe;
+  }, [loadData]);
 
   // Convert PresetItem[] to Habit[]/Task[] for display
   const loadPresetData = (preset: Preset) => {
@@ -469,7 +474,7 @@ export default function HabitsPage() {
       const newTask: Task = {
         id: generateId(),
         text: newTaskText.trim(),
-        time: newTaskTime || '09:00',
+        time: newTaskTime || '',
         completed: false,
       };
       setTasks((prev) => [...prev, newTask]);

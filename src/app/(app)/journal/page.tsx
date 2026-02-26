@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { generateId } from '@/lib/presets';
 import { getStorage } from '@/lib/storage';
+import { onAuthReady } from '@/lib/supabase/browser';
 import styles from './journal.module.css';
 
 export interface JournalEntry {
@@ -78,55 +79,57 @@ export default function JournalPage() {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load data on mount (after hydration)
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const storage = getStorage();
-        const loadedEntries = await storage.getJournalEntries();
-        const loadedActiveId = await storage.getActiveEntryId();
+  const loadData = useCallback(async () => {
+    try {
+      const storage = getStorage();
+      const loadedEntries = await storage.getJournalEntries();
+      const loadedActiveId = await storage.getActiveEntryId();
 
-    // Auto-create entry if none exist
-    if (loadedEntries.length === 0) {
-      const today = getTodayDateString();
-      const now = Date.now();
-      const newEntry: JournalEntry = {
-        id: generateId(),
-        createdAt: now,
-        updatedAt: now,
-        date: today,
-        content: '',
-      };
-          loadedEntries.push(newEntry);
-          await storage.saveJournalEntries(loadedEntries);
-          await storage.setActiveEntryId(newEntry.id);
-          setActiveEntryId(newEntry.id);
-        }
-
-        // Sort entries by updatedAt descending (newest first)
-        loadedEntries.sort((a, b) => b.updatedAt - a.updatedAt);
-
-        setEntries(loadedEntries);
-
-        // Set active entry (prioritize loaded, fallback to first)
-        const activeId = loadedActiveId || (loadedEntries.length > 0 ? loadedEntries[0].id : null);
-        if (activeId && loadedEntries.find((e) => e.id === activeId)) {
-          await storage.setActiveEntryId(activeId);
-          setActiveEntryId(activeId);
-        } else if (loadedEntries.length > 0) {
-          const firstId = loadedEntries[0].id;
-          await storage.setActiveEntryId(firstId);
-          setActiveEntryId(firstId);
-        }
-        
-        setEntries(loadedEntries);
-      } catch (error) {
-        console.error('Failed to load journal entries:', error);
+      // Auto-create entry if none exist
+      if (loadedEntries.length === 0) {
+        const today = getTodayDateString();
+        const now = Date.now();
+        const newEntry: JournalEntry = {
+          id: generateId(),
+          createdAt: now,
+          updatedAt: now,
+          date: today,
+          content: '',
+        };
+        loadedEntries.push(newEntry);
+        await storage.saveJournalEntries(loadedEntries);
+        await storage.setActiveEntryId(newEntry.id);
+        setActiveEntryId(newEntry.id);
       }
-    };
-    
-    loadData();
+
+      // Sort entries by updatedAt descending (newest first)
+      loadedEntries.sort((a, b) => b.updatedAt - a.updatedAt);
+
+      setEntries(loadedEntries);
+
+      // Set active entry (prioritize loaded, fallback to first)
+      const activeId = loadedActiveId || (loadedEntries.length > 0 ? loadedEntries[0].id : null);
+      if (activeId && loadedEntries.find((e) => e.id === activeId)) {
+        await storage.setActiveEntryId(activeId);
+        setActiveEntryId(activeId);
+      } else if (loadedEntries.length > 0) {
+        const firstId = loadedEntries[0].id;
+        await storage.setActiveEntryId(firstId);
+        setActiveEntryId(firstId);
+      }
+    } catch (error) {
+      console.error('Failed to load journal entries:', error);
+    }
   }, []);
+
+  // Load data on mount (after hydration) and when auth is ready.
+  useEffect(() => {
+    loadData();
+    const unsubscribe = onAuthReady(() => {
+      loadData();
+    });
+    return unsubscribe;
+  }, [loadData]);
 
   // Get active entry
   const activeEntry = entries.find((e) => e.id === activeEntryId) || null;

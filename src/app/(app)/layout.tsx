@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { getActivePresetId } from '@/lib/presets';
+import { clearUserIdCache } from '@/lib/storage/supabase';
 import type { User } from '@supabase/supabase-js';
 import styles from './app-shell.module.css';
 
@@ -15,6 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   // Check auth status on mount (run once)
   useEffect(() => {
@@ -27,6 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         if (mounted) {
           setLoading(false);
           setAuthChecked(true);
+          setInitialLoad(false);
         }
         return;
       }
@@ -68,6 +71,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
 
         setLoading(false);
+        setInitialLoad(false);
       } catch (error) {
         if (mounted) {
           if (process.env.NODE_ENV === 'development') {
@@ -75,6 +79,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           }
           setLoading(false);
           setAuthChecked(true);
+          setInitialLoad(false);
         }
       }
     };
@@ -97,6 +102,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
 
       setUser(session?.user ?? null);
+      clearUserIdCache();
 
       // Only redirect if auth was already checked (prevents race conditions)
       // Get current pathname inside callback to avoid stale closure
@@ -130,6 +136,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { href: '/today', label: 'Today', icon: 'calendar-day' },
+    { href: '/tomorrow', label: 'Tomorrow', icon: 'calendar-day' },
     { href: '/history', label: 'History', icon: 'clock-rotate-left' },
     { href: '/weekly', label: 'Weekly', icon: 'calendar-week' },
     { href: '/journal', label: 'Journal', icon: 'book' },
@@ -206,7 +213,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 
   // Show loading state while checking auth
-  if (loading) {
+  if (loading && initialLoad) {
     return (
       <div className={styles.mainContainer}>
         <div style={{ 

@@ -15,6 +15,11 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 @keyframes glowPulse {
   0%, 100% {
     box-shadow: 0 0 4px currentColor, 0 0 8px currentColor;
@@ -139,6 +144,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.titleGradient {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .sidebarTitle {

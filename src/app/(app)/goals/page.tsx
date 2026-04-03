@@ -117,7 +117,8 @@ export default function GoalsPage() {
         {/* Header */}
         <header className={styles.header}>
           <div>
-            <h1 className={styles.title}>Goals</h1>
+            <span className={styles.titleAccent}>// TARGET ACQUISITION</span>
+            <h1 className={styles.title}><span className={styles.titleGradient}>Goals</span></h1>
             <p className={styles.subtitle}>Set targets. Execute. Track progress.</p>
           </div>
           <div className={styles.activeBadge}>

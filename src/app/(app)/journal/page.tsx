@@ -326,7 +326,7 @@ export default function JournalPage() {
           className={`${styles.sidebar} ${showEntriesList ? styles.sidebarVisible : styles.sidebarHidden}`}
         >
           <div className={styles.sidebarHeader}>
-            <h1 className={styles.sidebarTitle}>Journal</h1>
+            <h1 className={styles.sidebarTitle}><span className={styles.titleGradient}>Journal</span></h1>
             <button
               type="button"
               onClick={handleNewEntry}

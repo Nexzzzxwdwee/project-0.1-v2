@@ -70,7 +70,8 @@ export default function SettingsPage() {
       {/* Header Section */}
       <header className={styles.header}>
         <div>
-          <h1 className={styles.title}>Settings</h1>
+          <span className={styles.titleAccent}>// SYSTEM CONFIG</span>
+          <h1 className={styles.title}><span className={styles.titleGradient}>Settings</span></h1>
           <p className={styles.subtitle}>Manage your Project 0.1 account and data</p>
         </div>
       </header>

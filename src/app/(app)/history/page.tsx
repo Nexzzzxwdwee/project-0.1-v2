@@ -148,7 +148,8 @@ export default function HistoryPage() {
     <div className={styles.page}>
       {/* Header Section */}
       <header className={styles.header}>
-        <h1 className={styles.title}>History</h1>
+        <span className={styles.titleAccent}>// MISSION LOG</span>
+        <h1 className={styles.title}><span className={styles.titleGradient}>History</span></h1>
         <p className={styles.subtitle}>A record of your daily execution.</p>
       </header>
 

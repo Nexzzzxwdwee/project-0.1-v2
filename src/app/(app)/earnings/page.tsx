@@ -138,7 +138,8 @@ export default function EarningsPage() {
         {/* Header Section */}
         <header className={styles.header}>
           <div className={styles.headerTop}>
-            <h1 className={styles.title}>Earnings</h1>
+            <span className={styles.titleAccent}>// FINANCIAL OPS</span>
+            <h1 className={styles.title}><span className={styles.titleGradient}>Earnings</span></h1>
             <p className={styles.subtitle}>Track income, expenses, and net outcome.</p>
           </div>
 

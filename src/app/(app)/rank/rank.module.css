@@ -7,6 +7,29 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.titleAccent {
+  display: block;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  color: #22c55e;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  margin-bottom: 0.375rem;
+  animation: slideInLeft 0.6s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) 0.1s both;
+}
+
+.titleGradient {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .page {
   min-height: 100vh;
   background-color: #0c0a09;
@@ -58,9 +81,10 @@
 
 .title {
   font-size: 1.75rem;
-  font-weight: 700;
+  font-weight: 800;
   color: white;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
   margin-bottom: 0.375rem;
 }
 

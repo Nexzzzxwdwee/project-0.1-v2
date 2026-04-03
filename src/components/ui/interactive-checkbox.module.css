@@ -1,4 +1,28 @@
-/* Interactive Checkbox Styles */
+/* Interactive Checkbox — Dopamine Edition */
+
+@keyframes checkPop {
+  0%   { transform: scale(0.8); }
+  40%  { transform: scale(1.25); }
+  70%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes checkmarkDraw {
+  0%   { opacity: 0; transform: scale(0) rotate(-45deg); }
+  50%  { opacity: 1; transform: scale(1.2) rotate(0deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes ripple {
+  0%   { transform: scale(0.5); opacity: 0.6; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes glowBurst {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+  50%  { box-shadow: 0 0 16px 4px rgba(34, 197, 94, 0.4); }
+  100% { box-shadow: 0 0 8px 0 rgba(34, 197, 94, 0.15); }
+}
 
 .label {
   display: inline-flex;
@@ -18,23 +42,36 @@
 }
 
 .box {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.625rem;
+  height: 1.625rem;
   border-radius: 50%;
-  border: 1px solid #292520;
-  background: #0c0a09;
+  border: 2px solid #44403c;
+  background: rgba(12, 10, 9, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 150ms ease-in-out;
+  transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
+}
+
+/* Ripple ring pseudo-element */
+.box::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.3);
+  transform: scale(0.5);
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Hover state */
 .label:hover .box {
-  border-color: #44403c;
-  box-shadow: 0 0 0 2px rgba(168, 162, 158, 0.1);
+  border-color: #78716c;
+  transform: scale(1.08);
+  box-shadow: 0 0 12px rgba(168, 162, 158, 0.1);
 }
 
 /* Focus state */
@@ -46,20 +83,20 @@
 /* Checked state */
 .boxChecked {
   border-color: #22c55e;
-  background: #22c55e;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.15);
 }
 
-.label:hover .boxChecked,
-:has(.label):hover .boxChecked {
-  border-color: #22c55e;
-  background: #22c55e;
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+.label:hover .boxChecked {
+  border-color: #4ade80;
+  transform: scale(1.08);
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.3);
 }
 
 /* Disabled state */
 .label:has(.input:disabled) {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .label:has(.input:disabled) .box {
@@ -69,12 +106,13 @@
 
 /* Checkmark */
 .checkmark {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 0.8rem;
+  height: 0.8rem;
   color: #0c0a09;
   opacity: 0;
-  transform: scale(0.8);
+  transform: scale(0);
   transition: opacity 200ms ease-out, transform 200ms ease-out;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
 }
 
 .boxChecked .checkmark {
@@ -82,35 +120,15 @@
   transform: scale(1);
 }
 
-/* Animation states */
+/* Animation states — triggered on toggle */
 .boxAnimating {
-  animation: checkPop 200ms ease-out;
+  animation: checkPop 350ms cubic-bezier(0.34, 1.56, 0.64, 1), glowBurst 500ms ease-out;
+}
+
+.boxAnimating::after {
+  animation: ripple 500ms ease-out forwards;
 }
 
 .checkmarkAnimating {
-  animation: checkmarkDraw 250ms ease-out;
+  animation: checkmarkDraw 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
-@keyframes checkPop {
-  0% {
-    transform: scale(0.95);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes checkmarkDraw {
-  0% {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-

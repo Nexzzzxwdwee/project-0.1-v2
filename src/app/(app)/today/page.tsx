@@ -22,6 +22,7 @@ import {
   type Preset,
   type DaySummary,
   type DayStatus,
+  type UserProgress,
 } from '@/lib/presets';
 import { sealDay } from '@/lib/services';
 import SealDayModal from '@/components/ui/SealDayModal';
@@ -67,6 +68,7 @@ export default function TodayPage() {
   const [taskText, setTaskText] = useState('');
   const [sealModalOpen, setSealModalOpen] = useState(false);
   const [streak, setStreak] = useState(0);
+  const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
 
   // Mark as mounted to avoid hydration mismatch
   useEffect(() => {
@@ -85,9 +87,9 @@ export default function TodayPage() {
         setPresets(loadedPresets);
         
         // Initialize UserProgress if missing
-        const userProgress = await getUserProgress();
-        if (!userProgress) {
-          const defaultProgress = {
+        const loadedProgress = await getUserProgress();
+        if (!loadedProgress) {
+          const defaultProgress: UserProgress = {
             xp: 0,
             rank: 'Novice',
             xpToNext: 100,
@@ -97,6 +99,9 @@ export default function TodayPage() {
             updatedAt: Date.now(),
           };
           await updateUserProgress(() => defaultProgress);
+          setUserProgress(defaultProgress);
+        } else {
+          setUserProgress(loadedProgress);
         }
         
         // Normalize items: ensure all items have unique IDs
@@ -443,6 +448,8 @@ export default function TodayPage() {
       const { updatedPlan, streak: newStreak } = await sealDay(dayPlan);
       setDayPlan(updatedPlan);
       setStreak(newStreak);
+      const refreshedProgress = await getUserProgress();
+      if (refreshedProgress) setUserProgress(refreshedProgress);
     } catch (error) {
       console.error('Failed to seal day:', error);
     }
@@ -496,15 +503,15 @@ export default function TodayPage() {
             </svg>
           </div>
           <div className={styles.rankTitleRow}>
-            <span className={styles.rankTitle}>Recruit</span>
-            <span className={styles.rankLevel}>Lvl 4</span>
+            <span className={styles.rankTitle}>{userProgress?.rank || 'Novice'}</span>
+            <span className={styles.rankLevel}>{userProgress ? `${userProgress.xp} XP` : '0 XP'}</span>
           </div>
           <div className={styles.xpBar}>
-            <div className={styles.xpFill} style={{ width: '75%' }}></div>
+            <div className={styles.xpFill} style={{ width: `${userProgress ? Math.min(100, Math.round((userProgress.xp / Math.max(userProgress.xpToNext, 1)) * 100)) : 0}%` }}></div>
           </div>
           <div className={styles.xpText}>
-            <span>750 / 1000 XP</span>
-            <span>Next: Operator</span>
+            <span>{userProgress?.xp || 0} / {userProgress?.xpToNext || 100} XP</span>
+            <span>Streak: {userProgress?.currentStreak || 0}</span>
           </div>
         </Link>
       </header>

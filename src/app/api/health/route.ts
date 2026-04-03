@@ -4,12 +4,12 @@ import { isSupabaseConfigured } from '@/lib/supabase/server';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const supabaseStatus = isSupabaseConfigured() ? 'configured' : 'missing';
+  const isProduction = process.env.NODE_ENV === 'production';
 
   return NextResponse.json(
     {
       status: 'ok',
-      supabase: supabaseStatus,
+      ...(isProduction ? {} : { supabase: isSupabaseConfigured() ? 'configured' : 'missing' }),
     },
     { status: 200 }
   );

@@ -1,9 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { generateId } from '@/lib/presets';
-import { getStorage } from '@/lib/storage';
+import {
+  generateId,
+  getJournalEntries,
+  saveJournalEntries,
+  getActiveEntryId,
+  setActiveEntryId,
+} from '@/lib/presets';
 import type { JournalEntry } from '@/lib/types';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import styles from './journal.module.css';
 
 /**
@@ -67,6 +73,7 @@ export default function JournalPage() {
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [showEntriesList, setShowEntriesList] = useState(true);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -75,9 +82,8 @@ export default function JournalPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const storage = getStorage();
-        const loadedEntries = await storage.getJournalEntries();
-        const loadedActiveId = await storage.getActiveEntryId();
+        const loadedEntries = await getJournalEntries();
+        const loadedActiveId = await getActiveEntryId();
 
     // Auto-create entry if none exist
     if (loadedEntries.length === 0) {
@@ -91,8 +97,8 @@ export default function JournalPage() {
         content: '',
       };
           loadedEntries.push(newEntry);
-          await storage.saveJournalEntries(loadedEntries);
-          await storage.setActiveEntryId(newEntry.id);
+          await saveJournalEntries(loadedEntries);
+          await setActiveEntryId(newEntry.id);
           setActiveEntryId(newEntry.id);
         }
 
@@ -104,11 +110,11 @@ export default function JournalPage() {
         // Set active entry (prioritize loaded, fallback to first)
         const activeId = loadedActiveId || (loadedEntries.length > 0 ? loadedEntries[0].id : null);
         if (activeId && loadedEntries.find((e) => e.id === activeId)) {
-          await storage.setActiveEntryId(activeId);
+          await setActiveEntryId(activeId);
           setActiveEntryId(activeId);
         } else if (loadedEntries.length > 0) {
           const firstId = loadedEntries[0].id;
-          await storage.setActiveEntryId(firstId);
+          await setActiveEntryId(firstId);
           setActiveEntryId(firstId);
         }
         
@@ -162,8 +168,7 @@ export default function JournalPage() {
       // Set new timer
       debounceTimerRef.current = setTimeout(async () => {
         try {
-          const storage = getStorage();
-          const currentEntries = await storage.getJournalEntries();
+          const currentEntries = await getJournalEntries();
           const updated = currentEntries.map((entry) => {
             if (entry.id === entryId) {
               return {
@@ -178,7 +183,7 @@ export default function JournalPage() {
           // Re-sort
           updated.sort((a, b) => b.updatedAt - a.updatedAt);
 
-          await storage.saveJournalEntries(updated);
+          await saveJournalEntries(updated);
           setSaveStatus('saved');
           debounceTimerRef.current = null;
         } catch (error) {
@@ -199,7 +204,7 @@ export default function JournalPage() {
   // Create new entry
   const handleNewEntry = async () => {
     try {
-      const storage = getStorage();
+
       const today = getTodayDateString();
       const now = Date.now();
       const newEntry: JournalEntry = {
@@ -211,9 +216,9 @@ export default function JournalPage() {
       };
 
       const updated = [newEntry, ...entries];
-      await storage.saveJournalEntries(updated);
+      await saveJournalEntries(updated);
       setEntries(updated);
-      await storage.setActiveEntryId(newEntry.id);
+      await setActiveEntryId(newEntry.id);
       setActiveEntryId(newEntry.id);
 
       // Focus textarea after a brief delay
@@ -228,15 +233,17 @@ export default function JournalPage() {
   // Delete entry
   const handleDeleteEntry = async () => {
     if (!activeEntryId) return;
+    setDeleteConfirmOpen(true);
+  };
 
-    if (!confirm('Delete this entry? This cannot be undone.')) {
-      return;
-    }
+  const handleDeleteConfirm = async () => {
+    setDeleteConfirmOpen(false);
+    if (!activeEntryId) return;
 
     try {
-      const storage = getStorage();
+
       const updated = entries.filter((e) => e.id !== activeEntryId);
-      await storage.saveJournalEntries(updated);
+      await saveJournalEntries(updated);
 
       // Select next entry (prefer next in list, or previous, or null)
       let nextId: string | null = null;
@@ -253,10 +260,10 @@ export default function JournalPage() {
 
       setEntries(updated);
       if (nextId) {
-        await storage.setActiveEntryId(nextId);
+        await setActiveEntryId(nextId);
         setActiveEntryId(nextId);
       } else {
-        await storage.setActiveEntryId(null);
+        await setActiveEntryId(null);
         setActiveEntryId(null);
       }
     } catch (error) {
@@ -277,8 +284,8 @@ export default function JournalPage() {
   useEffect(() => {
     const saveActive = async () => {
       try {
-        const storage = getStorage();
-        await storage.setActiveEntryId(activeEntryId);
+  
+        await setActiveEntryId(activeEntryId);
       } catch (error) {
         console.error('Failed to save active entry:', error);
       }
@@ -291,6 +298,13 @@ export default function JournalPage() {
 
   return (
     <div className={styles.page}>
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        title="Delete entry"
+        message="Delete this entry? This cannot be undone."
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteConfirmOpen(false)}
+      />
       {/* Mobile toggle button */}
       <div className={styles.mobileToggle}>
         <button

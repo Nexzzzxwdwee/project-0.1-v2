@@ -19,3 +19,15 @@ export interface Goal {
   done: boolean;
   doneAt: number | null;
 }
+
+export interface Transaction {
+  id: string;
+  date: string; // YYYY-MM-DD
+  type: 'income' | 'expense';
+  amount: number;
+  currency: string;
+  tag: string;
+  description: string;
+  note?: string;
+  createdAt: number;
+}

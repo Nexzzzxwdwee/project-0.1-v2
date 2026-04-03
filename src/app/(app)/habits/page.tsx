@@ -17,6 +17,7 @@ import {
 import { commitPreset } from '@/lib/services';
 import RenamePresetModal from '@/components/ui/RenamePresetModal';
 import DeletePresetModal from '@/components/ui/DeletePresetModal';
+import EditTaskModal from '@/components/ui/EditTaskModal';
 import TimePicker from '@/components/ui/TimePicker';
 
 interface Habit {
@@ -236,20 +237,18 @@ export default function HabitsPage() {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const editTask = (id: string) => {
-    setTasks((prev) => {
-      const task = prev.find((t) => t.id === id);
-      if (!task) return prev;
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const editingTask = editingTaskId ? tasks.find((t) => t.id === editingTaskId) : null;
 
-      const newText = prompt('Task name:', task.text) || task.text;
-      const newTime = prompt('Time (HH:MM):', task.time) || task.time;
+  const editTask = (id: string) => setEditingTaskId(id);
 
-      return prev.map((t) =>
-        t.id === id
-          ? { ...t, text: newText, time: newTime }
-          : t
+  const handleEditTaskSubmit = (text: string, time: string) => {
+    if (editingTaskId) {
+      setTasks((prev) =>
+        prev.map((t) => (t.id === editingTaskId ? { ...t, text, time } : t))
       );
-    });
+    }
+    setEditingTaskId(null);
   };
 
   const handleNewPreset = async () => {
@@ -406,6 +405,13 @@ export default function HabitsPage() {
 
   return (
     <div className={styles.page}>
+      <EditTaskModal
+        open={editingTaskId !== null}
+        initialText={editingTask?.text || ''}
+        initialTime={editingTask?.time || '09:00'}
+        onSubmit={handleEditTaskSubmit}
+        onCancel={() => setEditingTaskId(null)}
+      />
       {/* Header Section */}
       <header className={styles.header}>
         <h1 className={styles.title}>Habits</h1>

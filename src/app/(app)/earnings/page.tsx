@@ -1,31 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { generateId, getTodayDateString, getTransactions, saveTransactions } from '@/lib/presets';
+import type { Transaction } from '@/lib/types';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import styles from './earnings.module.css';
-
-interface Transaction {
-  id: number;
-  date: string;
-  type: 'income' | 'expense';
-  amount: number;
-  currency: string;
-  tag: string;
-  description: string;
-  note?: string;
-}
-
-const mockTransactions: Transaction[] = [
-  { id: 1, date: '2025-01-15', type: 'income', amount: 2500, currency: 'USD', tag: 'Trading', description: 'Crypto trading profit', note: 'BTC position closed' },
-  { id: 2, date: '2025-01-14', type: 'expense', amount: 180, currency: 'USD', tag: 'Subscriptions', description: 'Software subscriptions', note: 'Monthly tools' },
-  { id: 3, date: '2025-01-12', type: 'income', amount: 3200, currency: 'USD', tag: 'Work', description: 'Freelance project payment', note: 'Web development' },
-  { id: 4, date: '2025-01-10', type: 'expense', amount: 450, currency: 'USD', tag: 'Other', description: 'Equipment purchase', note: 'Monitor and keyboard' },
-  { id: 5, date: '2025-01-08', type: 'income', amount: 1750, currency: 'USD', tag: 'Sales', description: 'Product sales', note: 'Digital course' },
-  { id: 6, date: '2025-01-05', type: 'expense', amount: 125, currency: 'USD', tag: 'Trading', description: 'Trading fees', note: 'Exchange commissions' },
-  { id: 7, date: '2025-01-01', type: 'income', amount: 5000, currency: 'USD', tag: 'Work', description: 'Monthly salary', note: 'Employment income' },
-  { id: 8, date: '2024-12-28', type: 'expense', amount: 120, currency: 'USD', tag: 'Subscriptions', description: 'Cloud storage', note: 'Annual plan' },
-  { id: 9, date: '2024-12-25', type: 'expense', amount: 85, currency: 'USD', tag: 'Other', description: 'Office supplies', note: 'Desk organization' },
-  { id: 10, date: '2024-12-20', type: 'expense', amount: 320, currency: 'USD', tag: 'Trading', description: 'Trading loss', note: 'ETH position closed' },
-];
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -50,16 +29,42 @@ const formatMoney = (amount: number, currency: Currency, showDecimals = false): 
 };
 
 export default function EarningsPage() {
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 0, 1)); // January 2025
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
   const [baseCurrency, setBaseCurrency] = useState<Currency>('GBP');
   const [entryType, setEntryType] = useState<'income' | 'expense'>('income');
   const [entryAmount, setEntryAmount] = useState('');
   const [entryCurrency, setEntryCurrency] = useState<Currency>('GBP');
-  const [entryDate, setEntryDate] = useState(new Date().toISOString().split('T')[0]);
+  const [entryDate, setEntryDate] = useState(getTodayDateString());
   const [entryTag, setEntryTag] = useState('');
   const [entryNote, setEntryNote] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [transactions] = useState<Transaction[]>(mockTransactions);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Load transactions on mount
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const loaded = await getTransactions();
+        setTransactions(loaded);
+      } catch (error) {
+        console.error('Failed to load transactions:', error);
+      }
+    };
+    load();
+  }, []);
+
+  const updateTransactions = async (updated: Transaction[]) => {
+    setTransactions(updated);
+    try {
+      await saveTransactions(updated);
+    } catch (error) {
+      console.error('Failed to save transactions:', error);
+    }
+  };
 
   const filteredTransactions = selectedTag
     ? transactions.filter((t) => t.tag === selectedTag)
@@ -86,20 +91,48 @@ export default function EarningsPage() {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
   };
 
-  const handleAddEntry = (e: React.FormEvent) => {
+  const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Form submission logic would go here
-    console.log('Add entry:', { entryType, entryAmount, entryCurrency, entryDate, entryTag, entryNote });
-    // Reset form
+    const amount = parseFloat(entryAmount);
+    if (isNaN(amount) || amount <= 0) return;
+
+    const newTransaction: Transaction = {
+      id: generateId(),
+      date: entryDate,
+      type: entryType,
+      amount,
+      currency: entryCurrency,
+      tag: entryTag || 'Other',
+      description: `${entryType === 'income' ? 'Income' : 'Expense'}: ${entryTag || 'Other'}`,
+      note: entryNote || undefined,
+      createdAt: Date.now(),
+    };
+
+    await updateTransactions([newTransaction, ...transactions]);
+
     setEntryAmount('');
     setEntryTag('');
     setEntryNote('');
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteId) {
+      await updateTransactions(transactions.filter((t) => t.id !== deleteId));
+    }
+    setDeleteId(null);
   };
 
   const availableTags = Array.from(new Set(transactions.map((t) => t.tag)));
 
   return (
     <div className={styles.page}>
+      <ConfirmModal
+        open={deleteId !== null}
+        title="Delete transaction"
+        message="Delete this transaction? This cannot be undone."
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteId(null)}
+      />
       <div className={styles.bgGrid}></div>
       <div className={styles.container}>
         {/* Header Section */}
@@ -158,7 +191,6 @@ export default function EarningsPage() {
         {/* Summary Row */}
         <section className={styles.section}>
           <div className={styles.summaryGrid}>
-            {/* Total Income */}
             <div className={styles.summaryCard}>
               <span className={styles.summaryLabel}>Total Income</span>
               <div className={styles.summaryValue}>
@@ -167,7 +199,6 @@ export default function EarningsPage() {
               <div className={styles.summaryCount}>{incomeCount} entries</div>
             </div>
 
-            {/* Total Expenses */}
             <div className={styles.summaryCard}>
               <span className={styles.summaryLabel}>Total Expenses</span>
               <div className={styles.summaryValue}>
@@ -176,7 +207,6 @@ export default function EarningsPage() {
               <div className={styles.summaryCount}>{expenseCount} entries</div>
             </div>
 
-            {/* Net PnL */}
             <div className={styles.summaryCard}>
               <span className={styles.summaryLabel}>Net PnL</span>
               <div className={styles.summaryValue}>
@@ -197,7 +227,6 @@ export default function EarningsPage() {
             <h2 className={styles.addEntryTitle}>Add Entry</h2>
 
             <form onSubmit={handleAddEntry} className={styles.addEntryForm}>
-              {/* Type Selection */}
               <div className={styles.formField}>
                 <label className={styles.fieldLabel}>Type</label>
                 <div className={styles.typeButtons}>
@@ -220,7 +249,6 @@ export default function EarningsPage() {
                 </div>
               </div>
 
-              {/* Amount */}
               <div className={styles.formField}>
                 <label htmlFor="entry-amount" className={styles.fieldLabel}>Amount</label>
                 <input
@@ -235,7 +263,6 @@ export default function EarningsPage() {
                 />
               </div>
 
-              {/* Currency & Date Row */}
               <div className={styles.formRow}>
                 <div className={styles.formField}>
                   <label htmlFor="entry-currency" className={styles.fieldLabel}>Currency</label>
@@ -265,7 +292,6 @@ export default function EarningsPage() {
                 </div>
               </div>
 
-              {/* Tag Input */}
               <div className={styles.formField}>
                 <label htmlFor="entry-tag" className={styles.fieldLabel}>Tag</label>
                 <input
@@ -279,7 +305,6 @@ export default function EarningsPage() {
                 />
               </div>
 
-              {/* Note */}
               <div className={styles.formField}>
                 <label htmlFor="entry-note" className={styles.fieldLabel}>Note</label>
                 <input
@@ -292,7 +317,6 @@ export default function EarningsPage() {
                 />
               </div>
 
-              {/* Submit Button */}
               <button type="submit" className={styles.submitButton}>
                 Add Entry
               </button>
@@ -301,68 +325,77 @@ export default function EarningsPage() {
         </section>
 
         {/* Tag Filter */}
-        <section className={styles.section}>
-          <div className={styles.tagFilters}>
-            <button
-              type="button"
-              className={`${styles.tagFilter} ${selectedTag === null ? styles.tagFilterActive : ''}`}
-              onClick={() => setSelectedTag(null)}
-            >
-              All
-            </button>
-            {availableTags.map((tag) => (
+        {availableTags.length > 0 && (
+          <section className={styles.section}>
+            <div className={styles.tagFilters}>
               <button
-                key={tag}
                 type="button"
-                className={`${styles.tagFilter} ${selectedTag === tag ? styles.tagFilterActive : ''}`}
-                onClick={() => setSelectedTag(tag)}
+                className={`${styles.tagFilter} ${selectedTag === null ? styles.tagFilterActive : ''}`}
+                onClick={() => setSelectedTag(null)}
               >
-                {tag}
+                All
               </button>
-            ))}
-          </div>
-        </section>
+              {availableTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`${styles.tagFilter} ${selectedTag === tag ? styles.tagFilterActive : ''}`}
+                  onClick={() => setSelectedTag(tag)}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Transaction Log */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Transaction Log</h2>
 
-          <div className={styles.transactionList}>
-            {filteredTransactions.map((transaction) => (
-              <div key={transaction.id} className={styles.transactionItem}>
-                <div className={styles.transactionLeft}>
-                  <div className={styles.transactionDateGroup}>
-                    <span className={styles.transactionDate}>{formatDate(transaction.date)}</span>
-                    <span className={styles.transactionTag}>{transaction.tag}</span>
+          {filteredTransactions.length === 0 ? (
+            <p style={{ color: '#78716c', textAlign: 'center', padding: '2rem 0' }}>
+              No transactions yet. Add your first entry above.
+            </p>
+          ) : (
+            <div className={styles.transactionList}>
+              {filteredTransactions.map((transaction) => (
+                <div key={transaction.id} className={styles.transactionItem}>
+                  <div className={styles.transactionLeft}>
+                    <div className={styles.transactionDateGroup}>
+                      <span className={styles.transactionDate}>{formatDate(transaction.date)}</span>
+                      <span className={styles.transactionTag}>{transaction.tag}</span>
+                    </div>
+                    <div className={styles.transactionDetails}>
+                      <p className={styles.transactionDescription}>{transaction.description}</p>
+                      {transaction.note && (
+                        <p className={styles.transactionNote}>{transaction.note}</p>
+                      )}
+                    </div>
                   </div>
-                  <div className={styles.transactionDetails}>
-                    <p className={styles.transactionDescription}>{transaction.description}</p>
-                    {transaction.note && (
-                      <p className={styles.transactionNote}>{transaction.note}</p>
-                    )}
-                  </div>
-                </div>
-                <div className={styles.transactionRight}>
-                  <div className={styles.transactionAmount}>
-                    <span
-                      className={`${styles.transactionAmountValue} ${transaction.type === 'income' ? styles.transactionAmountIncome : ''}`}
+                  <div className={styles.transactionRight}>
+                    <div className={styles.transactionAmount}>
+                      <span
+                        className={`${styles.transactionAmountValue} ${transaction.type === 'income' ? styles.transactionAmountIncome : ''}`}
+                      >
+                        {transaction.type === 'income' ? '+' : '-'}{formatMoney(Math.abs(transaction.amount), transaction.currency as Currency)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.deleteButton}
+                      aria-label={`Delete transaction: ${transaction.description}`}
+                      onClick={() => setDeleteId(transaction.id)}
                     >
-                      {transaction.type === 'income' ? '+' : '-'}{formatMoney(Math.abs(transaction.amount), transaction.currency as Currency)}
-                    </span>
+                      <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
+                        <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z" />
+                      </svg>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className={styles.deleteButton}
-                    aria-label={`Delete transaction: ${transaction.description}`}
-                  >
-                    <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
-                      <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z" />
-                    </svg>
-                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Footer */}

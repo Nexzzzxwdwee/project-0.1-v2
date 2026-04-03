@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import styles from './onboarding.module.css';
 import { generateId } from '@/lib/presets';
 import { initializeFromOnboarding } from '@/lib/services';
+import InputModal from '@/components/ui/InputModal';
 
 interface OnboardingItem {
   id: string;
@@ -49,35 +50,24 @@ export default function OnboardingPage() {
       source: 'default' as const,
     }))
   );
+  const [addModalType, setAddModalType] = useState<'habit' | 'task' | null>(null);
 
-  const handleAddHabit = () => {
-    const text = prompt('Enter habit name:');
-    if (text && text.trim()) {
+  const handleAddHabit = () => setAddModalType('habit');
+  const handleAddTask = () => setAddModalType('task');
+
+  const handleAddModalSubmit = (text: string) => {
+    if (addModalType === 'habit') {
       setOnboardingHabits((prev) => [
         ...prev,
-        {
-          id: generateId(),
-          text: text.trim(),
-          checked: false,
-          source: 'custom' as const,
-        },
+        { id: generateId(), text, checked: false, source: 'custom' as const },
       ]);
-    }
-  };
-
-  const handleAddTask = () => {
-    const text = prompt('Enter task name:');
-    if (text && text.trim()) {
+    } else if (addModalType === 'task') {
       setOnboardingTasks((prev) => [
         ...prev,
-        {
-          id: generateId(),
-          text: text.trim(),
-          checked: false,
-          source: 'custom' as const,
-        },
+        { id: generateId(), text, checked: false, source: 'custom' as const },
       ]);
     }
+    setAddModalType(null);
   };
 
   const handleDeleteHabit = (id: string) => {
@@ -132,6 +122,13 @@ export default function OnboardingPage() {
 
   return (
     <main className={styles.mainContent}>
+      <InputModal
+        open={addModalType !== null}
+        title={addModalType === 'habit' ? 'Enter habit name' : 'Enter task name'}
+        placeholder={addModalType === 'habit' ? 'e.g. Morning meditation' : 'e.g. Review weekly goals'}
+        onSubmit={handleAddModalSubmit}
+        onCancel={() => setAddModalType(null)}
+      />
       {/* Background Elements */}
       <div className={styles.bgGrid}></div>
       <div className={styles.bgGradientTop}></div>

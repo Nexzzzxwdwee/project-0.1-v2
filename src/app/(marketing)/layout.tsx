@@ -1,4 +1,10 @@
+import type { Metadata } from 'next';
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
+
+export const metadata: Metadata = {
+  title: 'Welcome',
+  description: 'Build tactical habits, track your rank, and seal every day. Join Project 0.1.',
+};
 
 const space = Space_Grotesk({
   subsets: ['latin'],

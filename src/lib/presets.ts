@@ -535,3 +535,53 @@ export async function updateUserProgress(updater: (prev: UserProgress) => UserPr
   await storage.updateUserProgress(updater);
 }
 
+// ---------------------------------------------------------------------------
+// Journal wrappers
+// ---------------------------------------------------------------------------
+
+export async function getJournalEntries(): Promise<import('@/lib/types').JournalEntry[]> {
+  const storage = getStorage();
+  return storage.getJournalEntries();
+}
+
+export async function saveJournalEntries(entries: import('@/lib/types').JournalEntry[]): Promise<void> {
+  const storage = getStorage();
+  await storage.saveJournalEntries(entries);
+}
+
+export async function getActiveEntryId(): Promise<string | null> {
+  const storage = getStorage();
+  return storage.getActiveEntryId();
+}
+
+export async function setActiveEntryId(id: string | null): Promise<void> {
+  const storage = getStorage();
+  await storage.setActiveEntryId(id);
+}
+
+// ---------------------------------------------------------------------------
+// Goals wrappers
+// ---------------------------------------------------------------------------
+
+export async function getGoals(): Promise<import('@/lib/types').Goal[]> {
+  const storage = getStorage();
+  return storage.getGoals();
+}
+
+export async function saveGoals(goals: import('@/lib/types').Goal[]): Promise<void> {
+  const storage = getStorage();
+  await storage.saveGoals(goals);
+}
+
+// ---------------------------------------------------------------------------
+// Transactions wrappers (localStorage-only for Phase 1)
+// ---------------------------------------------------------------------------
+
+export async function getTransactions(): Promise<import('@/lib/types').Transaction[]> {
+  return getJSON<import('@/lib/types').Transaction[]>(`${P01_PREFIX}transactions`, []);
+}
+
+export async function saveTransactions(transactions: import('@/lib/types').Transaction[]): Promise<void> {
+  setJSON(`${P01_PREFIX}transactions`, transactions);
+}
+

@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { generateId } from '@/lib/presets';
-import { getStorage } from '@/lib/storage';
+import { generateId, getGoals, saveGoals } from '@/lib/presets';
 import type { Goal } from '@/lib/types';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import styles from './goals.module.css';
 
 export default function GoalsPage() {
@@ -11,13 +11,14 @@ export default function GoalsPage() {
   const [newGoalText, setNewGoalText] = useState('');
   const [newGoalTag, setNewGoalTag] = useState('');
   const [completedExpanded, setCompletedExpanded] = useState(false);
+  const [deleteGoalId, setDeleteGoalId] = useState<string | null>(null);
+  const deleteGoal = deleteGoalId ? goals.find((g) => g.id === deleteGoalId) : null;
 
   // Load goals on mount (after hydration)
   useEffect(() => {
     const loadGoals = async () => {
       try {
-        const storage = getStorage();
-        const loadedGoals = await storage.getGoals();
+        const loadedGoals = await getGoals();
         setGoals(loadedGoals);
       } catch (error) {
         console.error('Failed to load goals:', error);
@@ -44,8 +45,7 @@ export default function GoalsPage() {
   const updateGoals = async (updatedGoals: Goal[]) => {
     setGoals(updatedGoals);
     try {
-      const storage = getStorage();
-      await storage.saveGoals(updatedGoals);
+      await saveGoals(updatedGoals);
     } catch (error) {
       console.error('Failed to save goals:', error);
     }
@@ -91,20 +91,27 @@ export default function GoalsPage() {
   };
 
   // Delete goal
-  const handleDeleteGoal = async (id: string) => {
-    const goal = goals.find((g) => g.id === id);
-    if (!goal) return;
+  const handleDeleteGoal = (id: string) => {
+    setDeleteGoalId(id);
+  };
 
-    if (!confirm(`Delete "${goal.text}"? This cannot be undone.`)) {
-      return;
+  const handleDeleteGoalConfirm = () => {
+    if (deleteGoalId) {
+      const updated = goals.filter((g) => g.id !== deleteGoalId);
+      updateGoals(updated);
     }
-
-    const updated = goals.filter((g) => g.id !== id);
-    updateGoals(updated);
+    setDeleteGoalId(null);
   };
 
   return (
     <div className={styles.page}>
+      <ConfirmModal
+        open={deleteGoalId !== null}
+        title="Delete goal"
+        message={deleteGoal ? `Delete "${deleteGoal.text}"? This cannot be undone.` : ''}
+        onConfirm={handleDeleteGoalConfirm}
+        onCancel={() => setDeleteGoalId(null)}
+      />
       <div className={styles.bgGrid}></div>
       <div className={styles.container}>
         {/* Header */}

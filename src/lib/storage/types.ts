@@ -10,8 +10,8 @@ import type {
   DaySummary,
   UserProgress,
 } from '@/lib/presets';
-import type { JournalEntry } from '@/app/(app)/journal/page';
-import type { Goal } from '@/app/(app)/goals/page';
+import type { JournalEntry } from '@/lib/types';
+import type { Goal } from '@/lib/types';
 
 /**
  * Storage adapter interface

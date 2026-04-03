@@ -96,6 +96,17 @@ export function normalizeText(s: string): string {
 }
 
 /**
+ * Get today's date as YYYY-MM-DD
+ */
+export function getTodayDateString(): string {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Initialize presets from mock data structure
  * This is used when localStorage is empty
  */

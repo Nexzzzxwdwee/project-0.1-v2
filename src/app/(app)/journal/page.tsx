@@ -3,15 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { generateId } from '@/lib/presets';
 import { getStorage } from '@/lib/storage';
+import type { JournalEntry } from '@/lib/types';
 import styles from './journal.module.css';
-
-export interface JournalEntry {
-  id: string;
-  createdAt: number;
-  updatedAt: number;
-  date: string; // YYYY-MM-DD
-  content: string;
-}
 
 /**
  * Get today's date as YYYY-MM-DD

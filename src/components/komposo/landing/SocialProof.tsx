@@ -1,23 +1,30 @@
+import Image from 'next/image';
 import styles from './landing.module.css';
 
 export function SocialProof() {
   return (
     <div className={`${styles.glassCard} ${styles.socialProof}`}>
       <div className={styles.avatars}>
-        <img
+        <Image
           src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100"
           className={styles.avatar}
           alt="User"
+          width={40}
+          height={40}
         />
-        <img
+        <Image
           src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=100"
           className={styles.avatar}
           alt="User"
+          width={40}
+          height={40}
         />
-        <img
+        <Image
           src="https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=100"
           className={styles.avatar}
           alt="User"
+          width={40}
+          height={40}
         />
         <div className={styles.avatarPlus}>+2k</div>
       </div>

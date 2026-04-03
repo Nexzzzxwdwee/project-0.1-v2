@@ -3,21 +3,8 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './onboarding.module.css';
-import {
-  getPresets,
-  savePresets,
-  setActivePresetId,
-  getDayPlan,
-  saveDayPlan,
-  mergePresetIntoDayPlan,
-  getUserProgress,
-  saveUserProgress,
-  generateId,
-  normalizeText,
-  type Preset,
-  type PresetItem,
-  type UserProgress,
-} from '@/lib/presets';
+import { generateId } from '@/lib/presets';
+import { initializeFromOnboarding } from '@/lib/services';
 
 interface OnboardingItem {
   id: string;
@@ -41,11 +28,6 @@ const mockTasks = [
   { id: 2, name: 'Backtesting / Study block', checked: false },
   { id: 3, name: 'Content output', checked: false },
 ];
-
-function getTodayDateString(): string {
-  const date = new Date();
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -136,115 +118,14 @@ export default function OnboardingPage() {
     setError(null);
 
     try {
-      // Use state arrays directly
-      const habits: PresetItem[] = onboardingHabits
-        .map((h) => h.text.trim())
-        .filter((text) => text.length > 0)
-        .map((text) => ({
-          id: generateId(),
-          text,
-        }));
-
-      const tasks: PresetItem[] = onboardingTasks
-        .map((t) => t.text.trim())
-        .filter((text) => text.length > 0)
-        .map((text) => ({
-          id: generateId(),
-          text,
-        }));
-
-      if (habits.length === 0 && tasks.length === 0) {
-        setError('Please add at least one habit or task.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Get existing presets
-      const allPresets = await getPresets();
-      
-      // Determine preset name and ID
-      const presetName = 'Default';
-      let presetId: string = 'default';
-      
-      // Check if default preset exists
-      if (allPresets[presetId]) {
-        // Update existing preset (preserve IDs if possible)
-        const existingPreset = allPresets[presetId];
-        const updatedPreset: Preset = {
-          ...existingPreset,
-          name: presetName,
-          habits: habits.map((h) => {
-            // Try to match by text to preserve ID
-            const existing = existingPreset.habits.find((eh) => normalizeText(eh.text) === normalizeText(h.text));
-            return existing ? existing : h;
-          }),
-          tasks: tasks.map((t) => {
-            const existing = existingPreset.tasks.find((et) => normalizeText(et.text) === normalizeText(t.text));
-            return existing ? existing : t;
-          }),
-          updatedAt: Date.now(),
-        };
-        allPresets[presetId] = updatedPreset;
-      } else {
-        // Create new preset
-        allPresets[presetId] = {
-          id: presetId,
-          name: presetName,
-          habits,
-          tasks,
-          updatedAt: Date.now(),
-        };
-      }
-
-      // Save presets
-      await savePresets(allPresets);
-
-      // Set active preset ID
-      await setActivePresetId(presetId);
-
-      // Initialize today's day plan
-      const today = getTodayDateString();
-      const existingPlan = await getDayPlan(today);
-      const preset = allPresets[presetId];
-
-      const emptyPlan = {
-        date: today,
-        activePresetId: null,
-        presetUpdatedAt: null,
-        items: [],
-        archived: [],
-        isSealed: false,
-      };
-
-      // Merge preset into day plan (same logic as /today)
-      const merged = mergePresetIntoDayPlan(preset, emptyPlan, {
-        keepCompletion: false,
-        keepManual: true,
+      await initializeFromOnboarding({
+        habitTexts: onboardingHabits.map((h) => h.text),
+        taskTexts: onboardingTasks.map((t) => t.text),
       });
-
-      merged.activePresetId = presetId;
-      await saveDayPlan(merged);
-
-      // Ensure user progress exists
-      const existingProgress = await getUserProgress();
-      if (!existingProgress) {
-        const defaultProgress: UserProgress = {
-          xp: 0,
-          rank: 'Novice',
-          xpToNext: 100,
-          bestStreak: 0,
-          currentStreak: 0,
-          lastSealedDate: null,
-          updatedAt: Date.now(),
-        };
-        await saveUserProgress(defaultProgress);
-      }
-
-      // Redirect to /today
       router.push('/today');
     } catch (err) {
       console.error('Failed to initialize:', err);
-      setError('Failed to save. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to save. Please try again.');
       setIsLoading(false);
     }
   };

@@ -14,8 +14,10 @@ import {
   type Preset,
   type PresetId,
 } from '@/lib/presets';
+import { commitPreset } from '@/lib/services';
 import RenamePresetModal from '@/components/ui/RenamePresetModal';
 import DeletePresetModal from '@/components/ui/DeletePresetModal';
+import TimePicker from '@/components/ui/TimePicker';
 
 interface Habit {
   id: string; // presetItemId
@@ -37,199 +39,6 @@ function formatTime(time: string): string {
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour % 12 || 12;
   return `${displayHour}:${minutes} ${ampm}`;
-}
-
-function TimePicker({
-  value,
-  onChange,
-  className,
-}: {
-  value: string; // HH:MM format
-  onChange: (time: string) => void;
-  className?: string;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [hour, setHour] = useState(9);
-  const [minute, setMinute] = useState(0);
-  const [ampm, setAmpm] = useState<'AM' | 'PM'>('AM');
-  const popoverRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
-  // Parse 24h format to 12h format
-  useEffect(() => {
-    if (value) {
-      const [hours, minutes] = value.split(':').map(Number);
-      const hour24 = hours || 9;
-      const hour12 = hour24 % 12 || 12;
-      setHour(hour12);
-      setMinute(minutes || 0);
-      setAmpm(hour24 >= 12 ? 'PM' : 'AM');
-    } else {
-      setHour(9);
-      setMinute(0);
-      setAmpm('AM');
-    }
-  }, [value]);
-
-  // Convert 12h format to 24h format
-  const to24h = (h: number, m: number, period: 'AM' | 'PM'): string => {
-    let hour24 = h;
-    if (period === 'PM' && h !== 12) hour24 = h + 12;
-    if (period === 'AM' && h === 12) hour24 = 0;
-    return `${String(hour24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-  };
-
-  const handleSet = () => {
-    const time24 = to24h(hour, minute, ampm);
-    onChange(time24);
-    setIsOpen(false);
-  };
-
-  const handleCancel = () => {
-    setIsOpen(false);
-    // Reset to current value
-    if (value) {
-      const [hours, minutes] = value.split(':').map(Number);
-      const hour24 = hours || 9;
-      const hour12 = hour24 % 12 || 12;
-      setHour(hour12);
-      setMinute(minutes || 0);
-      setAmpm(hour24 >= 12 ? 'PM' : 'AM');
-    }
-  };
-
-  // Close on Escape
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        handleCancel();
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen]);
-
-  // Close on click outside
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        popoverRef.current &&
-        !popoverRef.current.contains(e.target as Node) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(e.target as Node)
-      ) {
-        handleCancel();
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  const displayValue = value ? formatTime(value) : '--:--';
-
-  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
-  const minutes = Array.from({ length: 60 }, (_, i) => i);
-
-  return (
-    <div className={styles.timePickerWrapper}>
-      <button
-        ref={triggerRef}
-        type="button"
-        className={`${styles.timePickerTrigger} ${className || ''}`}
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Select time"
-      >
-        <svg className={styles.icon} viewBox="0 0 512 512" fill="currentColor">
-          <path d="M464 256A208 208 0 1 1 48 256a208 208 0 1 1 416 0zM0 256a256 256 0 1 0 512 0A256 256 0 1 0 0 256zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z" />
-        </svg>
-        <span className={styles.timePickerValue}>{displayValue}</span>
-      </button>
-
-      {isOpen && (
-        <>
-          <div className={styles.timePickerOverlay} onClick={handleCancel}></div>
-          <div ref={popoverRef} className={styles.timePickerPopover}>
-            <div className={styles.timePickerHeader}>
-              <h3 className={styles.timePickerTitle}>Select Time</h3>
-            </div>
-
-            <div className={styles.timePickerBody}>
-              <div className={styles.timePickerColumn}>
-                <label className={styles.timePickerLabel}>Hour</label>
-                <div className={styles.timePickerScroll}>
-                  {hours.map((h) => (
-                    <button
-                      key={h}
-                      type="button"
-                      className={`${styles.timePickerOption} ${hour === h ? styles.timePickerOptionActive : ''}`}
-                      onClick={() => setHour(h)}
-                    >
-                      {h}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className={styles.timePickerColumn}>
-                <label className={styles.timePickerLabel}>Minute</label>
-                <div className={styles.timePickerScroll}>
-                  {minutes.map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      className={`${styles.timePickerOption} ${minute === m ? styles.timePickerOptionActive : ''}`}
-                      onClick={() => setMinute(m)}
-                    >
-                      {String(m).padStart(2, '0')}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className={styles.timePickerColumn}>
-                <label className={styles.timePickerLabel}>Period</label>
-                <div className={styles.timePickerScroll}>
-                  <button
-                    type="button"
-                    className={`${styles.timePickerOption} ${ampm === 'AM' ? styles.timePickerOptionActive : ''}`}
-                    onClick={() => setAmpm('AM')}
-                  >
-                    AM
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.timePickerOption} ${ampm === 'PM' ? styles.timePickerOptionActive : ''}`}
-                    onClick={() => setAmpm('PM')}
-                  >
-                    PM
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.timePickerFooter}>
-              <button
-                type="button"
-                className={styles.timePickerCancel}
-                onClick={handleCancel}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className={styles.timePickerSet}
-                onClick={handleSet}
-              >
-                Set
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
 }
 
 export default function HabitsPage() {
@@ -327,71 +136,16 @@ export default function HabitsPage() {
 
   // Commit current preset to storage (async save)
   // Uses refs to ensure we always have the latest habits/tasks/activePreset
-  // Loads fresh presets from storage to avoid stale state
   const commitActivePreset = useCallback(async () => {
-    const currentPresetId = activePresetRef.current;
-    const currentHabits = habitsRef.current;
-    const currentTasks = tasksRef.current;
-    
     try {
-      // Load fresh presets from storage (not from state)
-      const allPresets = await getPresets();
-      if (Object.keys(allPresets).length === 0) return;
-      if (!allPresets[currentPresetId]) return;
-      
-      const currentPreset = allPresets[currentPresetId];
-      
-      // CRITICAL GUARD: Prevent overwriting non-empty preset with empty state
-      // 
-      // Why this exists:
-      // - React StrictMode in development double-renders components, causing unmount/remount cycles
-      // - During unmount cleanup, refs (habitsRef/tasksRef) may still be empty [] if state hasn't synced yet
-      // - Without this guard, commitActivePreset() would save empty arrays, overwriting valid preset data
-      // - This is especially dangerous during initial mount after onboarding saves a preset
-      //
-      // Future-proofing for Supabase:
-      // - When migrating to Supabase, this same guard prevents race conditions where:
-      //   - Local state is empty (loading) but server has data
-      //   - We should never overwrite server data with empty local state
-      // - Keep this guard even after migration - it's a safety net for any async state sync issues
-      if (currentHabits.length === 0 && currentTasks.length === 0 && 
-          ((currentPreset.habits?.length || 0) > 0 || (currentPreset.tasks?.length || 0) > 0)) {
-        return;
+      const result = await commitPreset(
+        activePresetRef.current,
+        habitsRef.current,
+        tasksRef.current
+      );
+      if (result) {
+        setPresets(result);
       }
-      
-      const updatedPreset: Preset = {
-        ...currentPreset,
-        habits: currentHabits.map((h) => {
-          const original = currentPreset.habits.find(orig => orig.id === h.id);
-          return {
-            ...(original || {}),
-            id: h.id,
-            text: h.name,
-          };
-        }),
-        tasks: currentTasks.map((t) => {
-          const original = currentPreset.tasks.find(orig => orig.id === t.id);
-          return {
-            ...(original || {}),
-            id: t.id,
-            text: t.text,
-            time: t.time,
-          };
-        }),
-        updatedAt: Date.now(),
-      };
-      
-      // Update only the matching preset by ID, preserve all others
-      const updatedPresets = {
-        ...allPresets,
-        [currentPresetId]: updatedPreset,
-      };
-      
-      // Save to storage
-      await savePresets(updatedPresets);
-      
-      // Update state to reflect the save
-      setPresets(updatedPresets);
     } catch (error) {
       console.error('Failed to commit preset:', error);
     }

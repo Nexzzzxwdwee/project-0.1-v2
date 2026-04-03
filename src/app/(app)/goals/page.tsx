@@ -3,18 +3,8 @@
 import { useState, useEffect } from 'react';
 import { generateId } from '@/lib/presets';
 import { getStorage } from '@/lib/storage';
+import type { Goal } from '@/lib/types';
 import styles from './goals.module.css';
-
-export interface Goal {
-  id: string;
-  text: string;
-  tag?: string;
-  createdAt: number;
-  updatedAt: number;
-  done: boolean;
-  doneAt: number | null;
-}
-
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);

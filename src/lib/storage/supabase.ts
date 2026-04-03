@@ -13,8 +13,8 @@ import type {
   UserProgress,
 } from '@/lib/presets';
 import type { StorageAdapter } from './types';
-import type { JournalEntry } from '@/app/(app)/journal/page';
-import type { Goal } from '@/app/(app)/goals/page';
+import type { JournalEntry } from '@/lib/types';
+import type { Goal } from '@/lib/types';
 
 /**
  * Validate and truncate a user-provided string field before writing to DB.

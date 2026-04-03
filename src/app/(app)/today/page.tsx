@@ -12,10 +12,10 @@ import {
   mergePresetIntoDayPlan,
   generateId,
   getStreak,
-  saveDaySummary,
   getUserProgress,
   updateUserProgress,
   setActivePresetId,
+  getTodayDateString,
   type DayPlan,
   type DayPlanItem,
   type PresetId,
@@ -23,6 +23,7 @@ import {
   type DaySummary,
   type DayStatus,
 } from '@/lib/presets';
+import { sealDay } from '@/lib/services';
 import SealDayModal from '@/components/ui/SealDayModal';
 import TimePicker from '@/components/ui/TimePicker';
 
@@ -43,11 +44,6 @@ function formatTime(time: string | undefined): string {
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour % 12 || 12;
   return `${String(displayHour).padStart(2, '0')}:${String(minutes || '00').padStart(2, '0')} ${ampm}`;
-}
-
-function getTodayDateString(): string {
-  const date = new Date();
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 export default function TodayPage() {
@@ -442,90 +438,15 @@ export default function TodayPage() {
 
   const handleSealConfirm = async () => {
     if (dayPlan.isSealed) return;
-    
-    const today = getTodayDateString();
-    const updatedPlan: DayPlan = {
-      ...dayPlan,
-      isSealed: true,
-    };
-    
-    // Compute operator metrics from current dayPlan using same habits-only logic
-    const operatorHabits = dayPlan.items.filter(
-      (item) => item.source === 'preset' && item.kind === 'habit'
-    );
-    const sealOperatorTotal = operatorHabits.length;
-    const sealOperatorDone = operatorHabits.filter((item) => item.completed).length;
-    const sealOperatorPct = sealOperatorTotal === 0 ? 0 : Math.round((sealOperatorDone / sealOperatorTotal) * 100);
-    
-    // Calculate Total Score metrics (same as live calculation)
-    const habits = dayPlan.items.filter((item) => item.kind === 'habit');
-    const tasks = dayPlan.items.filter((item) => item.kind === 'task');
-    const habitsTotal = habits.length;
-    const habitsDone = habits.filter((h) => h.completed).length;
-    const habitsPct = habitsTotal === 0 ? 0 : Math.round((habitsDone / habitsTotal) * 100);
-    const tasksTotal = tasks.length;
-    const tasksDone = tasks.filter((t) => t.completed).length;
-    const tasksDenominator = Math.min(tasksTotal, 2);
-    const tasksNumerator = Math.min(tasksDone, 2);
-    const tasksPctCapped = tasksDenominator === 0 ? 0 : Math.round((tasksNumerator / tasksDenominator) * 100);
-    const totalScorePct = Math.round(habitsPct * 0.7 + tasksPctCapped * 0.3);
-    
-    // Determine status based on operatorPct and sealed state
-    let dayStatus: DayStatus;
-    if (sealOperatorPct === 100) {
-      dayStatus = 'Unbroken';
-    } else if (sealOperatorPct >= 70) {
-      dayStatus = 'Elite';
-    } else if (sealOperatorPct >= 1) {
-      dayStatus = 'Strong';
-    } else {
-      dayStatus = 'Building';
-    }
-    
-    // XP earned equals totalScorePct (placeholder mapping)
-    const xpEarned = totalScorePct;
-    
-    // Create and save DaySummary with all fields
-    const summary: DaySummary = {
-      date: today,
-      operatorPct: sealOperatorPct,
-      operatorTotal: sealOperatorTotal,
-      operatorDone: sealOperatorDone,
-      isSealed: true,
-      sealedAt: Date.now(),
-      totalScorePct,
-      habitsPct,
-      tasksPctCapped,
-      habitsTotal,
-      habitsDone,
-      tasksTotal,
-      tasksDone,
-      status: dayStatus,
-      xpEarned,
-    };
-    
+
     try {
-      await saveDaySummary(summary);
+      const { updatedPlan, streak: newStreak } = await sealDay(dayPlan);
       setDayPlan(updatedPlan);
-      await saveDayPlan(updatedPlan);
-      
-      // Recalculate streak
-      const newStreak = await getStreak();
       setStreak(newStreak);
-      
-      // Update user progress with XP earned and streak
-      await updateUserProgress((prev) => ({
-        ...prev,
-        xp: prev.xp + xpEarned,
-        lastSealedDate: today,
-        bestStreak: Math.max(prev.bestStreak, newStreak),
-        currentStreak: newStreak,
-        updatedAt: Date.now(),
-      }));
     } catch (error) {
       console.error('Failed to seal day:', error);
     }
-    
+
     setSealModalOpen(false);
   };
 

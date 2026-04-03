@@ -26,6 +26,7 @@ import {
   createDefaultUserProgress,
 } from '@/lib/presets';
 import { sealDay } from '@/lib/services';
+import { useRankData } from '@/hooks/useRankData';
 import SealDayModal from '@/components/ui/SealDayModal';
 import TimePicker from '@/components/ui/TimePicker';
 
@@ -69,7 +70,7 @@ export default function TodayPage() {
   const [taskText, setTaskText] = useState('');
   const [sealModalOpen, setSealModalOpen] = useState(false);
   const [streak, setStreak] = useState(0);
-  const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
+  const { userProgress, rankInfo, refresh: refreshRank } = useRankData();
 
   // Load day plan, presets, and user progress on mount
   useEffect(() => {
@@ -82,14 +83,10 @@ export default function TodayPage() {
         const loadedPresets = await getPresets();
         setPresets(loadedPresets);
 
-        // Initialize UserProgress if missing
+        // Ensure UserProgress exists in storage (hook reads it separately)
         const loadedProgress = await getUserProgress();
         if (!loadedProgress) {
-          const defaultProgress = createDefaultUserProgress();
-          await updateUserProgress(() => defaultProgress);
-          setUserProgress(defaultProgress);
-        } else {
-          setUserProgress(loadedProgress);
+          await updateUserProgress(() => createDefaultUserProgress());
         }
 
         // Normalize items: ensure all items have unique IDs
@@ -430,8 +427,7 @@ export default function TodayPage() {
       const { updatedPlan, streak: newStreak } = await sealDay(dayPlan);
       setDayPlan(updatedPlan);
       setStreak(newStreak);
-      const refreshedProgress = await getUserProgress();
-      if (refreshedProgress) setUserProgress(refreshedProgress);
+      await refreshRank();
     } catch (error) {
       console.error('Failed to seal day:', error);
     }
@@ -476,26 +472,40 @@ export default function TodayPage() {
           </div>
         </div>
 
-        {/* User Status Card */}
-        <Link href="/rank" className={styles.rankCard}>
-          <div className={styles.rankHeader}>
-            <span className={styles.rankLabel}>Current Rank</span>
-            <svg className={styles.icon} viewBox="0 0 512 512" fill="currentColor" style={{ color: '#eab308' }}>
-              <path d="M269.4 2.9C265.2 1 260.7 0 256 0s-9.2 1-13.4 2.9L54.3 82.8c-22 9.3-38.4 31-38.3 57.2c.5 99.2 41.3 280.7 213.6 363.2c16.7 8 36.1 8 52.8 0C454.7 420.7 495.5 239.2 496 140c.1-26.2-16.3-47.9-38.3-57.2L269.4 2.9zM256 175c-13.3 0-24 10.7-24 24v96c0 13.3 10.7 24 24 24s24-10.7 24-24V199c0-13.3-10.7-24-24-24zm32 224c0 17.7-14.3 32-32 32s-32-14.3-32-32v-32c0-17.7 14.3-32 32-32s32 14.3 32 32v32z" />
-            </svg>
-          </div>
-          <div className={styles.rankTitleRow}>
-            <span className={styles.rankTitle}>{userProgress?.rank || 'Novice'}</span>
-            <span className={styles.rankLevel}>{userProgress ? `${userProgress.xp} XP` : '0 XP'}</span>
-          </div>
-          <div className={styles.xpBar}>
-            <div className={styles.xpFill} style={{ width: `${userProgress ? Math.min(100, Math.round((userProgress.xp / Math.max(userProgress.xpToNext, 1)) * 100)) : 0}%` }}></div>
-          </div>
-          <div className={styles.xpText}>
-            <span>{userProgress?.xp || 0} / {userProgress?.xpToNext || 100} XP</span>
-            <span>Streak: {userProgress?.currentStreak || 0}</span>
-          </div>
-        </Link>
+        {/* Rank Badge */}
+        {rankInfo && (
+          <Link
+            href="/rank"
+            className={styles.rankCard}
+            style={{ '--rank-color': rankInfo.current.color, '--rank-muted': rankInfo.current.colorMuted } as React.CSSProperties}
+          >
+            <div className={styles.rankBadgeGlow}></div>
+            <div className={styles.rankHeader}>
+              <span className={styles.rankLabel}>Rank</span>
+              <svg className={styles.rankShield} viewBox="0 0 512 512" fill="currentColor">
+                <path d="M256 0c4.6 0 9.2 1 13.4 2.9L457.7 82.8c22 9.3 38.4 31 38.3 57.2c-.5 99.2-41.3 280.7-213.6 363.2c-16.7 8-36.1 8-52.8 0C57.3 420.7 16.5 239.2 16 140c-.1-26.2 16.3-47.9 38.3-57.2L242.7 2.9C246.8 1 251.4 0 256 0z" />
+              </svg>
+            </div>
+            <span className={styles.rankTitle}>{rankInfo.current.name}</span>
+            <div className={styles.xpBar}>
+              <div className={styles.xpFill} style={{ width: `${rankInfo.progressPercent}%` }}></div>
+            </div>
+            <div className={styles.xpText}>
+              <span>{userProgress?.xp?.toLocaleString() || 0} XP</span>
+              {rankInfo.next ? (
+                <span>{rankInfo.next.xpRequired.toLocaleString()} XP</span>
+              ) : (
+                <span>MAX</span>
+              )}
+            </div>
+            {(userProgress?.currentStreak || 0) > 0 && (
+              <div className={styles.streakPill}>
+                <span className={styles.streakFire}>&#x1F525;</span>
+                {userProgress?.currentStreak}d streak
+              </div>
+            )}
+          </Link>
+        )}
       </header>
 
       {/* Daily Status Card */}

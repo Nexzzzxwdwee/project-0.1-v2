@@ -59,90 +59,123 @@
 }
 
 /* Rank Card */
+/* --- Rank Badge Widget --- */
 .rankCard {
+  position: relative;
   display: block;
   text-decoration: none;
-  background: #1c1917;
-  border: 1px solid #292520;
+  background: linear-gradient(135deg, #1c1917 0%, #0c0a09 100%);
+  border: 1px solid var(--rank-muted, #292520);
   border-radius: 1rem;
-  padding: 1rem;
-  min-width: 240px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+  padding: 1rem 1.125rem;
+  min-width: 220px;
+  overflow: hidden;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  box-shadow:
+    0 0 0 0 transparent,
+    0 8px 20px -4px rgba(0, 0, 0, 0.5);
 }
 
 .rankCard:hover {
-  border-color: #44403c;
   transform: translateY(-2px);
-  box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.5);
+  border-color: var(--rank-color, #44403c);
+  box-shadow:
+    0 0 20px -4px color-mix(in srgb, var(--rank-color) 25%, transparent),
+    0 12px 24px -4px rgba(0, 0, 0, 0.6);
 }
 
 .rankCard:focus-visible {
-  outline: 2px solid #eab308;
+  outline: 2px solid var(--rank-color, #eab308);
   outline-offset: 2px;
+}
+
+.rankBadgeGlow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 85% 20%,
+    color-mix(in srgb, var(--rank-color) 8%, transparent) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
 }
 
 .rankHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.25rem;
 }
 
 .rankLabel {
-  font-size: 0.75rem;
+  font-size: 0.625rem;
   font-family: var(--font-mono), monospace;
-  color: #a8a29e;
+  color: #78716c;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
 }
 
-.rankTitleRow {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+.rankShield {
+  width: 1rem;
+  height: 1rem;
+  color: var(--rank-color, #a8a29e);
+  opacity: 0.7;
 }
 
 .rankTitle {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: white;
-}
-
-.rankLevel {
-  font-size: 0.75rem;
-  color: #eab308;
-  font-family: var(--font-mono), monospace;
+  display: block;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--rank-color, white);
+  letter-spacing: -0.01em;
+  margin-bottom: 0.75rem;
 }
 
 .xpBar {
   width: 100%;
-  background: #292520;
-  height: 0.375rem;
+  background: #1a1715;
+  height: 6px;
   border-radius: 9999px;
   overflow: hidden;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
+  border: 1px solid #292520;
 }
 
 .xpFill {
-  background: #eab308;
+  background: var(--rank-color, #eab308);
   height: 100%;
   border-radius: 9999px;
-  box-shadow: 0 0 10px #eab308;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--rank-color) 50%, transparent);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .xpText {
   display: flex;
   justify-content: space-between;
   font-size: 0.625rem;
-  color: #a8a29e;
+  color: #57534e;
   font-family: var(--font-mono), monospace;
 }
 
-.xpText span:last-child {
-  color: #eab308;
+.streakPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.625rem;
+  padding: 0.2rem 0.5rem;
+  background: rgba(251, 146, 60, 0.1);
+  border: 1px solid rgba(251, 146, 60, 0.2);
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-family: var(--font-mono), monospace;
+  color: #fb923c;
+  letter-spacing: 0.02em;
+}
+
+.streakFire {
+  font-size: 0.75rem;
+  line-height: 1;
 }
 
 /* Status Section */

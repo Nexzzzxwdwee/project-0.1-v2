@@ -26,6 +26,7 @@ import {
   type UserProgress,
   createDefaultUserProgress,
 } from './presets';
+import { computeRankFields } from './ranks';
 
 // ---------------------------------------------------------------------------
 // Seal Day
@@ -104,14 +105,20 @@ export async function sealDay(dayPlan: DayPlan): Promise<SealDayResult> {
 
   const streak = await getStreak();
 
-  await updateUserProgress((prev) => ({
-    ...prev,
-    xp: prev.xp + xpEarned,
-    lastSealedDate: today,
-    bestStreak: Math.max(prev.bestStreak, streak),
-    currentStreak: streak,
-    updatedAt: Date.now(),
-  }));
+  await updateUserProgress((prev) => {
+    const newXp = prev.xp + xpEarned;
+    const { rank, xpToNext } = computeRankFields(newXp);
+    return {
+      ...prev,
+      xp: newXp,
+      rank,
+      xpToNext,
+      lastSealedDate: today,
+      bestStreak: Math.max(prev.bestStreak, streak),
+      currentStreak: streak,
+      updatedAt: Date.now(),
+    };
+  });
 
   return { updatedPlan, summary, streak };
 }

@@ -4,6 +4,7 @@
 
 import { P01_PREFIX, getJSON, setJSON, listKeys } from './p01Storage';
 import { getStorage } from './storage';
+import { computeRankFields } from './ranks';
 
 export type PresetId = string; // 'default' | 'trading' | 'recovery' but allow any string
 
@@ -77,10 +78,11 @@ export interface UserProgress {
 
 /** Default UserProgress for new users. Single source of truth. */
 export function createDefaultUserProgress(): UserProgress {
+  const { rank, xpToNext } = computeRankFields(0);
   return {
     xp: 0,
-    rank: 'Recruit',
-    xpToNext: 1000,
+    rank,
+    xpToNext,
     bestStreak: 0,
     currentStreak: 0,
     lastSealedDate: null,

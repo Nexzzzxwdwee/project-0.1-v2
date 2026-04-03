@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getUserProgress, type UserProgress } from '@/lib/presets';
+import { getUserProgress, createDefaultUserProgress, type UserProgress } from '@/lib/presets';
 import styles from './rank.module.css';
 
 export default function RankPage() {
@@ -31,15 +31,7 @@ export default function RankPage() {
   const progressPercent = calculateProgressPercent();
 
   // Default values for empty state
-  const displayData = userProgress || {
-    rank: 'Recruit',
-    xp: 0,
-    xpToNext: 1000,
-    bestStreak: 0,
-    currentStreak: 0,
-    lastSealedDate: null,
-    updatedAt: Date.now(),
-  };
+  const displayData = userProgress || createDefaultUserProgress();
 
   const isEmpty = !userProgress;
 

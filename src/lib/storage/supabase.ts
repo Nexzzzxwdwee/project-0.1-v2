@@ -4,13 +4,14 @@
  */
 
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
-import type {
-  Preset,
-  PresetId,
-  DayPlan,
-  DayPlanItem,
-  DaySummary,
-  UserProgress,
+import {
+  createDefaultUserProgress,
+  type Preset,
+  type PresetId,
+  type DayPlan,
+  type DayPlanItem,
+  type DaySummary,
+  type UserProgress,
 } from '@/lib/presets';
 import type { StorageAdapter } from './types';
 import type { JournalEntry } from '@/lib/types';
@@ -192,13 +193,7 @@ export function supabaseAdapter(): StorageAdapter {
       const progress = await this.getUserProgress();
       
       const updated: UserProgress = progress || {
-        xp: 0,
-        rank: 'Novice',
-        xpToNext: 100,
-        bestStreak: 0,
-        currentStreak: 0,
-        lastSealedDate: null,
-        updatedAt: Date.now(),
+        ...createDefaultUserProgress(),
         activePresetId: presetId,
       };
 
@@ -499,16 +494,7 @@ export function supabaseAdapter(): StorageAdapter {
     async updateUserProgress(updater: (prev: UserProgress) => UserProgress): Promise<void> {
       const current = await this.getUserProgress();
       if (!current) {
-        const defaultProgress: UserProgress = {
-          xp: 0,
-          rank: 'Novice',
-          xpToNext: 100,
-          bestStreak: 0,
-          currentStreak: 0,
-          lastSealedDate: null,
-          updatedAt: Date.now(),
-        };
-        await this.saveUserProgress(updater(defaultProgress));
+        await this.saveUserProgress(updater(createDefaultUserProgress()));
       } else {
         await this.saveUserProgress(updater(current));
       }

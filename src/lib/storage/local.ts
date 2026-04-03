@@ -4,12 +4,13 @@
  */
 
 import { P01_PREFIX, getJSON, setJSON, listKeys } from '@/lib/p01Storage';
-import type {
-  Preset,
-  PresetId,
-  DayPlan,
-  DaySummary,
-  UserProgress,
+import {
+  createDefaultUserProgress,
+  type Preset,
+  type PresetId,
+  type DayPlan,
+  type DaySummary,
+  type UserProgress,
 } from '@/lib/presets';
 import type { StorageAdapter } from './types';
 import type { JournalEntry } from '@/lib/types';
@@ -125,16 +126,7 @@ export function localStorageAdapter(): StorageAdapter {
     async updateUserProgress(updater: (prev: UserProgress) => UserProgress): Promise<void> {
       const current = await this.getUserProgress();
       if (!current) {
-        const defaultProgress: UserProgress = {
-          xp: 0,
-          rank: 'Novice',
-          xpToNext: 100,
-          bestStreak: 0,
-          currentStreak: 0,
-          lastSealedDate: null,
-          updatedAt: Date.now(),
-        };
-        await this.saveUserProgress(updater(defaultProgress));
+        await this.saveUserProgress(updater(createDefaultUserProgress()));
       } else {
         await this.saveUserProgress(updater(current));
       }

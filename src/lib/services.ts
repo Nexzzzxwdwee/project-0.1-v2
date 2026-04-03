@@ -24,6 +24,7 @@ import {
   type PresetId,
   type PresetItem,
   type UserProgress,
+  createDefaultUserProgress,
 } from './presets';
 
 // ---------------------------------------------------------------------------
@@ -203,15 +204,7 @@ export async function initializeFromOnboarding(
   // Ensure user progress exists
   const existing = await getUserProgress();
   if (!existing) {
-    await saveUserProgress({
-      xp: 0,
-      rank: 'Novice',
-      xpToNext: 100,
-      bestStreak: 0,
-      currentStreak: 0,
-      lastSealedDate: null,
-      updatedAt: Date.now(),
-    });
+    await saveUserProgress(createDefaultUserProgress());
   }
 
   return presetId;

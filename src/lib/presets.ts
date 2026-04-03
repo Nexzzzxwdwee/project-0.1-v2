@@ -75,6 +75,19 @@ export interface UserProgress {
   activePresetId?: PresetId | null; // Active preset ID (stored in user_progress for Supabase)
 }
 
+/** Default UserProgress for new users. Single source of truth. */
+export function createDefaultUserProgress(): UserProgress {
+  return {
+    xp: 0,
+    rank: 'Recruit',
+    xpToNext: 1000,
+    bestStreak: 0,
+    currentStreak: 0,
+    lastSealedDate: null,
+    updatedAt: Date.now(),
+  };
+}
+
 /**
  * Generate a stable ID
  */

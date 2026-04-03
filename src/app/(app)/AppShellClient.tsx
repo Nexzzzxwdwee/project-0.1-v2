@@ -327,6 +327,8 @@ export default function AppShellClient({
       {/* Main Content */}
       <main className={styles.mainContent}>
         <div className={styles.bgGrid}></div>
+        <div className={`${styles.ambientGlow} ${styles.ambientGlowGreen}`}></div>
+        <div className={`${styles.ambientGlow} ${styles.ambientGlowGold}`}></div>
         <div key={pathname} className={styles.contentInner}>{children}</div>
       </main>
     </div>

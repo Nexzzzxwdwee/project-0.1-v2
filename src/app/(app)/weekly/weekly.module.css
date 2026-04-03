@@ -1,5 +1,19 @@
 /* Weekly Page Styles */
 
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes todayGlow {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.3), 0 0 24px rgba(34, 197, 94, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.2);
+  }
+}
+
 .page {
   max-width: 56rem;
   margin: 0 auto;
@@ -10,6 +24,7 @@
 /* Header */
 .header {
   margin-bottom: 3rem;
+  animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) both;
 }
 
 .headerTop {
@@ -47,6 +62,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) 0.08s both;
 }
 
 .weekSelectorButton {
@@ -71,8 +87,10 @@
 }
 
 .weekSelectorDisplay {
-  background: #1c1917;
-  border: 1px solid #292520;
+  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
   border-radius: 0.75rem;
   padding: 0.5rem 1rem;
   min-width: 200px;
@@ -93,8 +111,10 @@
 .emptyState {
   padding: 2rem;
   text-align: center;
-  background: #1c1917;
-  border: 1px solid #292520;
+  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
   border-radius: 1rem;
 }
 
@@ -106,6 +126,7 @@
 /* Summary Section */
 .summarySection {
   margin-bottom: 3rem;
+  animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) 0.16s both;
 }
 
 .summaryGrid {
@@ -121,13 +142,26 @@
 }
 
 .summaryCard {
-  background: #1c1917;
-  border: 1px solid #292520;
+  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
   border-radius: 1rem;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
+  animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) both;
+}
+
+.summaryCard:nth-child(1) { animation-delay: 0.24s; }
+.summaryCard:nth-child(2) { animation-delay: 0.32s; }
+.summaryCard:nth-child(3) { animation-delay: 0.40s; }
+
+.summaryCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 16px rgba(34, 197, 94, 0.06);
 }
 
 .summaryLabel {
@@ -172,7 +206,7 @@
   background: #22c55e;
   height: 100%;
   border-radius: 9999px;
-  transition: width 0.3s;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .summaryNote {
@@ -205,6 +239,7 @@
 /* Week View Section */
 .weekViewSection {
   margin-bottom: 3rem;
+  animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) 0.48s both;
 }
 
 .sectionTitle {
@@ -233,20 +268,34 @@
   align-items: center;
   padding: 1rem;
   border-radius: 1rem;
-  background: #1c1917;
-  border: 1px solid #292520;
-  transition: all 0.2s;
+  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+  transition: all 0.2s, transform 0.25s ease-out, box-shadow 0.25s ease-out;
   cursor: pointer;
   text-align: center;
+  animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) both;
 }
+
+.dayCard:nth-child(1) { animation-delay: 0.56s; }
+.dayCard:nth-child(2) { animation-delay: 0.62s; }
+.dayCard:nth-child(3) { animation-delay: 0.68s; }
+.dayCard:nth-child(4) { animation-delay: 0.74s; }
+.dayCard:nth-child(5) { animation-delay: 0.80s; }
+.dayCard:nth-child(6) { animation-delay: 0.86s; }
+.dayCard:nth-child(7) { animation-delay: 0.92s; }
 
 .dayCard:hover {
   border-color: rgba(34, 197, 94, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 12px rgba(34, 197, 94, 0.08);
 }
 
 .dayCardToday {
   border-color: #22c55e;
-  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3);
+  animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) both,
+             todayGlow 2.5s ease-in-out infinite;
 }
 
 .dayLabel {
@@ -331,13 +380,22 @@
 /* Patterns Section */
 .patternsSection {
   margin-bottom: 4rem;
+  animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) 1s both;
 }
 
 .patternsCard {
-  background: #1c1917;
-  border: 1px solid #292520;
+  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
   border-radius: 1rem;
   padding: 1.5rem;
+  transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
+}
+
+.patternsCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 12px rgba(168, 162, 158, 0.06);
 }
 
 @media (min-width: 768px) {
@@ -410,4 +468,14 @@
   width: 1em;
   height: 1em;
   display: inline-block;
+}
+
+/* Mobile performance */
+@media (max-width: 767px) {
+  .summaryCard,
+  .dayCard,
+  .weekSelectorDisplay {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
 }

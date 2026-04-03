@@ -1,5 +1,24 @@
 /* Habits Page Styles */
 
+/* === Keyframes === */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleBounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* === Page === */
 .page {
   max-width: 56rem;
   margin: 0 auto;
@@ -8,6 +27,7 @@
 /* Header */
 .header {
   margin-bottom: 3rem;
+  animation: fadeInUp 0.5s var(--ease-out-expo) both;
 }
 
 .title {
@@ -33,6 +53,7 @@
 /* Presets Section */
 .presetsSection {
   margin-bottom: 3rem;
+  animation: fadeInUp 0.5s var(--ease-out-expo) 0.08s both;
 }
 
 .presetsHeader {
@@ -60,8 +81,10 @@
 .presetButton {
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
-  background: #1c1917;
-  border: 1px solid #292520;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   color: #a8a29e;
   font-family: var(--font-mono), monospace;
   font-size: 0.75rem;
@@ -73,12 +96,15 @@
 
 .presetButton:hover {
   border-color: #44403c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .presetButtonActive {
   background: rgba(34, 197, 94, 0.2);
   border-color: #22c55e;
   color: #22c55e;
+  box-shadow: var(--glow-green);
 }
 
 .presetActions {
@@ -119,6 +145,7 @@
 /* Habits Section */
 .habitsSection {
   margin-bottom: 3rem;
+  animation: fadeInUp 0.5s var(--ease-out-expo) 0.16s both;
 }
 
 .sectionHeader {
@@ -158,13 +185,29 @@
   justify-content: space-between;
   padding: 1rem;
   border-radius: 1rem;
-  background: #1c1917;
-  border: 1px solid #292520;
-  transition: all 0.3s;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  transition: all 0.3s var(--ease-out-expo);
+  animation: fadeInUp 0.5s var(--ease-out-expo) both;
 }
+
+.habitItem:nth-child(1) { animation-delay: 0.08s; }
+.habitItem:nth-child(2) { animation-delay: 0.16s; }
+.habitItem:nth-child(3) { animation-delay: 0.24s; }
+.habitItem:nth-child(4) { animation-delay: 0.32s; }
+.habitItem:nth-child(5) { animation-delay: 0.40s; }
+.habitItem:nth-child(6) { animation-delay: 0.48s; }
+.habitItem:nth-child(7) { animation-delay: 0.56s; }
+.habitItem:nth-child(8) { animation-delay: 0.64s; }
+.habitItem:nth-child(9) { animation-delay: 0.72s; }
+.habitItem:nth-child(10) { animation-delay: 0.80s; }
 
 .habitItem:hover {
   border-color: #44403c;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 12px rgba(34, 197, 94, 0.08);
 }
 
 .habitItem:hover .habitActions {
@@ -201,6 +244,7 @@
 .habitCircleChecked {
   border-color: #22c55e;
   background: rgba(34, 197, 94, 0.2);
+  animation: scaleBounce 0.3s var(--ease-out-expo);
 }
 
 .checkIcon {
@@ -227,6 +271,7 @@
 .habitDoneBadge {
   margin-left: auto;
   transition: opacity 0.3s;
+  animation: scaleIn 0.3s var(--ease-out-expo) both;
 }
 
 .habitDoneBadge span {
@@ -335,6 +380,7 @@
 /* Tasks Section */
 .tasksSection {
   margin-bottom: 3rem;
+  animation: fadeInUp 0.5s var(--ease-out-expo) 0.24s both;
 }
 
 .tasksList {
@@ -349,13 +395,29 @@
   justify-content: space-between;
   padding: 1rem;
   border-radius: 1rem;
-  background: #1c1917;
-  border: 1px solid #292520;
-  transition: all 0.3s;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  transition: all 0.3s var(--ease-out-expo);
+  animation: fadeInUp 0.5s var(--ease-out-expo) both;
 }
+
+.taskItem:nth-child(1) { animation-delay: 0.08s; }
+.taskItem:nth-child(2) { animation-delay: 0.16s; }
+.taskItem:nth-child(3) { animation-delay: 0.24s; }
+.taskItem:nth-child(4) { animation-delay: 0.32s; }
+.taskItem:nth-child(5) { animation-delay: 0.40s; }
+.taskItem:nth-child(6) { animation-delay: 0.48s; }
+.taskItem:nth-child(7) { animation-delay: 0.56s; }
+.taskItem:nth-child(8) { animation-delay: 0.64s; }
+.taskItem:nth-child(9) { animation-delay: 0.72s; }
+.taskItem:nth-child(10) { animation-delay: 0.80s; }
 
 .taskItem:hover {
   border-color: #44403c;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 12px rgba(34, 197, 94, 0.08);
 }
 
 .taskItem:hover .taskActions {
@@ -392,6 +454,7 @@
 .taskCircleChecked {
   border-color: #22c55e;
   background: rgba(34, 197, 94, 0.2);
+  animation: scaleBounce 0.3s var(--ease-out-expo);
 }
 
 .taskContent {
@@ -425,6 +488,7 @@
 .taskDoneBadge {
   margin-left: auto;
   transition: opacity 0.3s;
+  animation: scaleIn 0.3s var(--ease-out-expo) both;
 }
 
 .taskDoneBadge span {
@@ -556,8 +620,10 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: #1c1917;
-  border: 1px solid #292520;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: 0.75rem;
   padding: 1.5rem;
   z-index: 1001;
@@ -737,4 +803,15 @@
   width: 1em;
   height: 1em;
   display: inline-block;
+}
+
+/* === Mobile Performance === */
+@media (max-width: 767px) {
+  .habitItem,
+  .taskItem,
+  .presetButton,
+  .timePickerPopover {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
 }

@@ -1,5 +1,43 @@
 /* Journal Page Styles - Entries List + Editor Layout */
 
+/* === Design Tokens === */
+/* --glass-bg: rgba(28, 25, 23, 0.6) */
+/* --glass-border: rgba(255, 255, 255, 0.06) */
+/* --glass-blur: blur(12px) */
+/* --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1) */
+/* --glow-green: 0 0 20px rgba(34, 197, 94, 0.35) */
+/* --glow-gold: 0 0 20px rgba(234, 179, 8, 0.35) */
+
+/* === Keyframes === */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 4px currentColor, 0 0 8px currentColor;
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 8px currentColor, 0 0 16px currentColor;
+    opacity: 0.7;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* === Page === */
+
 .page {
   position: relative;
   height: 100%;
@@ -24,8 +62,10 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: #1c1917;
-  border: 1px solid #292520;
+  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
   color: #a8a29e;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
@@ -64,12 +104,15 @@
 /* Sidebar */
 .sidebar {
   width: 100%;
-  background: #0c0a09;
-  border-right: 1px solid #292520;
+  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border-right: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
   display: flex;
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
+  animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) both;
 }
 
 @media (min-width: 768px) {
@@ -121,12 +164,14 @@
   letter-spacing: 0.05em;
   border: none;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
   white-space: nowrap;
 }
 
 .newEntryButton:hover {
   background: #e7e5e4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
 }
 
 .newEntryButton .icon {
@@ -142,19 +187,20 @@
 
 .searchInput {
   width: 100%;
-  background: #1c1917;
-  border: 1px solid #292520;
+  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
   color: #e7e5e4;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   font-family: var(--font-space), sans-serif;
   font-size: 0.875rem;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .searchInput:focus {
-  border-color: #44403c;
+  border-color: #22c55e;
+  box-shadow: var(--glow-green, 0 0 20px rgba(34, 197, 94, 0.35));
 }
 
 .searchInput::placeholder {
@@ -175,16 +221,32 @@
 .entryRow {
   width: 100%;
   text-align: left;
-  background: #1c1917;
-  border: 1px solid #292520;
+  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
   border-radius: 0.5rem;
   padding: 1rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1));
+  animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) both;
 }
 
+.entryRow:nth-child(1) { animation-delay: 0ms; }
+.entryRow:nth-child(2) { animation-delay: 80ms; }
+.entryRow:nth-child(3) { animation-delay: 160ms; }
+.entryRow:nth-child(4) { animation-delay: 240ms; }
+.entryRow:nth-child(5) { animation-delay: 320ms; }
+.entryRow:nth-child(6) { animation-delay: 400ms; }
+.entryRow:nth-child(7) { animation-delay: 480ms; }
+.entryRow:nth-child(8) { animation-delay: 560ms; }
+.entryRow:nth-child(9) { animation-delay: 640ms; }
+.entryRow:nth-child(10) { animation-delay: 720ms; }
+
 .entryRow:hover {
-  border-color: #44403c;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .entryRow:focus-visible {
@@ -195,6 +257,7 @@
 .entryRowActive {
   border-color: #22c55e;
   background: rgba(34, 197, 94, 0.05);
+  box-shadow: var(--glow-green, 0 0 20px rgba(34, 197, 94, 0.35));
 }
 
 .entryRowContent {
@@ -247,8 +310,11 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #0c0a09;
+  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
   min-height: 0;
+  animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) 0.1s both;
 }
 
 .editorHeader {
@@ -284,23 +350,15 @@
 }
 
 .saveDotPulse {
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: glowPulse 1.5s ease-in-out infinite;
   background: #eab308;
+  color: #eab308;
 }
 
 .saveDotSaved {
   background: #22c55e;
   opacity: 0.7;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5), 0 0 12px rgba(34, 197, 94, 0.25);
 }
 
 .saveText {
@@ -331,6 +389,7 @@
 .deleteButton:hover {
   border-color: #ef4444;
   color: #ef4444;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.3);
 }
 
 .deleteButton:focus-visible {
@@ -394,4 +453,16 @@
   width: 1em;
   height: 1em;
   display: inline-block;
+}
+
+/* === Mobile Performance === */
+@media (max-width: 767px) {
+  .sidebar,
+  .editor,
+  .entryRow,
+  .mobileToggleButton,
+  .searchInput {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
 }

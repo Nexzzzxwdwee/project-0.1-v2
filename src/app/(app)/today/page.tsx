@@ -463,7 +463,7 @@ export default function TodayPage() {
       {/* Header Section */}
       <header className={styles.header}>
         <div>
-          <span className={styles.titleAccent}>// TODAY&apos;S PROTOCOL</span>
+          <span className={styles.titleAccent}>{'// TODAY\'S PROTOCOL'}</span>
           <h1 className={styles.title}>
             Project <span className={styles.titleGradient}>0.1</span>
           </h1>

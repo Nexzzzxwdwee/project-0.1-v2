@@ -39,7 +39,7 @@ export default function RankPage() {
       <div className={styles.container}>
         {/* ─── Header ─── */}
         <header className={styles.header}>
-          <span className={styles.titleAccent}>// RANK SYSTEM</span>
+          <span className={styles.titleAccent}>{'// RANK SYSTEM'}</span>
           <h1 className={styles.title}>Rank <span className={styles.titleGradient}>Progression</span></h1>
           <p className={styles.subtitle}>
             <svg className={styles.subtitleIcon} viewBox="0 0 512 512" fill="currentColor">

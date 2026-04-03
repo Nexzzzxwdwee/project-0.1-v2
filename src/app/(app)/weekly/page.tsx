@@ -198,7 +198,7 @@ export default function WeeklyPage() {
       {/* Header Section */}
       <header className={styles.header}>
         <div className={styles.headerTop}>
-          <span className={styles.titleAccent}>// WEEKLY DEBRIEF</span>
+          <span className={styles.titleAccent}>{'// WEEKLY DEBRIEF'}</span>
           <h1 className={styles.title}><span className={styles.titleGradient}>Weekly</span></h1>
           <p className={styles.subtitle}>Review consistency and trajectory across the week.</p>
         </div>

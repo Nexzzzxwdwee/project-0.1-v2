@@ -414,7 +414,7 @@ export default function HabitsPage() {
       />
       {/* Header Section */}
       <header className={styles.header}>
-        <span className={styles.titleAccent}>// CORE PROTOCOLS</span>
+        <span className={styles.titleAccent}>{'// CORE PROTOCOLS'}</span>
         <h1 className={styles.title}><span className={styles.titleGradient}>Habits</span></h1>
         <p className={styles.subtitle}>Define and manage your daily non-negotiables.</p>
       </header>

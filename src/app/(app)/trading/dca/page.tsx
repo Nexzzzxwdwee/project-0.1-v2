@@ -76,6 +76,9 @@ export default function DCAPage() {
   const [budgetDraft, setBudgetDraft] = useState('');
   const [currency, setCurrency] = useState<DCACurrency>('GBP');
 
+  // View toggle
+  const [view, setView] = useState<'weekly' | 'monthly'>('weekly');
+
   // Add modal
   const [addDay, setAddDay] = useState<DayOfWeek | null>(null);
   const [formFirm, setFormFirm] = useState('');
@@ -231,6 +234,44 @@ export default function DCAPage() {
     return Array.from(set).sort();
   }, [accounts]);
 
+  // Monthly view: group entries by firm, aggregate costs
+  const monthlyRows = useMemo(() => {
+    const map = new Map<string, { firm: string; entries: DCAPlanEntry[]; totalMonthlyUsd: number }>();
+    for (const e of entries) {
+      const key = `${e.firm}|${e.accountSize}`;
+      const existing = map.get(key);
+      const mo = monthlyEquiv(e.costUsd, e.frequency);
+      if (existing) {
+        existing.entries.push(e);
+        existing.totalMonthlyUsd += mo;
+      } else {
+        map.set(key, {
+          firm: `${e.firm} ${e.accountSize}`,
+          entries: [e],
+          totalMonthlyUsd: mo,
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.totalMonthlyUsd - a.totalMonthlyUsd);
+  }, [entries]);
+
+  // Weekly totals per day for the monthly calendar view
+  const weeklyTotalsByDay = useMemo(() => {
+    return DAYS.map((day) => {
+      const dayEntries = entriesByDay.get(day.key) || [];
+      return {
+        ...day,
+        entries: dayEntries,
+        weeklyUsd: dayEntries.reduce((s, e) => s + e.costUsd, 0),
+      };
+    });
+  }, [entriesByDay]);
+
+  const totalWeeklyUsd = useMemo(
+    () => entries.reduce((s, e) => s + e.costUsd, 0),
+    [entries]
+  );
+
   if (loading) {
     return <div className={styles.loadingState}>Loading DCA plan...</div>;
   }
@@ -319,77 +360,200 @@ export default function DCAPage() {
         </div>
       </div>
 
-      {/* ─── Weekly Plan ─── */}
+      {/* ─── Plan Section ─── */}
       <div className={styles.section}>
-        <div className={styles.sectionLabel}>{'// WEEKLY PLAN'}</div>
-        <div className={styles.sectionSubtitle}>
-          Distribute your prop firm purchases across the week
+        <div className={styles.sectionHeader}>
+          <div>
+            <div className={styles.sectionLabel}>
+              {view === 'weekly' ? '// WEEKLY PLAN' : '// MONTHLY OVERVIEW'}
+            </div>
+            <div className={styles.sectionSubtitle}>
+              {view === 'weekly'
+                ? 'Distribute your prop firm purchases across the week'
+                : 'Monthly cost breakdown by account'}
+            </div>
+          </div>
+          <div className={styles.viewToggle}>
+            <button
+              type="button"
+              className={`${styles.viewBtn} ${view === 'weekly' ? styles.viewBtnActive : ''}`}
+              onClick={() => setView('weekly')}
+            >
+              Weekly
+            </button>
+            <button
+              type="button"
+              className={`${styles.viewBtn} ${view === 'monthly' ? styles.viewBtnActive : ''}`}
+              onClick={() => setView('monthly')}
+            >
+              Monthly
+            </button>
+          </div>
         </div>
 
-        <div className={styles.dayGrid}>
-          {DAYS.map((day) => {
-            const dayEntries = entriesByDay.get(day.key) || [];
-            const dayTotalUsd = dayEntries.reduce((s, e) => s + e.costUsd, 0);
-            const isEmpty = dayEntries.length === 0;
+        {/* ─── Weekly View ─── */}
+        {view === 'weekly' && (
+          <div className={styles.dayGrid}>
+            {DAYS.map((day) => {
+              const dayEntries = entriesByDay.get(day.key) || [];
+              const dayTotalUsd = dayEntries.reduce((s, e) => s + e.costUsd, 0);
+              const isEmpty = dayEntries.length === 0;
 
-            return (
-              <div
-                key={day.key}
-                className={`${styles.dayCard} ${isEmpty ? styles.dayCardEmpty : ''}`}
-              >
-                <div className={styles.dayName}>{day.label}</div>
+              return (
+                <div
+                  key={day.key}
+                  className={`${styles.dayCard} ${isEmpty ? styles.dayCardEmpty : ''}`}
+                >
+                  <div className={styles.dayName}>{day.label}</div>
 
-                <div className={styles.dayEntries}>
-                  {isEmpty ? (
-                    <div className={styles.dayEmpty}>No accounts</div>
-                  ) : (
-                    dayEntries.map((e) => (
-                      <div key={e.id} className={styles.accountPill}>
-                        <div className={styles.accountPillTop}>
-                          <span className={styles.accountPillFirm}>
-                            {e.firm} {e.accountSize}
-                          </span>
-                          <button
-                            type="button"
-                            className={styles.accountPillRemove}
-                            onClick={() => handleRemove(e.id)}
-                          >
-                            ×
-                          </button>
+                  <div className={styles.dayEntries}>
+                    {isEmpty ? (
+                      <div className={styles.dayEmpty}>No accounts</div>
+                    ) : (
+                      dayEntries.map((e) => (
+                        <div key={e.id} className={styles.accountPill}>
+                          <div className={styles.accountPillTop}>
+                            <span className={styles.accountPillFirm}>
+                              {e.firm} {e.accountSize}
+                            </span>
+                            <button
+                              type="button"
+                              className={styles.accountPillRemove}
+                              onClick={() => handleRemove(e.id)}
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <div className={styles.accountPillCost}>
+                            {formatBoth(e.costUsd)}
+                          </div>
+                          <div className={styles.accountPillFreq}>
+                            {FREQ_LABELS[e.frequency]} →{' '}
+                            {formatCost(monthlyEquiv(e.costUsd, e.frequency), currency)}/mo
+                          </div>
                         </div>
-                        <div className={styles.accountPillCost}>
-                          {formatBoth(e.costUsd)}
-                        </div>
-                        <div className={styles.accountPillFreq}>
-                          {FREQ_LABELS[e.frequency]} →{' '}
-                          {formatCost(monthlyEquiv(e.costUsd, e.frequency), currency)}/mo
-                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <div className={styles.dayFooter}>
+                    {dayTotalUsd > 0 && (
+                      <div className={styles.dayTotal}>
+                        Daily:{' '}
+                        <span className={styles.dayTotalValue}>
+                          {formatBoth(dayTotalUsd)}
+                        </span>
                       </div>
-                    ))
-                  )}
+                    )}
+                    <button
+                      type="button"
+                      className={styles.addAccountBtn}
+                      onClick={() => openAddModal(day.key)}
+                    >
+                      + Add Account
+                    </button>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+        )}
 
-                <div className={styles.dayFooter}>
-                  {dayTotalUsd > 0 && (
-                    <div className={styles.dayTotal}>
-                      Daily:{' '}
-                      <span className={styles.dayTotalValue}>
-                        {formatBoth(dayTotalUsd)}
-                      </span>
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    className={styles.addAccountBtn}
-                    onClick={() => openAddModal(day.key)}
-                  >
-                    + Add Account
-                  </button>
+        {/* ─── Monthly View ─── */}
+        {view === 'monthly' && (
+          <div className={styles.monthlyView}>
+            {/* Summary cards */}
+            <div className={styles.monthlySummaryRow}>
+              <div className={styles.monthlySummaryCard}>
+                <div className={styles.monthlySummaryLabel}>Weekly Spend</div>
+                <div className={styles.monthlySummaryValue}>
+                  {formatCost(totalWeeklyUsd, currency)}
                 </div>
               </div>
-            );
-          })}
-        </div>
+              <div className={styles.monthlySummaryCard}>
+                <div className={styles.monthlySummaryLabel}>Monthly Spend</div>
+                <div className={styles.monthlySummaryValue}>
+                  {formatCost(totalMonthlyUsd, currency)}
+                </div>
+              </div>
+              <div className={styles.monthlySummaryCard}>
+                <div className={styles.monthlySummaryLabel}>Total Accounts</div>
+                <div className={styles.monthlySummaryValue}>{entries.length}</div>
+              </div>
+              <div className={styles.monthlySummaryCard}>
+                <div className={styles.monthlySummaryLabel}>Budget Remaining</div>
+                <div
+                  className={styles.monthlySummaryValue}
+                  style={{ color: budgetUsd - totalMonthlyUsd >= 0 ? 'var(--success)' : 'var(--danger)' }}
+                >
+                  {formatCost(Math.max(0, budgetUsd - totalMonthlyUsd), currency)}
+                </div>
+              </div>
+            </div>
+
+            {/* Account breakdown table */}
+            {monthlyRows.length === 0 ? (
+              <div className={styles.monthlyEmpty}>No accounts in plan yet</div>
+            ) : (
+              <div className={styles.monthlyTableWrap}>
+                <table className={styles.monthlyTable}>
+                  <thead>
+                    <tr>
+                      <th>Account</th>
+                      <th>Day</th>
+                      <th>Frequency</th>
+                      <th>Per Purchase</th>
+                      <th>Monthly Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((e) => (
+                      <tr key={e.id}>
+                        <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {e.firm} {e.accountSize}
+                        </td>
+                        <td>{DAYS.find((d) => d.key === e.dayOfWeek)?.label}</td>
+                        <td>{FREQ_LABELS[e.frequency]}</td>
+                        <td style={{ color: 'var(--accent)' }}>{formatBoth(e.costUsd)}</td>
+                        <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {formatCost(monthlyEquiv(e.costUsd, e.frequency), currency)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={4} style={{ fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'right' }}>
+                        Total Monthly
+                      </td>
+                      <td style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '0.875rem' }}>
+                        {formatCost(totalMonthlyUsd, currency)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+
+            {/* Weekly breakdown mini bar */}
+            <div className={styles.weeklyBreakdown}>
+              <div className={styles.weeklyBreakdownTitle}>Weekly Breakdown</div>
+              <div className={styles.weeklyBreakdownGrid}>
+                {weeklyTotalsByDay.map((d) => (
+                  <div key={d.key} className={styles.weeklyBreakdownDay}>
+                    <div className={styles.weeklyBreakdownDayName}>{d.label}</div>
+                    <div className={styles.weeklyBreakdownDayCount}>
+                      {d.entries.length} acct{d.entries.length !== 1 ? 's' : ''}
+                    </div>
+                    <div className={styles.weeklyBreakdownDayCost}>
+                      {d.weeklyUsd > 0 ? formatCost(d.weeklyUsd, currency) : '—'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ─── Add Account Modal ─── */}

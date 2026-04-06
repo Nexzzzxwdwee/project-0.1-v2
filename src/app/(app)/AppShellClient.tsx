@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { getActivePresetId } from '@/lib/presets';
 import type { User } from '@supabase/supabase-js';
@@ -141,8 +141,11 @@ export default function AppShellClient({
 
   const closeDrawer = () => setIsDrawerOpen(false);
 
+  const mainRef = useRef<HTMLElement>(null);
+
   useEffect(() => {
     closeDrawer();
+    mainRef.current?.scrollTo(0, 0);
   }, [pathname]);
 
   useEffect(() => {
@@ -326,7 +329,7 @@ export default function AppShellClient({
       </aside>
 
       {/* Main Content */}
-      <main className={styles.mainContent}>
+      <main ref={mainRef} className={styles.mainContent}>
         <div className={styles.bgGrid}></div>
         <div className={`${styles.ambientGlow} ${styles.ambientGlowGreen}`}></div>
         <div className={`${styles.ambientGlow} ${styles.ambientGlowGold}`}></div>

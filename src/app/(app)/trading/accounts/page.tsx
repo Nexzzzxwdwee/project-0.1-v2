@@ -358,30 +358,30 @@ export default function TradingAccounts() {
                                     </defs>
                                     <XAxis
                                       dataKey="tradeNumber"
-                                      tick={{ fill: '#57534e', fontSize: 11 }}
-                                      axisLine={{ stroke: '#292524' }}
+                                      tick={{ fill: '#404040', fontSize: 10 }}
+                                      axisLine={{ stroke: '#1a1a1a' }}
                                       tickLine={false}
                                     />
                                     <YAxis
-                                      tick={{ fill: '#57534e', fontSize: 11 }}
-                                      axisLine={{ stroke: '#292524' }}
+                                      tick={{ fill: '#404040', fontSize: 10 }}
+                                      axisLine={{ stroke: '#1a1a1a' }}
                                       tickLine={false}
                                       tickFormatter={(v: number) => `${v}R`}
                                     />
                                     <ReferenceLine
                                       y={0}
-                                      stroke="#44403c"
+                                      stroke="#262626"
                                       strokeDasharray="3 3"
                                     />
                                     <Tooltip
                                       contentStyle={{
-                                        background: 'rgba(28, 25, 23, 0.95)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '0.5rem',
-                                        color: '#e7e5e4',
+                                        background: '#1a1a1a',
+                                        border: '1px solid #262626',
+                                        borderRadius: '0.375rem',
+                                        color: '#d4d4d4',
                                         fontFamily:
                                           'var(--font-mono), monospace',
-                                        fontSize: '0.75rem',
+                                        fontSize: '0.6875rem',
                                       }}
                                       formatter={(value) => [
                                         `${value}R`,

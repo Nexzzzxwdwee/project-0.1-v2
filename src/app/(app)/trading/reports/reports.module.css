@@ -3,37 +3,37 @@
    ═══════════════════════════════════════════════ */
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-12px); }
+  from { opacity: 0; transform: translateX(-8px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
 /* ─── Header ─── */
 .header {
   margin-bottom: 2rem;
-  animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) both;
+  animation: fadeInUp 0.4s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) both;
 }
 
 .titleAccent {
   display: block;
   font-family: var(--font-mono), monospace;
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   color: #22c55e;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.25em;
   margin-bottom: 0.375rem;
-  animation: slideInLeft 0.6s var(--ease-out-expo) 0.1s both;
+  animation: slideInLeft 0.5s var(--ease-out-expo) 0.1s both;
 }
 
 .title {
-  font-size: 2rem;
-  font-weight: bold;
+  font-size: 1.75rem;
+  font-weight: 700;
   font-family: var(--font-space), sans-serif;
-  color: #e7e5e4;
+  color: #e5e5e5;
   margin: 0;
 }
 
@@ -50,44 +50,42 @@
   align-items: center;
   justify-content: center;
   height: 40vh;
-  color: #57534e;
+  color: #404040;
   font-family: var(--font-mono), monospace;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
 }
 
 /* ─── Empty ─── */
 .emptyState {
   text-align: center;
   padding: 4rem 2rem;
-  color: #57534e;
+  color: #404040;
   font-family: var(--font-mono), monospace;
-  font-size: 0.875rem;
-  animation: fadeInUp 0.5s var(--ease-out-expo) 0.1s both;
+  font-size: 0.8125rem;
+  animation: fadeInUp 0.4s var(--ease-out-expo) 0.08s both;
 }
 
 /* ─── Section ─── */
 .section {
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
 }
 
 .sectionTitle {
   font-family: var(--font-mono), monospace;
-  font-size: 0.75rem;
+  font-size: 0.625rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #a8a29e;
-  margin-bottom: 1rem;
+  letter-spacing: 0.15em;
+  color: #525252;
+  margin-bottom: 0.75rem;
 }
 
 /* ─── Full-width chart ─── */
 .chartCard {
-  background: rgba(28, 25, 23, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  animation: fadeInUp 0.5s var(--ease-out-expo) 0.1s both;
+  background: #111111;
+  border: 1px solid #1a1a1a;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  animation: fadeInUp 0.4s var(--ease-out-expo) 0.08s both;
 }
 
 .chartArea {
@@ -104,7 +102,7 @@
 .tableGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 @media (max-width: 1023px) {
@@ -114,13 +112,11 @@
 }
 
 .tableCard {
-  background: rgba(28, 25, 23, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.75rem;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: #111111;
+  border: 1px solid #1a1a1a;
+  border-radius: 0.5rem;
   overflow-x: auto;
-  animation: fadeInUp 0.5s var(--ease-out-expo) 0.15s both;
+  animation: fadeInUp 0.4s var(--ease-out-expo) 0.12s both;
 }
 
 .tableCardFull {
@@ -131,35 +127,35 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
 }
 
 .table th {
   text-align: left;
-  padding: 0.875rem 1rem;
+  padding: 0.75rem 0.875rem;
   font-family: var(--font-mono), monospace;
-  font-size: 0.6875rem;
+  font-size: 0.5625rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #78716c;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  letter-spacing: 0.15em;
+  color: #525252;
+  border-bottom: 1px solid #1a1a1a;
   white-space: nowrap;
 }
 
 .table td {
-  padding: 0.75rem 1rem;
-  color: #d6d3d1;
+  padding: 0.625rem 0.875rem;
+  color: #a3a3a3;
   font-family: var(--font-space), sans-serif;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid #141414;
   white-space: nowrap;
 }
 
 .table tbody tr {
-  transition: background 0.15s;
+  transition: background 0.1s;
 }
 
 .table tbody tr:hover {
-  background: rgba(34, 197, 94, 0.03);
+  background: #141414;
 }
 
 .table tbody tr:last-child td {
@@ -168,62 +164,65 @@
 
 /* ─── R colours ─── */
 .rPositive {
-  color: #4ade80;
-  font-weight: 600;
+  color: #22c55e;
+  font-weight: 700;
+  font-family: var(--font-mono), monospace;
 }
 
 .rNegative {
   color: #ef4444;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: var(--font-mono), monospace;
 }
 
 .rZero {
-  color: #78716c;
-  font-weight: 600;
+  color: #525252;
+  font-weight: 700;
+  font-family: var(--font-mono), monospace;
 }
 
 /* ─── Stat cards row ─── */
 .statRow {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: 1rem;
-  animation: fadeInUp 0.5s var(--ease-out-expo) 0.2s both;
+  gap: 0.75rem;
+  animation: fadeInUp 0.4s var(--ease-out-expo) 0.16s both;
 }
 
 .statCard {
-  background: rgba(28, 25, 23, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: border-color 0.2s;
+  background: #111111;
+  border: 1px solid #1a1a1a;
+  border-radius: 0.5rem;
+  padding: 1.125rem;
+  border-left: 3px solid #262626;
+  transition: border-color 0.15s;
 }
 
 .statCard:hover {
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: #1a1a1a;
+  border-left-color: #404040;
 }
 
 .statLabel {
   font-family: var(--font-mono), monospace;
-  font-size: 0.6875rem;
+  font-size: 0.5625rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #78716c;
-  margin-bottom: 0.375rem;
+  letter-spacing: 0.15em;
+  color: #525252;
+  margin-bottom: 0.3125rem;
 }
 
 .statValue {
-  font-size: 1.5rem;
+  font-size: 1.375rem;
   font-weight: 700;
-  font-family: var(--font-space), sans-serif;
-  color: #e7e5e4;
+  font-family: var(--font-mono), monospace;
+  color: #d4d4d4;
 }
 
 .statSub {
   font-family: var(--font-mono), monospace;
-  font-size: 0.6875rem;
-  color: #57534e;
+  font-size: 0.5625rem;
+  color: #404040;
   margin-top: 0.25rem;
 }
 
@@ -232,8 +231,8 @@
   .chartCard,
   .tableCard,
   .statCard {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }
 

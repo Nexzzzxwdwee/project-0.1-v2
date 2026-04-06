@@ -13,21 +13,23 @@
 .subNav {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.125rem;
   padding: 0.25rem;
-  background: rgba(28, 25, 23, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.75rem;
+  background: #111111;
+  border: 1px solid #1a1a1a;
+  border-radius: 0.5rem;
   width: fit-content;
 }
 
 .subNavItem {
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  font-family: var(--font-space), sans-serif;
-  color: #78716c;
+  padding: 0.5rem 1.125rem;
+  border-radius: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-family: var(--font-mono), monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #525252;
   text-decoration: none;
   transition: all 0.2s;
   border: 1px solid transparent;
@@ -35,14 +37,14 @@
 }
 
 .subNavItem:hover {
-  color: #e7e5e4;
-  background: rgba(28, 25, 23, 0.6);
+  color: #a3a3a3;
+  background: #1a1a1a;
 }
 
 .subNavItemActive {
-  color: #4ade80;
-  background: rgba(34, 197, 94, 0.06);
-  border-color: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.15);
 }
 
 /* ─── Content area ─── */
@@ -65,6 +67,6 @@
 
   .subNavItem {
     padding: 0.5rem 0.75rem;
-    font-size: 0.8125rem;
+    font-size: 0.625rem;
   }
 }

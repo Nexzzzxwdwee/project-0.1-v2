@@ -26,8 +26,8 @@ import styles from './dashboard.module.css';
 type TimeFilter = 'all' | 'month' | 'week';
 
 const PIE_COLORS = [
-  '#22c55e', '#60a5fa', '#eab308', '#c084fc', '#f97316',
-  '#ec4899', '#14b8a6', '#ef4444', '#84cc16', '#06b6d4',
+  '#22c55e', '#f59e0b', '#475569', '#a3e635', '#d97706',
+  '#64748b', '#16a34a', '#ea580c', '#334155', '#84cc16',
 ];
 
 function getDateRange(filter: TimeFilter): { from?: string; to?: string } {
@@ -110,12 +110,12 @@ function PieChartCard({
             </Pie>
             <Tooltip
               contentStyle={{
-                background: 'rgba(28, 25, 23, 0.95)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '0.5rem',
-                color: '#e7e5e4',
+                background: '#1a1a1a',
+                border: '1px solid #262626',
+                borderRadius: '0.375rem',
+                color: '#d4d4d4',
                 fontFamily: 'var(--font-mono), monospace',
-                fontSize: '0.75rem',
+                fontSize: '0.6875rem',
               }}
               formatter={(value, name) => {
                 const pct = total > 0 ? Math.round((Number(value) / total) * 100) : 0;
@@ -428,25 +428,25 @@ export default function TradingDashboard() {
                   </defs>
                   <XAxis
                     dataKey="tradeNumber"
-                    tick={{ fill: '#57534e', fontSize: 11 }}
-                    axisLine={{ stroke: '#292524' }}
+                    tick={{ fill: '#404040', fontSize: 10 }}
+                    axisLine={{ stroke: '#1a1a1a' }}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fill: '#57534e', fontSize: 11 }}
-                    axisLine={{ stroke: '#292524' }}
+                    tick={{ fill: '#404040', fontSize: 10 }}
+                    axisLine={{ stroke: '#1a1a1a' }}
                     tickLine={false}
                     tickFormatter={(v: number) => `${v}R`}
                   />
-                  <ReferenceLine y={0} stroke="#44403c" strokeDasharray="3 3" />
+                  <ReferenceLine y={0} stroke="#262626" strokeDasharray="3 3" />
                   <Tooltip
                     contentStyle={{
-                      background: 'rgba(28, 25, 23, 0.95)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '0.5rem',
-                      color: '#e7e5e4',
+                      background: '#1a1a1a',
+                      border: '1px solid #262626',
+                      borderRadius: '0.375rem',
+                      color: '#d4d4d4',
                       fontFamily: 'var(--font-mono), monospace',
-                      fontSize: '0.75rem',
+                      fontSize: '0.6875rem',
                     }}
                     formatter={(value) => [`${value}R`, 'Cumulative R']}
                     labelFormatter={(label) => `Trade #${label}`}

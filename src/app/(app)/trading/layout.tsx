@@ -9,6 +9,7 @@ const subNavItems = [
   { href: '/trading/accounts', label: 'Accounts' },
   { href: '/trading/journal', label: 'Journal' },
   { href: '/trading/reports', label: 'Reports' },
+  { href: '/trading/dca', label: 'DCA Plan' },
 ];
 
 export default function TradingLayout({

@@ -9,6 +9,11 @@ import type {
   Trade,
   TradeFilters,
   REquityCurvePoint,
+  DCABudget,
+  DCAPlanEntry,
+  DayOfWeek,
+  DCAFrequency,
+  DCACurrency,
 } from '@/lib/types';
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -299,4 +304,119 @@ export async function getAssetStats(userId: string): Promise<StatRow[]> {
 export async function getModelStats(userId: string): Promise<StatRow[]> {
   const trades = await getTrades(userId);
   return aggregateBy(trades, (t) => t.model);
+}
+
+// ── DCA Plan ─────────────────────────────────────────────────
+
+export async function getDCABudget(userId: string): Promise<DCABudget | null> {
+  const { data, error } = await supabase()
+    .from('dca_budget')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    budgetAmount: Number(data.budget_amount),
+    currency: data.currency,
+    updatedAt: data.updated_at,
+  };
+}
+
+export async function saveDCABudget(
+  userId: string,
+  amount: number,
+  currency: DCACurrency
+): Promise<DCABudget> {
+  const { data, error } = await supabase()
+    .from('dca_budget')
+    .upsert(
+      {
+        user_id: userId,
+        budget_amount: amount,
+        currency,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' }
+    )
+    .select()
+    .single();
+
+  if (error) throw error;
+  return {
+    id: data.id,
+    userId: data.user_id,
+    budgetAmount: Number(data.budget_amount),
+    currency: data.currency,
+    updatedAt: data.updated_at,
+  };
+}
+
+export async function getDCAPlanEntries(userId: string): Promise<DCAPlanEntry[]> {
+  const { data, error } = await supabase()
+    .from('dca_plan_entries')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    userId: row.user_id,
+    dayOfWeek: row.day_of_week,
+    firm: row.firm,
+    accountSize: row.account_size,
+    costUsd: Number(row.cost_usd),
+    frequency: row.frequency,
+    createdAt: row.created_at,
+  }));
+}
+
+export async function addDCAPlanEntry(
+  userId: string,
+  data: {
+    dayOfWeek: DayOfWeek;
+    firm: string;
+    accountSize: string;
+    costUsd: number;
+    frequency: DCAFrequency;
+  }
+): Promise<DCAPlanEntry> {
+  const { data: row, error } = await supabase()
+    .from('dca_plan_entries')
+    .insert({
+      user_id: userId,
+      day_of_week: data.dayOfWeek,
+      firm: data.firm,
+      account_size: data.accountSize,
+      cost_usd: data.costUsd,
+      frequency: data.frequency,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return {
+    id: row.id,
+    userId: row.user_id,
+    dayOfWeek: row.day_of_week,
+    firm: row.firm,
+    accountSize: row.account_size,
+    costUsd: Number(row.cost_usd),
+    frequency: row.frequency,
+    createdAt: row.created_at,
+  };
+}
+
+export async function removeDCAPlanEntry(entryId: string): Promise<void> {
+  const { error } = await supabase()
+    .from('dca_plan_entries')
+    .delete()
+    .eq('id', entryId);
+
+  if (error) throw error;
 }

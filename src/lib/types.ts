@@ -82,3 +82,28 @@ export interface REquityCurvePoint {
   cumulativeR: number;
   tradeNumber: number;
 }
+
+// ── DCA Plan ─────────────────────────────────────────────────
+
+export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+export type DCAFrequency = 'weekly' | 'biweekly' | 'monthly';
+export type DCACurrency = 'GBP' | 'USD';
+
+export interface DCABudget {
+  id: string;
+  userId: string;
+  budgetAmount: number;
+  currency: DCACurrency;
+  updatedAt: string;
+}
+
+export interface DCAPlanEntry {
+  id: string;
+  userId: string;
+  dayOfWeek: DayOfWeek;
+  firm: string;
+  accountSize: string;
+  costUsd: number;
+  frequency: DCAFrequency;
+  createdAt: string;
+}

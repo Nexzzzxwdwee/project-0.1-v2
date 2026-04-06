@@ -17,6 +17,7 @@ import {
   updateAccount,
   getTrades,
   getEquityCurve,
+  parseSize,
 } from '@/lib/trading';
 import type { TradingAccount, Trade, REquityCurvePoint } from '@/lib/types';
 import styles from './accounts.module.css';
@@ -99,6 +100,13 @@ export default function TradingAccounts() {
     }
     return map;
   }, [allTrades]);
+
+  // Total funding across all active accounts
+  const totalFunding = useMemo(() => {
+    return accounts
+      .filter((a) => a.status === 'active')
+      .reduce((sum, a) => sum + parseSize(a.size), 0);
+  }, [accounts]);
 
   // Expand a row to show equity curve
   const handleRowClick = useCallback(
@@ -220,6 +228,16 @@ export default function TradingAccounts() {
           + Add Account
         </button>
       </div>
+
+      {/* ─── Funding Counter ─── */}
+      {accounts.length > 0 && (
+        <div className={styles.fundingBar}>
+          <span className={styles.fundingLabel}>Total Active Funding</span>
+          <span className={styles.fundingValue}>
+            ${totalFunding.toLocaleString()}
+          </span>
+        </div>
+      )}
 
       {/* ─── Table ─── */}
       {accounts.length === 0 ? (

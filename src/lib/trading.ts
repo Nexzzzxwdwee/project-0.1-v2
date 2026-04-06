@@ -56,6 +56,18 @@ function toTrade(row: any): Trade {
   };
 }
 
+/**
+ * Parse account size strings like "10k", "50K", "100000", "150k" into numbers.
+ * Handles k/K suffix and plain numbers.
+ */
+export function parseSize(size: string): number {
+  const trimmed = size.trim().toLowerCase();
+  const match = trimmed.match(/^(\d+(?:\.\d+)?)\s*k$/);
+  if (match) return Number(match[1]) * 1000;
+  const num = Number(trimmed.replace(/[^0-9.]/g, ''));
+  return isNaN(num) ? 0 : num;
+}
+
 // ── Accounts ─────────────────────────────────────────────────
 
 export async function getAccounts(userId: string): Promise<TradingAccount[]> {

@@ -81,6 +81,36 @@
   transform: scale(0.97);
 }
 
+/* ─── Funding Counter ─── */
+.fundingBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  background: rgba(28, 25, 23, 0.6);
+  border: 1px solid rgba(234, 179, 8, 0.12);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: fadeInUp 0.5s var(--ease-out-expo) 0.1s both;
+}
+
+.fundingLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #78716c;
+}
+
+.fundingValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--font-space), sans-serif;
+  color: #eab308;
+}
+
 /* ─── Loading ─── */
 .loadingState {
   display: flex;

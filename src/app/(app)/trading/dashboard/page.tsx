@@ -9,17 +9,26 @@ import {
   YAxis,
   Tooltip,
   ReferenceLine,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import {
   getAccounts,
   getTrades,
   getEquityCurve,
+  parseSize,
 } from '@/lib/trading';
 import type { TradingAccount, Trade, REquityCurvePoint } from '@/lib/types';
 import styles from './dashboard.module.css';
 
 type TimeFilter = 'all' | 'month' | 'week';
+
+const PIE_COLORS = [
+  '#22c55e', '#60a5fa', '#eab308', '#c084fc', '#f97316',
+  '#ec4899', '#14b8a6', '#ef4444', '#84cc16', '#06b6d4',
+];
 
 function getDateRange(filter: TimeFilter): { from?: string; to?: string } {
   if (filter === 'all') return {};
@@ -31,7 +40,6 @@ function getDateRange(filter: TimeFilter): { from?: string; to?: string } {
       .split('T')[0];
     return { from, to };
   }
-  // week
   const day = now.getDay();
   const diff = now.getDate() - day + (day === 0 ? -6 : 1);
   const from = new Date(now.getFullYear(), now.getMonth(), diff)
@@ -47,6 +55,93 @@ function getMonthRange(): { from: string; to: string } {
     .split('T')[0];
   const to = now.toISOString().split('T')[0];
   return { from, to };
+}
+
+function formatCurrency(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}k`;
+  return `$${n.toLocaleString()}`;
+}
+
+interface PieSlice {
+  name: string;
+  value: number;
+}
+
+function PieChartCard({
+  title,
+  data,
+  valueLabel,
+}: {
+  title: string;
+  data: PieSlice[];
+  valueLabel?: (v: PieSlice) => string;
+}) {
+  if (data.length === 0) {
+    return (
+      <div className={styles.pieCard}>
+        <div className={styles.pieCardTitle}>{title}</div>
+        <div className={styles.pieEmpty}>No data</div>
+      </div>
+    );
+  }
+
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+
+  return (
+    <div className={styles.pieCard}>
+      <div className={styles.pieCardTitle}>{title}</div>
+      <div className={styles.pieChartArea}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              innerRadius={45}
+              outerRadius={75}
+              paddingAngle={2}
+              dataKey="value"
+              stroke="none"
+            >
+              {data.map((_, i) => (
+                <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip
+              contentStyle={{
+                background: 'rgba(28, 25, 23, 0.95)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '0.5rem',
+                color: '#e7e5e4',
+                fontFamily: 'var(--font-mono), monospace',
+                fontSize: '0.75rem',
+              }}
+              formatter={(value, name) => {
+                const pct = total > 0 ? Math.round((Number(value) / total) * 100) : 0;
+                return [`${pct}%`, String(name)];
+              }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <div className={styles.pieLegend}>
+        {data.map((d, i) => {
+          const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
+          const label = valueLabel ? valueLabel(d) : `${pct}%`;
+          return (
+            <div key={d.name} className={styles.pieLegendItem}>
+              <span
+                className={styles.pieLegendDot}
+                style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+              />
+              {d.name} ({label})
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export default function TradingDashboard() {
@@ -104,7 +199,6 @@ export default function TradingDashboard() {
       trades = trades.filter((t) => t.date <= range.to!);
     }
 
-    // Build curve from filtered trades
     let cumulative = 0;
     return trades.map((t, i) => {
       cumulative += t.result;
@@ -129,7 +223,6 @@ export default function TradingDashboard() {
     const winRate =
       allTrades.length > 0 ? Math.round((wins / allTrades.length) * 100) : 0;
 
-    // Accounts at risk: group trades by account, check running R
     const accountRTotals = new Map<string, number>();
     for (const t of allTrades) {
       for (const aid of t.accountIds) {
@@ -141,12 +234,19 @@ export default function TradingDashboard() {
       return r <= -3;
     });
 
+    // Total funding from active accounts
+    const totalFunding = activeAccounts.reduce(
+      (sum, a) => sum + parseSize(a.size),
+      0
+    );
+
     return {
       activeCount: activeAccounts.length,
       totalRMonth: Math.round(totalRMonth * 100) / 100,
       totalRAll: Math.round(totalRAll * 100) / 100,
       winRate,
       atRiskCount: atRisk.length,
+      totalFunding,
     };
   }, [accounts, allTrades]);
 
@@ -159,6 +259,41 @@ export default function TradingDashboard() {
       }
     }
     return map;
+  }, [allTrades]);
+
+  // Pie chart data — firm diversification (count of active accounts per firm)
+  const firmPieData = useMemo((): PieSlice[] => {
+    const active = accounts.filter((a) => a.status === 'active');
+    const map = new Map<string, number>();
+    for (const a of active) {
+      map.set(a.firm, (map.get(a.firm) || 0) + 1);
+    }
+    return Array.from(map.entries())
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [accounts]);
+
+  // Pie chart data — model diversification (count of active accounts per model)
+  const modelPieData = useMemo((): PieSlice[] => {
+    const active = accounts.filter((a) => a.status === 'active');
+    const map = new Map<string, number>();
+    for (const a of active) {
+      map.set(a.model, (map.get(a.model) || 0) + 1);
+    }
+    return Array.from(map.entries())
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [accounts]);
+
+  // Pie chart data — session diversification (count of trades per session)
+  const sessionPieData = useMemo((): PieSlice[] => {
+    const map = new Map<string, number>();
+    for (const t of allTrades) {
+      map.set(t.session, (map.get(t.session) || 0) + 1);
+    }
+    return Array.from(map.entries())
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
   }, [allTrades]);
 
   if (loading) {
@@ -194,6 +329,12 @@ export default function TradingDashboard() {
         <div className={styles.summaryCard}>
           <div className={styles.summaryLabel}>Active Accounts</div>
           <div className={styles.summaryValue}>{stats.activeCount}</div>
+        </div>
+        <div className={styles.summaryCard}>
+          <div className={styles.summaryLabel}>Total Funding</div>
+          <div className={`${styles.summaryValue} ${styles.summaryValueGold}`}>
+            {formatCurrency(stats.totalFunding)}
+          </div>
         </div>
         <div className={styles.summaryCard}>
           <div className={styles.summaryLabel}>R This Month</div>
@@ -378,6 +519,37 @@ export default function TradingDashboard() {
               );
             })
           )}
+        </div>
+      </div>
+
+      {/* ─── Diversification Pie Charts ─── */}
+      <div className={styles.pieSection}>
+        <div className={styles.pieSectionTitle}>Diversification</div>
+        <div className={styles.pieGrid}>
+          <PieChartCard
+            title="By Firm"
+            data={firmPieData}
+            valueLabel={(d) => {
+              const total = firmPieData.reduce((s, x) => s + x.value, 0);
+              return `${d.value} acct${d.value !== 1 ? 's' : ''} · ${total > 0 ? Math.round((d.value / total) * 100) : 0}%`;
+            }}
+          />
+          <PieChartCard
+            title="By Model"
+            data={modelPieData}
+            valueLabel={(d) => {
+              const total = modelPieData.reduce((s, x) => s + x.value, 0);
+              return `${d.value} acct${d.value !== 1 ? 's' : ''} · ${total > 0 ? Math.round((d.value / total) * 100) : 0}%`;
+            }}
+          />
+          <PieChartCard
+            title="By Session"
+            data={sessionPieData}
+            valueLabel={(d) => {
+              const total = sessionPieData.reduce((s, x) => s + x.value, 0);
+              return `${d.value} trade${d.value !== 1 ? 's' : ''} · ${total > 0 ? Math.round((d.value / total) * 100) : 0}%`;
+            }}
+          />
         </div>
       </div>
     </div>

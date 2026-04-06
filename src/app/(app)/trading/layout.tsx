@@ -19,22 +19,24 @@ export default function TradingLayout({
   const pathname = usePathname();
 
   return (
-    <div className={styles.container}>
-      <nav className={styles.subNav}>
-        {subNavItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`${styles.subNavItem} ${isActive ? styles.subNavItemActive : ''}`}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-      <div className={styles.content}>{children}</div>
+    <div data-theme="blue">
+      <div className={styles.container}>
+        <nav className={styles.subNav}>
+          {subNavItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`${styles.subNavItem} ${isActive ? styles.subNavItemActive : ''}`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+        <div className={styles.content}>{children}</div>
+      </div>
     </div>
   );
 }

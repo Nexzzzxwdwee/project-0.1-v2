@@ -171,8 +171,9 @@ export default function AppShellClient({
     }
   }, [isDrawerOpen]);
 
-  const renderNavItems = () => (
+  const renderNavItems = (opts?: { onItemClick?: () => void }) => (
     <>
+      <div className={styles.sectionLabel}>MAIN</div>
       {navItems.map((item) => {
         const isActive = pathname === item.href || (item.href === '/trading' && pathname.startsWith('/trading/'));
         return (
@@ -180,7 +181,7 @@ export default function AppShellClient({
             key={item.href}
             href={item.href}
             className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
-            onClick={closeDrawer}
+            onClick={opts?.onItemClick}
           >
             <svg
               className={styles.navIcon}
@@ -190,7 +191,6 @@ export default function AppShellClient({
               <path d={getIconSVG(item.icon)} />
             </svg>
             <span className={styles.navLabel}>{item.label}</span>
-            {isActive && <div className={styles.navActiveDot}></div>}
           </Link>
         );
       })}
@@ -206,7 +206,7 @@ export default function AppShellClient({
             alignItems: 'center',
             justifyContent: 'center',
             height: '100vh',
-            color: '#a8a29e',
+            color: 'var(--text-secondary)',
           }}
         >
           Loading...
@@ -272,9 +272,10 @@ export default function AppShellClient({
           </button>
         </div>
 
-        <nav className={styles.nav}>{renderNavItems()}</nav>
+        <nav className={styles.nav}>{renderNavItems({ onItemClick: closeDrawer })}</nav>
 
         <div className={styles.sidebarFooter}>
+          <div className={styles.sectionLabel}>SYSTEM</div>
           <Link
             href="/settings"
             className={`${styles.navItem} ${pathname === '/settings' ? styles.navItemActive : ''}`}
@@ -288,9 +289,6 @@ export default function AppShellClient({
               <path d={getIconSVG('gear')} />
             </svg>
             <span className={styles.navLabel}>Settings</span>
-            {pathname === '/settings' && (
-              <div className={styles.navActiveDot}></div>
-            )}
           </Link>
         </div>
       </aside>
@@ -309,6 +307,7 @@ export default function AppShellClient({
         </div>
 
         <div className={styles.sidebarFooter}>
+          <div className={styles.sectionLabel}>SYSTEM</div>
           <Link
             href="/settings"
             className={`${styles.navItem} ${pathname === '/settings' ? styles.navItemActive : ''}`}
@@ -321,18 +320,12 @@ export default function AppShellClient({
               <path d={getIconSVG('gear')} />
             </svg>
             <span className={styles.navLabel}>Settings</span>
-            {pathname === '/settings' && (
-              <div className={styles.navActiveDot}></div>
-            )}
           </Link>
         </div>
       </aside>
 
       {/* Main Content */}
       <main ref={mainRef} className={styles.mainContent}>
-        <div className={styles.bgGrid}></div>
-        <div className={`${styles.ambientGlow} ${styles.ambientGlowGreen}`}></div>
-        <div className={`${styles.ambientGlow} ${styles.ambientGlowGold}`}></div>
         <div key={pathname} className={styles.contentInner}>{children}</div>
       </main>
     </div>

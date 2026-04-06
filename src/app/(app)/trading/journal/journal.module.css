@@ -29,7 +29,7 @@
   display: block;
   font-family: var(--font-mono), monospace;
   font-size: 0.625rem;
-  color: #22c55e;
+  color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.25em;
   margin-bottom: 0.375rem;
@@ -40,12 +40,12 @@
   font-size: 1.75rem;
   font-weight: 700;
   font-family: var(--font-space), sans-serif;
-  color: #e5e5e5;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .titleGradient {
-  background: linear-gradient(135deg, #4ade80, #22c55e);
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -56,14 +56,14 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1.125rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-input);
   font-size: 0.6875rem;
   font-weight: 600;
   font-family: var(--font-mono), monospace;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #0a0a0a;
-  background: #22c55e;
+  color: var(--bg);
+  background: var(--accent);
   border: none;
   cursor: pointer;
   transition: transform 0.15s var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
@@ -92,10 +92,10 @@
 
 .filterSelect {
   padding: 0.4375rem 0.625rem;
-  border-radius: 0.375rem;
-  border: 1px solid #262626;
-  background: #111111;
-  color: #a3a3a3;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
   font-family: var(--font-mono), monospace;
   font-size: 0.6875rem;
   outline: none;
@@ -108,7 +108,7 @@
 }
 
 .filterSelect:focus {
-  border-color: #22c55e;
+  border-color: var(--accent);
 }
 
 /* ─── Loading ─── */
@@ -117,16 +117,16 @@
   align-items: center;
   justify-content: center;
   height: 40vh;
-  color: #404040;
+  color: var(--text-muted);
   font-family: var(--font-mono), monospace;
   font-size: 0.8125rem;
 }
 
 /* ─── Table ─── */
 .tableWrap {
-  background: #111111;
-  border: 1px solid #1a1a1a;
-  border-radius: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   overflow-x: auto;
   animation: fadeInUp 0.4s var(--ease-out-expo) 0.12s both;
 }
@@ -144,16 +144,16 @@
   font-size: 0.5625rem;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: #525252;
-  border-bottom: 1px solid #1a1a1a;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
 .table td {
   padding: 0.625rem;
-  color: #a3a3a3;
+  color: var(--text-secondary);
   font-family: var(--font-space), sans-serif;
-  border-bottom: 1px solid #141414;
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
   font-size: 0.75rem;
 }
@@ -163,7 +163,7 @@
 }
 
 .table tbody tr:hover {
-  background: #141414;
+  background: var(--surface-raised);
 }
 
 .table tbody tr:last-child td {
@@ -172,26 +172,26 @@
 
 /* ─── R value colours ─── */
 .rPositive {
-  color: #22c55e;
+  color: var(--success);
   font-weight: 700;
   font-family: var(--font-mono), monospace;
 }
 
 .rNegative {
-  color: #ef4444;
+  color: var(--danger);
   font-weight: 700;
   font-family: var(--font-mono), monospace;
 }
 
 .rZero {
-  color: #525252;
+  color: var(--text-muted);
   font-weight: 700;
   font-family: var(--font-mono), monospace;
 }
 
 /* ─── Links in table ─── */
 .chartLink {
-  color: #22c55e;
+  color: var(--accent);
   text-decoration: none;
   font-family: var(--font-mono), monospace;
   font-size: 0.625rem;
@@ -220,31 +220,31 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.125rem 0.4375rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
 }
 
 .sessionLDN {
-  color: #22c55e;
+  color: var(--success);
   background: rgba(34, 197, 94, 0.1);
   border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
 .sessionNY {
-  color: #f59e0b;
+  color: var(--warning);
   background: rgba(245, 158, 11, 0.1);
   border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
 /* ─── Bias badge ─── */
 .biasBullish {
-  color: #22c55e;
+  color: var(--success);
   font-family: var(--font-mono), monospace;
   font-weight: 600;
 }
 
 .biasBearish {
-  color: #ef4444;
+  color: var(--danger);
   font-family: var(--font-mono), monospace;
   font-weight: 600;
 }
@@ -257,18 +257,18 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.125rem 0.4375rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
 }
 
 .assetClassForex {
-  color: #22c55e;
+  color: var(--success);
   background: rgba(34, 197, 94, 0.08);
   border: 1px solid rgba(34, 197, 94, 0.15);
 }
 
 .assetClassFutures {
-  color: #f59e0b;
+  color: var(--warning);
   background: rgba(245, 158, 11, 0.08);
   border: 1px solid rgba(245, 158, 11, 0.15);
 }
@@ -285,10 +285,10 @@
   align-items: center;
   gap: 0.3125rem;
   padding: 0.3125rem 0.625rem;
-  border-radius: 0.375rem;
-  border: 1px solid #262626;
-  background: #0a0a0a;
-  color: #737373;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
   font-family: var(--font-mono), monospace;
   font-size: 0.6875rem;
   cursor: pointer;
@@ -297,14 +297,14 @@
 }
 
 .checkboxLabel:hover {
-  border-color: #404040;
-  color: #a3a3a3;
+  border-color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .checkboxLabelChecked {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.08);
-  border-color: rgba(34, 197, 94, 0.2);
+  color: var(--accent);
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.2);
 }
 
 .checkboxLabel input[type="checkbox"] {
@@ -323,7 +323,7 @@
   cursor: pointer;
   border: 1px solid rgba(239, 68, 68, 0.2);
   background: rgba(239, 68, 68, 0.06);
-  color: #ef4444;
+  color: var(--danger);
   transition: all 0.1s;
 }
 
@@ -336,7 +336,7 @@
 .emptyState {
   text-align: center;
   padding: 4rem 2rem;
-  color: #404040;
+  color: var(--text-muted);
   font-family: var(--font-mono), monospace;
   font-size: 0.8125rem;
   animation: fadeInUp 0.4s var(--ease-out-expo) 0.12s both;
@@ -344,7 +344,7 @@
 
 .emptyTitle {
   font-size: 0.875rem;
-  color: #525252;
+  color: var(--text-muted);
   margin-bottom: 0.5rem;
 }
 
@@ -363,9 +363,9 @@
 }
 
 .modal {
-  background: #111111;
-  border: 1px solid #1a1a1a;
-  border-radius: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 1.75rem;
   width: 100%;
   max-width: 36rem;
@@ -378,7 +378,7 @@
   font-size: 1.125rem;
   font-weight: 700;
   font-family: var(--font-space), sans-serif;
-  color: #e5e5e5;
+  color: var(--text-primary);
   margin-bottom: 1.25rem;
 }
 
@@ -392,17 +392,17 @@
   font-size: 0.5625rem;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: #525252;
+  color: var(--text-muted);
   margin-bottom: 0.3125rem;
 }
 
 .formInput {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  border: 1px solid #262626;
-  background: #0a0a0a;
-  color: #d4d4d4;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-primary);
   font-family: var(--font-space), sans-serif;
   font-size: 0.8125rem;
   outline: none;
@@ -410,16 +410,16 @@
 }
 
 .formInput:focus {
-  border-color: #22c55e;
+  border-color: var(--accent);
 }
 
 .formSelect {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  border: 1px solid #262626;
-  background: #0a0a0a;
-  color: #d4d4d4;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-primary);
   font-family: var(--font-space), sans-serif;
   font-size: 0.8125rem;
   outline: none;
@@ -429,16 +429,16 @@
 }
 
 .formSelect:focus {
-  border-color: #22c55e;
+  border-color: var(--accent);
 }
 
 .formTextarea {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  border: 1px solid #262626;
-  background: #0a0a0a;
-  color: #d4d4d4;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-primary);
   font-family: var(--font-space), sans-serif;
   font-size: 0.8125rem;
   outline: none;
@@ -448,7 +448,7 @@
 }
 
 .formTextarea:focus {
-  border-color: #22c55e;
+  border-color: var(--accent);
 }
 
 .formRow {
@@ -472,34 +472,34 @@
 
 .cancelBtn {
   padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-input);
   font-size: 0.6875rem;
   font-weight: 500;
   font-family: var(--font-mono), monospace;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #737373;
+  color: var(--text-secondary);
   background: transparent;
-  border: 1px solid #262626;
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: all 0.1s;
 }
 
 .cancelBtn:hover {
-  color: #d4d4d4;
-  border-color: #404040;
+  color: var(--text-primary);
+  border-color: var(--text-muted);
 }
 
 .saveBtn {
   padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-input);
   font-size: 0.6875rem;
   font-weight: 600;
   font-family: var(--font-mono), monospace;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #0a0a0a;
-  background: #22c55e;
+  color: var(--bg);
+  background: var(--accent);
   border: none;
   cursor: pointer;
   transition: transform 0.1s var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
@@ -517,9 +517,9 @@
 .modalTabs {
   display: flex;
   margin-bottom: 1.25rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-input);
   overflow: hidden;
-  border: 1px solid #1a1a1a;
+  border: 1px solid var(--border);
 }
 
 .modalTab {
@@ -533,19 +533,19 @@
   text-align: center;
   cursor: pointer;
   border: none;
-  background: #0a0a0a;
-  color: #525252;
+  background: var(--bg);
+  color: var(--text-muted);
   transition: all 0.15s;
 }
 
 .modalTab:hover {
-  color: #a3a3a3;
-  background: #141414;
+  color: var(--text-secondary);
+  background: var(--surface-raised);
 }
 
 .modalTabActive {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.08);
+  color: var(--accent);
+  background: rgba(59, 130, 246, 0.08);
 }
 
 /* ─── Paste from Sheets ─── */
@@ -556,7 +556,7 @@
 .pasteInstructions {
   font-family: var(--font-mono), monospace;
   font-size: 0.625rem;
-  color: #525252;
+  color: var(--text-muted);
   margin-bottom: 0.75rem;
   line-height: 1.6;
 }
@@ -565,10 +565,10 @@
   width: 100%;
   min-height: 10rem;
   padding: 0.75rem;
-  border-radius: 0.375rem;
-  border: 1px solid #262626;
-  background: #0a0a0a;
-  color: #d4d4d4;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-primary);
   font-family: var(--font-mono), monospace;
   font-size: 0.75rem;
   line-height: 1.6;
@@ -582,7 +582,7 @@
 }
 
 .pasteTextarea:focus {
-  border-color: #22c55e;
+  border-color: var(--accent);
 }
 
 .dateFormatRow {
@@ -597,7 +597,7 @@
   font-size: 0.5625rem;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: #525252;
+  color: var(--text-muted);
 }
 
 .dateFormatBtn {
@@ -609,27 +609,27 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   cursor: pointer;
-  border: 1px solid #262626;
-  background: #0a0a0a;
-  color: #525252;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
   transition: all 0.1s;
 }
 
 .dateFormatBtn:hover {
-  color: #a3a3a3;
-  border-color: #404040;
+  color: var(--text-secondary);
+  border-color: var(--text-muted);
 }
 
 .dateFormatBtnActive {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.08);
-  border-color: rgba(34, 197, 94, 0.2);
+  color: var(--accent);
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.2);
 }
 
 .rGuide {
-  background: #0d0d0d;
-  border: 1px solid #1a1a1a;
-  border-radius: 0.375rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
   padding: 0.75rem;
   margin-top: 0.75rem;
 }
@@ -639,7 +639,7 @@
   font-size: 0.5625rem;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: #525252;
+  color: var(--text-muted);
   margin-bottom: 0.375rem;
 }
 
@@ -650,17 +650,17 @@
 }
 
 .rGuideGreen {
-  color: #22c55e;
+  color: var(--success);
 }
 
 .rGuideRed {
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .rGuideCols {
   font-family: var(--font-mono), monospace;
   font-size: 0.5625rem;
-  color: #404040;
+  color: var(--text-muted);
   margin-top: 0.375rem;
 }
 
@@ -668,16 +668,16 @@
   margin-top: 0.75rem;
   font-family: var(--font-mono), monospace;
   font-size: 0.625rem;
-  color: #525252;
+  color: var(--text-muted);
 }
 
 .pastePreviewCount {
-  color: #22c55e;
+  color: var(--accent);
   font-weight: 700;
 }
 
 .pasteError {
-  color: #ef4444;
+  color: var(--danger);
   font-family: var(--font-mono), monospace;
   font-size: 0.625rem;
   margin-top: 0.5rem;
@@ -686,8 +686,8 @@
 /* ─── Preview table ─── */
 .previewTableWrap {
   margin-top: 0.5rem;
-  border: 1px solid #1a1a1a;
-  border-radius: 0.375rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
   overflow-x: auto;
 }
 
@@ -704,16 +704,16 @@
   font-size: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: #525252;
-  border-bottom: 1px solid #1a1a1a;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
 .previewTable td {
   padding: 0.375rem 0.625rem;
-  color: #a3a3a3;
+  color: var(--text-secondary);
   font-family: var(--font-mono), monospace;
-  border-bottom: 1px solid #141414;
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
@@ -723,7 +723,7 @@
 
 /* ─── Confirm modal ─── */
 .confirmText {
-  color: #737373;
+  color: var(--text-secondary);
   font-size: 0.8125rem;
   margin-bottom: 1.25rem;
   line-height: 1.5;
@@ -731,14 +731,14 @@
 
 .confirmDeleteBtn {
   padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-input);
   font-size: 0.6875rem;
   font-weight: 600;
   font-family: var(--font-mono), monospace;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #fff;
-  background: #ef4444;
+  background: var(--danger);
   border: none;
   cursor: pointer;
   transition: transform 0.1s var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));

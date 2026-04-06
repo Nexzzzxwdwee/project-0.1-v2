@@ -1,13 +1,5 @@
 /* Earnings Page Styles */
 
-/* === Design Tokens === */
-/* --glass-bg: rgba(28, 25, 23, 0.6) */
-/* --glass-border: rgba(255, 255, 255, 0.06) */
-/* --glass-blur: blur(12px) */
-/* --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1) */
-/* --glow-green: 0 0 20px rgba(34, 197, 94, 0.35) */
-/* --glow-gold: 0 0 20px rgba(234, 179, 8, 0.35) */
-
 /* === Keyframes === */
 
 @keyframes fadeInUp {
@@ -24,18 +16,16 @@
   display: block;
   font-family: var(--font-mono), monospace;
   font-size: 0.6875rem;
-  color: #22c55e;
+  font-weight: 600;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.15em;
   margin-bottom: 0.375rem;
   animation: slideInLeft 0.6s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) 0.1s both;
 }
 
 .titleGradient {
-  background: linear-gradient(135deg, #4ade80, #22c55e);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent);
 }
 
 /* === Page === */
@@ -58,8 +48,8 @@
   inset: 0;
   pointer-events: none;
   opacity: 0.02;
-  background-image: linear-gradient(#292520 1px, transparent 1px),
-    linear-gradient(90deg, #292520 1px, transparent 1px);
+  background-image: linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
@@ -85,11 +75,11 @@
 }
 
 .title {
-  font-size: 2.25rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
   line-height: 1.1;
-  color: white;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   font-family: var(--font-space), sans-serif;
 }
@@ -101,7 +91,7 @@
 }
 
 .subtitle {
-  color: #a8a29e;
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
@@ -127,7 +117,7 @@
 .controlLabel {
   font-size: 0.75rem;
   font-family: var(--font-mono), monospace;
-  color: #a8a29e;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   white-space: nowrap;
@@ -140,25 +130,25 @@
 }
 
 .monthButton {
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
-  border-radius: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  color: #e7e5e4;
+  color: var(--text-primary);
   font-family: var(--font-mono), monospace;
   cursor: pointer;
   transition: all 150ms ease-out;
 }
 
 .monthButton:hover {
-  border-color: #44403c;
+  border-color: var(--text-muted);
   transform: translateY(-1px);
 }
 
 .monthButton:focus-visible {
   outline: none;
-  border-color: #44403c;
+  border-color: var(--accent);
 }
 
 .monthButton .icon {
@@ -167,24 +157,24 @@
 }
 
 .monthDisplay {
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
-  border-radius: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  color: #e7e5e4;
+  color: var(--text-primary);
   font-family: var(--font-mono), monospace;
   min-width: 140px;
   text-align: center;
 }
 
 .currencySelect {
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
-  border-radius: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  color: #e7e5e4;
+  color: var(--text-primary);
   font-family: var(--font-mono), monospace;
   cursor: pointer;
   transition: all 150ms ease-out;
@@ -192,7 +182,7 @@
 
 .currencySelect:focus {
   outline: none;
-  border-color: #44403c;
+  border-color: var(--accent);
 }
 
 /* Sections */
@@ -204,7 +194,7 @@
 .sectionTitle {
   font-size: 1.125rem;
   font-weight: bold;
-  color: white;
+  color: var(--text-primary);
   font-family: var(--font-space), sans-serif;
   margin-bottom: 1.5rem;
 }
@@ -223,13 +213,11 @@
 }
 
 .summaryCard {
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
-  border-radius: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 1.5rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-subtle);
   transition: all 250ms var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1));
   animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) both;
 }
@@ -240,14 +228,14 @@
 
 .summaryCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-hover);
+  background: var(--surface-raised);
 }
 
 .summaryLabel {
   font-size: 0.75rem;
   font-family: var(--font-mono), monospace;
-  color: #a8a29e;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   display: block;
@@ -264,34 +252,31 @@
 .summaryAmount {
   font-size: 1.875rem;
   font-weight: bold;
-  color: white;
+  color: var(--text-primary);
   font-family: var(--font-mono), monospace;
 }
 
 .summaryAmountPositive {
-  color: #22c55e;
-  text-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+  color: var(--accent);
 }
 
 .summaryCount {
   font-size: 0.625rem;
-  color: #a8a29e;
+  color: var(--text-secondary);
   font-family: var(--font-mono), monospace;
 }
 
 .summaryCountPositive {
-  color: rgba(34, 197, 94, 0.7);
+  color: color-mix(in srgb, var(--accent) 70%, transparent);
 }
 
 /* Add Entry Card */
 .addEntryCard {
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
-  border-radius: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 1.5rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-subtle);
   transition: all 200ms var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1));
   animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) 0.25s both;
 }
@@ -299,7 +284,7 @@
 .addEntryTitle {
   font-size: 1.125rem;
   font-weight: bold;
-  color: white;
+  color: var(--text-primary);
   font-family: var(--font-space), sans-serif;
   margin-bottom: 1.5rem;
 }
@@ -325,7 +310,7 @@
 .fieldLabel {
   font-size: 0.75rem;
   font-family: var(--font-mono), monospace;
-  color: #a8a29e;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -338,9 +323,9 @@
 .typeButton {
   flex: 1;
   padding: 0.75rem 1rem;
-  border-radius: 0.375rem;
-  background: #1a1815;
-  color: #a8a29e;
+  border-radius: var(--radius-input);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
   font-family: var(--font-mono), monospace;
   font-size: 0.875rem;
   border: none;
@@ -349,32 +334,30 @@
 }
 
 .typeButton:hover {
-  background: #252018;
+  background: var(--border);
 }
 
 .typeButtonActive {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), var(--glow-green, 0 0 20px rgba(34, 197, 94, 0.35));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
 }
 
 .typeButtonActiveExpense {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 20px rgba(239, 68, 68, 0.25);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
 }
 
 .amountInput,
 .formInput,
 .formSelect {
   width: 100%;
-  background: rgba(12, 10, 9, 0.8);
-  color: #e7e5e4;
+  background: var(--bg);
+  color: var(--text-primary);
   font-family: var(--font-mono), monospace;
   font-size: 0.875rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-input);
   padding: 0.75rem 1rem;
-  border: 1px solid #292520;
+  border: 1px solid var(--border);
   transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
 }
 
@@ -384,20 +367,19 @@
 
 .amountInput::placeholder,
 .formInput::placeholder {
-  color: #57534e;
+  color: var(--text-muted);
 }
 
 .amountInput:focus,
 .formInput:focus,
 .formSelect:focus {
   outline: none;
-  border-color: #22c55e;
-  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3), 0 0 12px rgba(34, 197, 94, 0.1);
+  border-color: var(--accent);
 }
 
 .formSelect {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23a8a29e' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2371717a' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
   background-size: 1.5em 1.5em;
   background-position: right 0.5rem center;
   background-repeat: no-repeat;
@@ -406,32 +388,31 @@
 
 .submitButton {
   width: 100%;
-  background: rgba(34, 197, 94, 0.1);
-  color: #4ade80;
+  background: var(--accent);
+  color: white;
   font-family: var(--font-mono), monospace;
   font-size: 0.875rem;
   font-weight: 600;
   padding: 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: var(--radius-input);
+  border: none;
   cursor: pointer;
   transition: all 200ms ease-out;
   margin-top: 0.5rem;
 }
 
 .submitButton:hover {
-  background: rgba(34, 197, 94, 0.15);
-  border-color: rgba(34, 197, 94, 0.35);
-  box-shadow: 0 0 16px rgba(34, 197, 94, 0.12);
+  background: var(--accent-hover);
+  box-shadow: var(--shadow-hover);
 }
 
 .submitButton:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .submitButton:active {
-  background: rgba(34, 197, 94, 0.2);
+  opacity: 0.9;
 }
 
 /* Tag Filters */
@@ -443,26 +424,25 @@
 
 .tagFilter {
   padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-input);
+  background: var(--surface);
+  border: 1px solid var(--border);
   font-size: 0.75rem;
   font-family: var(--font-mono), monospace;
-  color: #e7e5e4;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 150ms ease-out;
 }
 
 .tagFilter:hover {
-  border-color: #44403c;
+  border-color: var(--text-muted);
   transform: translateY(-1px);
 }
 
 .tagFilterActive {
-  border-color: #22c55e;
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-  box-shadow: var(--glow-green, 0 0 20px rgba(34, 197, 94, 0.35));
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
 }
 
 /* Transaction List */
@@ -477,11 +457,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem;
-  border-radius: 0.75rem;
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1px solid var(--border);
   transition: all 200ms var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1));
   animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) both;
 }
@@ -499,8 +477,8 @@
 
 .transactionItem:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-hover);
+  background: var(--surface-raised);
 }
 
 .transactionLeft {
@@ -519,12 +497,12 @@
 .transactionDate {
   font-size: 0.875rem;
   font-family: var(--font-mono), monospace;
-  color: #a8a29e;
+  color: var(--text-secondary);
 }
 
 .transactionTag {
   font-size: 0.75rem;
-  color: #78716c;
+  color: var(--text-muted);
   font-family: var(--font-mono), monospace;
 }
 
@@ -534,13 +512,13 @@
 
 .transactionDescription {
   font-size: 0.875rem;
-  color: #e7e5e4;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
 .transactionNote {
   font-size: 0.75rem;
-  color: #78716c;
+  color: var(--text-muted);
   font-family: var(--font-mono), monospace;
 }
 
@@ -557,18 +535,17 @@
 .transactionAmountValue {
   font-size: 0.875rem;
   font-weight: bold;
-  color: #e7e5e4;
+  color: var(--text-primary);
   font-family: var(--font-mono), monospace;
   display: block;
 }
 
 .transactionAmountIncome {
-  color: #22c55e;
-  text-shadow: 0 0 16px rgba(34, 197, 94, 0.4);
+  color: var(--accent);
 }
 
 .deleteButton {
-  color: #44403c;
+  color: var(--text-muted);
   opacity: 0;
   transition: all 150ms ease-out;
   padding: 0.5rem;
@@ -582,7 +559,7 @@
 }
 
 .deleteButton:hover {
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .deleteButton .icon {
@@ -600,28 +577,14 @@
 .footer {
   margin-top: 4rem;
   padding-top: 2rem;
-  border-top: 1px solid #292520;
+  border-top: 1px solid var(--border);
   text-align: center;
 }
 
 .footerQuote {
   font-family: var(--font-mono), monospace;
   font-size: 0.75rem;
-  color: #44403c;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-}
-
-/* === Mobile Performance === */
-@media (max-width: 767px) {
-  .summaryCard,
-  .addEntryCard,
-  .transactionItem,
-  .tagFilter,
-  .monthButton,
-  .monthDisplay,
-  .currencySelect {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
 }

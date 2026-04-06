@@ -14,18 +14,16 @@
   display: block;
   font-family: var(--font-mono), monospace;
   font-size: 0.6875rem;
-  color: #22c55e;
+  font-weight: 600;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.15em;
   margin-bottom: 0.375rem;
   animation: slideInLeft 0.6s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) 0.1s both;
 }
 
 .titleGradient {
-  background: linear-gradient(135deg, #4ade80, #22c55e);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent);
 }
 
 .page {
@@ -42,11 +40,11 @@
 }
 
 .title {
-  font-size: 2.25rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
   line-height: 1.1;
-  color: white;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   font-family: var(--font-space), sans-serif;
 }
@@ -58,7 +56,7 @@
 }
 
 .subtitle {
-  color: #a8a29e;
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
@@ -82,11 +80,9 @@
 
 .summaryCard {
   padding: 1rem;
-  border-radius: 1rem;
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1px solid var(--border);
   transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
   animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) both;
 }
@@ -97,7 +93,7 @@
 
 .summaryCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 16px rgba(34, 197, 94, 0.06);
+  box-shadow: var(--shadow-hover);
 }
 
 @media (min-width: 768px) {
@@ -111,14 +107,14 @@
   font-family: var(--font-mono), monospace;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #a8a29e;
+  color: var(--text-secondary);
   margin-bottom: 0.5rem;
 }
 
 .summaryValue {
   font-size: 2rem;
   font-weight: bold;
-  color: white;
+  color: var(--text-primary);
 }
 
 @media (min-width: 768px) {
@@ -128,12 +124,12 @@
 }
 
 .summaryValueGreen {
-  color: #22c55e;
+  color: var(--accent);
 }
 
 .summarySubtext {
   font-size: 0.75rem;
-  color: #44403c;
+  color: var(--text-muted);
   margin-top: 0.25rem;
 }
 
@@ -146,7 +142,7 @@
 .dailyLogTitle {
   font-size: 1.25rem;
   font-weight: bold;
-  color: white;
+  color: var(--text-primary);
   margin-bottom: 1.5rem;
   font-family: var(--font-space), sans-serif;
 }
@@ -154,15 +150,13 @@
 .emptyState {
   padding: 2rem;
   text-align: center;
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
-  border-radius: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
 }
 
 .emptyStateText {
-  color: #a8a29e;
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
@@ -192,24 +186,22 @@
   width: 100%;
   text-align: left;
   padding: 1rem;
-  border-radius: 1rem;
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1px solid var(--border);
   transition: all 0.3s, transform 0.25s ease-out, box-shadow 0.25s ease-out;
   cursor: pointer;
 }
 
 .dailyLogButton:hover {
-  border-color: #44403c;
+  background: var(--surface-raised);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 12px rgba(168, 162, 158, 0.06);
+  box-shadow: var(--shadow-hover);
 }
 
 .dailyLogButton:focus {
   outline: none;
-  border-color: rgba(34, 197, 94, 0.5);
+  border-color: var(--accent);
 }
 
 .dailyLogButtonContent {
@@ -225,13 +217,13 @@
 }
 
 .dailyLogDate {
-  color: #e7e5e4;
+  color: var(--text-primary);
   font-weight: 500;
   font-family: var(--font-space), sans-serif;
 }
 
 .dailyLogCount {
-  color: #44403c;
+  color: var(--text-muted);
   font-size: 0.75rem;
   margin-top: 0.125rem;
 }
@@ -243,41 +235,39 @@
 }
 
 .statusPill {
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-family: var(--font-mono), monospace;
   padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-pill);
   text-transform: uppercase;
   transition: box-shadow 0.3s ease-out;
 }
 
 .statusPillComplete {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.15), 0 0 16px rgba(34, 197, 94, 0.05);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
 .statusPillIncomplete {
-  color: #44403c;
-  background: #292520;
-  border: 1px solid #292520;
+  color: var(--text-muted);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
 }
 
 .dailyLogScore {
-  color: white;
+  color: var(--text-primary);
   font-weight: bold;
   font-family: var(--font-space), sans-serif;
 }
 
 .dailyLogScoreIncomplete {
-  color: #a8a29e;
+  color: var(--text-secondary);
 }
 
 .chevronIcon {
   width: 0.75rem;
   height: 0.75rem;
-  color: #44403c;
+  color: var(--text-muted);
   transition: transform 0.3s;
 }
 
@@ -297,11 +287,9 @@
 .dailyLogDetails {
   margin-top: 0.5rem;
   padding: 1rem;
-  border-radius: 1rem;
-  background: var(--glass-bg, rgba(12, 10, 9, 0.7));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-card);
+  background: var(--bg);
+  border: 1px solid var(--border);
   animation: slideDown 0.2s ease-out;
 }
 
@@ -332,7 +320,7 @@
   font-family: var(--font-mono), monospace;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #a8a29e;
+  color: var(--text-secondary);
   margin-bottom: 0.5rem;
 }
 
@@ -351,49 +339,39 @@
 .checkIcon {
   width: 0.75rem;
   height: 0.75rem;
-  color: #22c55e;
+  color: var(--accent);
   flex-shrink: 0;
 }
 
 .circleIcon {
   width: 0.75rem;
   height: 0.75rem;
-  color: #44403c;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
 .detailsItemText {
   font-size: 0.875rem;
-  color: #e7e5e4;
+  color: var(--text-primary);
   font-family: var(--font-space), sans-serif;
 }
 
 .detailsItemTextIncomplete {
-  color: #a8a29e;
+  color: var(--text-secondary);
 }
 
 /* Footer */
 .footer {
   margin-top: 4rem;
   padding-top: 2rem;
-  border-top: 1px solid #292520;
+  border-top: 1px solid var(--border);
   text-align: center;
 }
 
 .footerQuote {
   font-family: var(--font-mono), monospace;
   font-size: 0.75rem;
-  color: #44403c;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-}
-
-/* Mobile performance */
-@media (max-width: 767px) {
-  .summaryCard,
-  .dailyLogButton,
-  .dailyLogDetails {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
 }

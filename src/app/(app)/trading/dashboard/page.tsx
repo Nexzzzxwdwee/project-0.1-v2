@@ -515,7 +515,7 @@ export default function TradingDashboard() {
                     <span>{a.asset}</span>
                     <span
                       className={styles.accountR}
-                      style={{ color: r >= 0 ? '#4ade80' : '#ef4444' }}
+                      style={{ color: r >= 0 ? 'var(--success)' : 'var(--danger)' }}
                     >
                       {r >= 0 ? '+' : ''}
                       {r}R

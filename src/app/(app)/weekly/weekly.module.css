@@ -12,10 +12,10 @@
 
 @keyframes todayGlow {
   0%, 100% {
-    box-shadow: 0 0 12px rgba(34, 197, 94, 0.3), 0 0 24px rgba(34, 197, 94, 0.1);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 30%, transparent), 0 0 24px color-mix(in srgb, var(--accent) 10%, transparent);
   }
   50% {
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.2);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 50%, transparent), 0 0 40px color-mix(in srgb, var(--accent) 20%, transparent);
   }
 }
 
@@ -40,26 +40,24 @@
   display: block;
   font-family: var(--font-mono), monospace;
   font-size: 0.6875rem;
-  color: #22c55e;
+  font-weight: 600;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.15em;
   margin-bottom: 0.375rem;
   animation: slideInLeft 0.6s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) 0.1s both;
 }
 
 .titleGradient {
-  background: linear-gradient(135deg, #4ade80, #22c55e);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent);
 }
 
 .title {
-  font-size: 2.25rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
   line-height: 1.1;
-  color: white;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   font-family: var(--font-space), sans-serif;
 }
@@ -71,7 +69,7 @@
 }
 
 .subtitle {
-  color: #a8a29e;
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
@@ -90,7 +88,7 @@
 }
 
 .weekSelectorButton {
-  color: #a8a29e;
+  color: var(--text-secondary);
   background: none;
   border: none;
   padding: 0.5rem;
@@ -102,7 +100,7 @@
 }
 
 .weekSelectorButton:hover {
-  color: white;
+  color: var(--text-primary);
 }
 
 .weekSelectorButton .icon {
@@ -111,11 +109,9 @@
 }
 
 .weekSelectorDisplay {
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
-  border-radius: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 0.5rem 1rem;
   min-width: 200px;
   text-align: center;
@@ -124,7 +120,7 @@
 .weekSelectorText {
   font-family: var(--font-mono), monospace;
   font-size: 0.875rem;
-  color: white;
+  color: var(--text-primary);
 }
 
 /* Empty State */
@@ -135,15 +131,13 @@
 .emptyState {
   padding: 2rem;
   text-align: center;
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
-  border-radius: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
 }
 
 .emptyStateText {
-  color: #a8a29e;
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
@@ -166,11 +160,9 @@
 }
 
 .summaryCard {
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
-  border-radius: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -185,11 +177,11 @@
 
 .summaryCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 16px rgba(34, 197, 94, 0.06);
+  box-shadow: var(--shadow-hover);
 }
 
 .summaryLabel {
-  color: #a8a29e;
+  color: var(--text-secondary);
   font-size: 0.75rem;
   font-family: var(--font-mono), monospace;
   text-transform: uppercase;
@@ -206,36 +198,36 @@
 .summaryValue {
   font-size: 2rem;
   font-weight: bold;
-  color: white;
+  color: var(--text-primary);
   font-family: var(--font-mono), monospace;
 }
 
 .summaryValueSub {
   font-size: 0.875rem;
-  color: #a8a29e;
+  color: var(--text-secondary);
   font-family: var(--font-mono), monospace;
   margin-bottom: 0.25rem;
 }
 
 .progressBar {
   width: 100%;
-  background: #292520;
-  height: 0.375rem;
-  border-radius: 9999px;
+  background: var(--border);
+  height: 4px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
   margin-top: 1rem;
 }
 
 .progressFill {
-  background: #22c55e;
+  background: var(--accent);
   height: 100%;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill);
   transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .summaryNote {
   font-size: 0.625rem;
-  color: #a8a29e;
+  color: var(--text-secondary);
   font-family: var(--font-mono), monospace;
   margin-top: 1rem;
 }
@@ -250,12 +242,12 @@
 .fireIcon {
   width: 0.75rem;
   height: 0.75rem;
-  color: #eab308;
+  color: var(--warning);
 }
 
 .streakBadgeText {
   font-size: 0.625rem;
-  color: #eab308;
+  color: var(--warning);
   font-family: var(--font-mono), monospace;
   text-transform: uppercase;
 }
@@ -269,7 +261,7 @@
 .sectionTitle {
   font-size: 1.25rem;
   font-weight: bold;
-  color: white;
+  color: var(--text-primary);
   margin-bottom: 1.5rem;
   font-family: var(--font-space), sans-serif;
 }
@@ -291,11 +283,9 @@
   flex-direction: column;
   align-items: center;
   padding: 1rem;
-  border-radius: 1rem;
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1px solid var(--border);
   transition: all 0.2s, transform 0.25s ease-out, box-shadow 0.25s ease-out;
   cursor: pointer;
   text-align: center;
@@ -311,13 +301,13 @@
 .dayCard:nth-child(7) { animation-delay: 0.92s; }
 
 .dayCard:hover {
-  border-color: rgba(34, 197, 94, 0.5);
+  border-color: var(--accent);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 12px rgba(34, 197, 94, 0.08);
+  box-shadow: var(--shadow-hover);
 }
 
 .dayCardToday {
-  border-color: #22c55e;
+  border-color: var(--accent);
   animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) both,
              todayGlow 2.5s ease-in-out infinite;
 }
@@ -325,7 +315,7 @@
 .dayLabel {
   font-size: 0.625rem;
   font-family: var(--font-mono), monospace;
-  color: #a8a29e;
+  color: var(--text-secondary);
   text-transform: uppercase;
   margin-bottom: 0.5rem;
 }
@@ -333,12 +323,12 @@
 .dayDate {
   font-size: 0.75rem;
   font-family: var(--font-mono), monospace;
-  color: #a8a29e;
+  color: var(--text-secondary);
   margin-bottom: 0.75rem;
 }
 
 .dayDateToday {
-  color: white;
+  color: var(--text-primary);
   font-weight: bold;
 }
 
@@ -354,25 +344,25 @@
 }
 
 .dayStatusIconComplete {
-  background: rgba(34, 197, 94, 0.2);
-  border-color: #22c55e;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-color: var(--accent);
 }
 
 .dayStatusIconComplete .icon {
   width: 0.75rem;
   height: 0.75rem;
-  color: #22c55e;
+  color: var(--accent);
 }
 
 .dayStatusIconIncomplete {
-  background: #292520;
-  border-color: #44403c;
+  background: var(--surface-raised);
+  border-color: var(--text-muted);
 }
 
 .dayStatusIconIncomplete .icon {
   width: 0.75rem;
   height: 0.75rem;
-  color: #44403c;
+  color: var(--text-muted);
 }
 
 .dayStatusText {
@@ -383,22 +373,22 @@
 }
 
 .dayStatusTextComplete {
-  color: #22c55e;
+  color: var(--accent);
 }
 
 .dayStatusTextIncomplete {
-  color: #a8a29e;
+  color: var(--text-secondary);
 }
 
 .dayPoints {
   font-size: 0.5625rem;
-  color: #a8a29e;
+  color: var(--text-secondary);
   font-family: var(--font-mono), monospace;
   margin-top: 0.5rem;
 }
 
 .dayPointsToday {
-  color: #22c55e;
+  color: var(--accent);
 }
 
 /* Patterns Section */
@@ -408,18 +398,16 @@
 }
 
 .patternsCard {
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
-  border-radius: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 1.5rem;
   transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
 }
 
 .patternsCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 12px rgba(168, 162, 158, 0.06);
+  box-shadow: var(--shadow-hover);
 }
 
 @media (min-width: 768px) {
@@ -449,26 +437,26 @@
 }
 
 .patternDotGreen {
-  background: #22c55e;
+  background: var(--accent);
 }
 
 .patternDotYellow {
-  background: #eab308;
+  background: var(--warning);
 }
 
 .patternDotGray {
-  background: #a8a29e;
+  background: var(--text-secondary);
 }
 
 .patternTitle {
-  color: #e7e5e4;
+  color: var(--text-primary);
   font-size: 0.875rem;
   font-weight: 500;
   font-family: var(--font-space), sans-serif;
 }
 
 .patternDescription {
-  color: #a8a29e;
+  color: var(--text-secondary);
   font-size: 0.75rem;
   margin-top: 0.25rem;
 }
@@ -476,14 +464,14 @@
 /* Footer */
 .footer {
   padding-top: 2rem;
-  border-top: 1px solid #292520;
+  border-top: 1px solid var(--border);
   text-align: center;
 }
 
 .footerQuote {
   font-family: var(--font-mono), monospace;
   font-size: 0.75rem;
-  color: #44403c;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -492,14 +480,4 @@
   width: 1em;
   height: 1em;
   display: inline-block;
-}
-
-/* Mobile performance */
-@media (max-width: 767px) {
-  .summaryCard,
-  .dayCard,
-  .weekSelectorDisplay {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
 }

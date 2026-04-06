@@ -1,5 +1,9 @@
 import AppShellClient from './AppShellClient';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return <AppShellClient>{children}</AppShellClient>;
+  return (
+    <div data-theme="green">
+      <AppShellClient>{children}</AppShellClient>
+    </div>
+  );
 }

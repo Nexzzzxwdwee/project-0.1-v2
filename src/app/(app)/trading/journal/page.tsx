@@ -549,7 +549,7 @@ export default function TradingJournal() {
                             ))}
                             {parsedPasteRows.length > 5 && (
                               <tr>
-                                <td colSpan={5} style={{ color: '#525252', textAlign: 'center' }}>
+                                <td colSpan={5} style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
                                   +{parsedPasteRows.length - 5} more
                                 </td>
                               </tr>

@@ -45,25 +45,25 @@ export default function ConfirmModal({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
-        background: 'rgba(0,0,0,0.6)',
+        background: 'rgba(0,0,0,0.7)',
       }}
       onClick={onCancel}
     >
       <div
         style={{
-          background: '#1c1917',
-          border: '1px solid #292524',
-          borderRadius: '0.75rem',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-card)',
           padding: '1.5rem',
           maxWidth: '400px',
           width: '90%',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ margin: '0 0 0.5rem', color: '#e7e5e4', fontSize: '1rem' }}>
+        <h3 style={{ margin: '0 0 0.5rem', color: 'var(--text-primary)', fontSize: '1rem' }}>
           {title}
         </h3>
-        <p style={{ margin: '0 0 1.25rem', color: '#a8a29e', fontSize: '0.875rem', lineHeight: 1.5 }}>
+        <p style={{ margin: '0 0 1.25rem', color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.5 }}>
           {message}
         </p>
         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
@@ -73,9 +73,9 @@ export default function ConfirmModal({
             style={{
               padding: '0.4rem 1rem',
               background: 'transparent',
-              color: '#a8a29e',
-              border: '1px solid #292524',
-              borderRadius: '0.5rem',
+              color: 'var(--text-secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-input)',
               cursor: 'pointer',
               fontSize: '0.875rem',
             }}
@@ -88,10 +88,10 @@ export default function ConfirmModal({
             onClick={onConfirm}
             style={{
               padding: '0.4rem 1rem',
-              background: '#991b1b',
-              color: '#fecaca',
+              background: 'var(--danger)',
+              color: 'white',
               border: 'none',
-              borderRadius: '0.5rem',
+              borderRadius: 'var(--radius-input)',
               cursor: 'pointer',
               fontSize: '0.875rem',
             }}

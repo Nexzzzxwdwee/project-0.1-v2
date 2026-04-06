@@ -11,25 +11,25 @@
   border: none;
   font-family: var(--font-mono), monospace;
   font-size: 0.875rem;
-  color: #e7e5e4;
+  color: var(--text-primary);
   padding: 0.75rem 0.5rem;
   cursor: pointer;
   transition: color 0.2s;
 }
 
 .timePickerTrigger:hover {
-  color: #a8a29e;
+  color: var(--text-secondary);
 }
 
 .timePickerTrigger .icon {
   width: 1rem;
   height: 1rem;
-  color: #44403c;
+  color: var(--text-muted);
   transition: color 0.2s;
 }
 
 .timePickerTrigger:hover .icon {
-  color: #a8a29e;
+  color: var(--text-secondary);
 }
 
 .timePickerValue {
@@ -38,16 +38,15 @@
 }
 
 .timePickerPlaceholder .timePickerValue {
-  color: #78716c;
+  color: var(--text-muted);
   font-style: italic;
 }
 
 .timePickerOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.7);
   z-index: 1000;
-  backdrop-filter: blur(4px);
 }
 
 .timePickerPopover {
@@ -55,12 +54,12 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: #1c1917;
-  border: 1px solid #292520;
-  border-radius: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 1.5rem;
   z-index: 1001;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(34, 197, 94, 0.1);
+  box-shadow: var(--shadow-hover);
   min-width: 280px;
   max-width: 320px;
 }
@@ -81,7 +80,7 @@
   font-family: var(--font-mono), sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #a8a29e;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -102,7 +101,7 @@
   font-family: var(--font-mono), monospace;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #44403c;
+  color: var(--text-muted);
   margin-bottom: 0.5rem;
   text-align: center;
 }
@@ -125,19 +124,19 @@
 }
 
 .timePickerScroll::-webkit-scrollbar-thumb {
-  background-color: #292520;
+  background-color: var(--border);
   border-radius: 2px;
 }
 
 .timePickerScroll::-webkit-scrollbar-thumb:hover {
-  background-color: #44403c;
+  background-color: var(--text-muted);
 }
 
 .timePickerOption {
-  background: #0c0a09;
-  border: 1px solid #292520;
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 0.25rem;
-  color: #a8a29e;
+  color: var(--text-secondary);
   font-family: var(--font-mono), monospace;
   font-size: 0.875rem;
   padding: 0.5rem 0.75rem;
@@ -147,19 +146,19 @@
 }
 
 .timePickerOption:hover {
-  border-color: #44403c;
-  color: #e7e5e4;
-  background: #1c1917;
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+  background: var(--surface);
 }
 
 .timePickerOptionActive {
-  background: rgba(34, 197, 94, 0.2);
-  border-color: #22c55e;
-  color: #22c55e;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--bg);
 }
 
 .timePickerOptionActive:hover {
-  background: rgba(34, 197, 94, 0.3);
+  color: var(--accent);
 }
 
 .timePickerFooter {
@@ -171,32 +170,31 @@
 .timePickerCancel,
 .timePickerSet {
   padding: 0.5rem 1rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-input);
   font-family: var(--font-mono), monospace;
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
-  border: 1px solid #292520;
 }
 
 .timePickerCancel {
   background: transparent;
-  color: #a8a29e;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
 }
 
 .timePickerCancel:hover {
-  color: #e7e5e4;
-  border-color: #44403c;
+  color: var(--text-primary);
+  border-color: var(--text-muted);
 }
 
 .timePickerSet {
-  background: rgba(34, 197, 94, 0.2);
-  border-color: #22c55e;
-  color: #22c55e;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: white;
 }
 
 .timePickerSet:hover {
-  background: rgba(34, 197, 94, 0.3);
-  border-color: #22c55e;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
-

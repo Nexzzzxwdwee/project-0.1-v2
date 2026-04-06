@@ -15,21 +15,21 @@
   align-items: center;
   gap: 0.125rem;
   padding: 0.25rem;
-  background: #111111;
-  border: 1px solid #1a1a1a;
-  border-radius: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   width: fit-content;
 }
 
 .subNavItem {
   padding: 0.5rem 1.125rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-input);
   font-size: 0.6875rem;
   font-weight: 600;
   font-family: var(--font-mono), monospace;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #525252;
+  color: var(--text-muted);
   text-decoration: none;
   transition: all 0.2s;
   border: 1px solid transparent;
@@ -37,14 +37,14 @@
 }
 
 .subNavItem:hover {
-  color: #a3a3a3;
-  background: #1a1a1a;
+  color: var(--text-secondary);
+  background: var(--border);
 }
 
 .subNavItemActive {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.08);
-  border-color: rgba(34, 197, 94, 0.15);
+  color: var(--accent);
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.15);
 }
 
 /* ─── Content area ─── */

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   Rank Page — Operator Aesthetic
+   Rank Page — Design Token Refresh
    ═══════════════════════════════════════════════ */
 
 @keyframes fadeInUp {
@@ -16,24 +16,22 @@
   display: block;
   font-family: var(--font-mono), monospace;
   font-size: 0.6875rem;
-  color: #22c55e;
+  font-weight: 600;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.15em;
   margin-bottom: 0.375rem;
   animation: slideInLeft 0.6s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) 0.1s both;
 }
 
 .titleGradient {
-  background: linear-gradient(135deg, #4ade80, #22c55e);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent);
 }
 
 .page {
   min-height: 100vh;
-  background-color: #0c0a09;
-  color: #e7e5e4;
+  background-color: var(--bg);
+  color: var(--text-primary);
   position: relative;
   overflow-y: auto;
 }
@@ -44,8 +42,8 @@
   pointer-events: none;
   opacity: 0.03;
   background-image:
-    linear-gradient(#292520 1px, transparent 1px),
-    linear-gradient(90deg, #292520 1px, transparent 1px);
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
@@ -68,7 +66,7 @@
   align-items: center;
   justify-content: center;
   height: 50vh;
-  color: #57534e;
+  color: var(--text-muted);
   font-family: var(--font-mono), monospace;
   font-size: 0.875rem;
 }
@@ -81,9 +79,9 @@
 
 .title {
   font-size: 1.75rem;
-  font-weight: 800;
-  color: white;
-  letter-spacing: -0.03em;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
   line-height: 1.1;
   margin-bottom: 0.375rem;
 }
@@ -100,7 +98,7 @@
   gap: 0.5rem;
   font-family: var(--font-mono), monospace;
   font-size: 0.75rem;
-  color: #57534e;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -108,17 +106,15 @@
 .subtitleIcon {
   width: 0.875rem;
   height: 0.875rem;
-  color: #57534e;
+  color: var(--text-muted);
 }
 
 /* ─── Hero Card (Current Rank) ─── */
 .hero {
   position: relative;
-  background: linear-gradient(145deg, rgba(28, 25, 23, 0.7) 0%, rgba(12, 10, 9, 0.8) 100%);
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--rank-muted, #292520);
-  border-radius: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 2rem 1.5rem;
   margin-bottom: 3rem;
   overflow: hidden;
@@ -152,7 +148,7 @@
 .heroShield {
   width: 6rem;
   height: 6rem;
-  color: var(--rank-color, #a8a29e);
+  color: var(--rank-color, var(--text-secondary));
 }
 
 @media (min-width: 768px) {
@@ -169,7 +165,7 @@
 .heroLabel {
   font-family: var(--font-mono), monospace;
   font-size: 0.625rem;
-  color: #57534e;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.2em;
 }
@@ -177,7 +173,7 @@
 .heroRankName {
   font-size: 2.5rem;
   font-weight: 800;
-  color: var(--rank-color, white);
+  color: var(--rank-color, var(--text-primary));
   letter-spacing: -0.02em;
   margin: 0.25rem 0 1.5rem;
   line-height: 1.1;
@@ -206,7 +202,7 @@
   font-family: var(--font-mono), monospace;
   font-size: 1.375rem;
   font-weight: 700;
-  color: white;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -215,7 +211,7 @@
 .heroStatLabel {
   font-family: var(--font-mono), monospace;
   font-size: 0.625rem;
-  color: #57534e;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-top: 0.125rem;
@@ -224,7 +220,7 @@
 .heroStatDivider {
   width: 1px;
   height: 2rem;
-  background: #292520;
+  background: var(--border);
   align-self: center;
 }
 
@@ -243,24 +239,22 @@
   justify-content: space-between;
   font-family: var(--font-mono), monospace;
   font-size: 0.6875rem;
-  color: #78716c;
+  color: var(--text-secondary);
   margin-bottom: 0.5rem;
 }
 
 .heroProgressTrack {
   width: 100%;
   height: 8px;
-  background: #1a1715;
-  border: 1px solid #292520;
-  border-radius: 9999px;
+  background: var(--border);
+  border-radius: var(--radius-pill);
   overflow: hidden;
 }
 
 .heroProgressFill {
   height: 100%;
-  background: var(--rank-color, #a8a29e);
-  border-radius: 9999px;
-  box-shadow: 0 0 14px color-mix(in srgb, var(--rank-color) 40%, transparent);
+  background: var(--rank-color, var(--text-secondary));
+  border-radius: var(--radius-pill);
   transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -269,7 +263,7 @@
   justify-content: space-between;
   font-family: var(--font-mono), monospace;
   font-size: 0.625rem;
-  color: #44403c;
+  color: var(--text-muted);
   margin-top: 0.375rem;
 }
 
@@ -285,7 +279,7 @@
 .tiersTitle {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #a8a29e;
+  color: var(--text-secondary);
   letter-spacing: -0.01em;
 }
 
@@ -310,11 +304,9 @@
 /* ─── Tier Card ─── */
 .tierCard {
   position: relative;
-  background: var(--glass-bg, rgba(28, 25, 23, 0.6));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
-  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
-  border-radius: 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 1.125rem 1.25rem;
   overflow: hidden;
   transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
@@ -335,19 +327,19 @@
 .tierCard:nth-child(12) { animation-delay: 0.82s; }
 
 .tierCard:hover {
-  border-color: #292520;
+  border-color: var(--border);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-hover);
 }
 
 .tierCardCurrent {
-  background: linear-gradient(145deg, #1c1917 0%, #141211 100%);
-  border-color: var(--tier-muted, #292520);
+  background: var(--surface-raised);
+  border-color: var(--tier-muted, var(--border));
   transform: scale(1);
 }
 
 .tierCardCurrent:hover {
-  border-color: var(--tier-color, #44403c);
+  border-color: var(--tier-color, var(--text-muted));
   transform: translateY(-2px);
 }
 
@@ -383,7 +375,7 @@
 .tierCardIndex {
   font-family: var(--font-mono), monospace;
   font-size: 0.625rem;
-  color: #44403c;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -391,40 +383,38 @@
 .tierCardBadge {
   font-family: var(--font-mono), monospace;
   font-size: 0.5625rem;
-  color: var(--tier-color, #22c55e);
-  background: color-mix(in srgb, var(--tier-color) 10%, transparent);
+  color: var(--tier-color, var(--accent));
+  background: color-mix(in srgb, var(--tier-color) 15%, transparent);
   padding: 0.1rem 0.375rem;
-  border-radius: 0.25rem;
-  border: 1px solid color-mix(in srgb, var(--tier-color) 20%, transparent);
+  border-radius: var(--radius-pill);
   letter-spacing: 0.05em;
 }
 
 .tierCardBadgeNext {
   font-family: var(--font-mono), monospace;
   font-size: 0.5625rem;
-  color: #78716c;
-  background: rgba(120, 113, 108, 0.1);
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--text-secondary) 10%, transparent);
   padding: 0.1rem 0.375rem;
-  border-radius: 0.25rem;
-  border: 1px solid rgba(120, 113, 108, 0.15);
+  border-radius: var(--radius-pill);
   letter-spacing: 0.05em;
 }
 
 .tierCardName {
   font-size: 1.125rem;
   font-weight: 700;
-  color: var(--tier-color, white);
+  color: var(--tier-color, var(--text-primary));
   letter-spacing: -0.01em;
 }
 
 .tierCardLocked .tierCardName {
-  color: #44403c;
+  color: var(--text-muted);
 }
 
 .tierCardIcon {
   width: 1.25rem;
   height: 1.25rem;
-  color: var(--tier-color, #44403c);
+  color: var(--tier-color, var(--text-muted));
   opacity: 0.5;
   flex-shrink: 0;
 }
@@ -435,14 +425,14 @@
 }
 
 .tierCardLocked .tierCardIcon {
-  color: #292520;
+  color: var(--border);
   opacity: 0.4;
 }
 
 .tierCardReq {
   font-family: var(--font-mono), monospace;
   font-size: 0.625rem;
-  color: #44403c;
+  color: var(--text-muted);
   margin-bottom: 0.625rem;
   letter-spacing: 0.02em;
 }
@@ -450,15 +440,15 @@
 .tierCardBar {
   width: 100%;
   height: 4px;
-  background: #1a1715;
-  border-radius: 9999px;
+  background: var(--border);
+  border-radius: var(--radius-pill);
   overflow: hidden;
 }
 
 .tierCardBarFill {
   height: 100%;
-  background: var(--tier-color, #44403c);
-  border-radius: 9999px;
+  background: var(--tier-color, var(--text-muted));
+  border-radius: var(--radius-pill);
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -470,14 +460,14 @@
 .footer {
   margin-top: 3rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #1a1715;
+  border-top: 1px solid var(--border);
   text-align: center;
 }
 
 .footer p {
   font-family: var(--font-mono), monospace;
   font-size: 0.6875rem;
-  color: #292520;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.15em;
 }

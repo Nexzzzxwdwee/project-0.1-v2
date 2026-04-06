@@ -27,8 +27,8 @@ import styles from './dashboard.module.css';
 type TimeFilter = 'all' | 'month' | 'week';
 
 const PIE_COLORS = [
-  '#22c55e', '#f59e0b', '#475569', '#a3e635', '#d97706',
-  '#64748b', '#16a34a', '#ea580c', '#334155', '#84cc16',
+  '#3b82f6', '#f59e0b', '#475569', '#60a5fa', '#d97706',
+  '#64748b', '#2563eb', '#ea580c', '#334155', '#93c5fd',
 ];
 
 function getDateRange(filter: TimeFilter): { from?: string; to?: string } {
@@ -424,8 +424,8 @@ export default function TradingDashboard() {
                 >
                   <defs>
                     <linearGradient id="curveGreen" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="curveRed" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
@@ -462,7 +462,7 @@ export default function TradingDashboard() {
                     dataKey="cumulativeR"
                     stroke={
                       filteredCurve[filteredCurve.length - 1]?.cumulativeR >= 0
-                        ? '#22c55e'
+                        ? '#3b82f6'
                         : '#ef4444'
                     }
                     strokeWidth={2}
@@ -478,7 +478,7 @@ export default function TradingDashboard() {
                       strokeWidth: 2,
                       fill:
                         filteredCurve[filteredCurve.length - 1]?.cumulativeR >= 0
-                          ? '#22c55e'
+                          ? '#3b82f6'
                           : '#ef4444',
                     }}
                   />

@@ -346,12 +346,12 @@ export default function TradingAccounts() {
                                       >
                                         <stop
                                           offset="5%"
-                                          stopColor={r >= 0 ? '#22c55e' : '#ef4444'}
+                                          stopColor={r >= 0 ? '#3b82f6' : '#ef4444'}
                                           stopOpacity={0.2}
                                         />
                                         <stop
                                           offset="95%"
-                                          stopColor={r >= 0 ? '#22c55e' : '#ef4444'}
+                                          stopColor={r >= 0 ? '#3b82f6' : '#ef4444'}
                                           stopOpacity={0}
                                         />
                                       </linearGradient>
@@ -394,7 +394,7 @@ export default function TradingAccounts() {
                                     <Area
                                       type="monotone"
                                       dataKey="cumulativeR"
-                                      stroke={r >= 0 ? '#22c55e' : '#ef4444'}
+                                      stroke={r >= 0 ? '#3b82f6' : '#ef4444'}
                                       strokeWidth={2}
                                       fill={`url(#grad-${a.id})`}
                                       dot={false}

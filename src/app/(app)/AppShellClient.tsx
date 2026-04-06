@@ -215,8 +215,10 @@ export default function AppShellClient({
     );
   }
 
+  const theme = pathname.startsWith('/trading') ? 'blue' : 'green';
+
   return (
-    <div className={styles.mainContainer}>
+    <div className={styles.mainContainer} data-theme={theme}>
       {/* Mobile Top Bar */}
       <div className={styles.mobileTopBar}>
         <button

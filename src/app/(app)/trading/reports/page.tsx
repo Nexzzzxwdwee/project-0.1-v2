@@ -181,8 +181,8 @@ export default function TradingReports() {
               >
                 <defs>
                   <linearGradient id="reportGreen" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="reportRed" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
@@ -217,7 +217,7 @@ export default function TradingReports() {
                 <Area
                   type="monotone"
                   dataKey="cumulativeR"
-                  stroke={lastR >= 0 ? '#22c55e' : '#ef4444'}
+                  stroke={lastR >= 0 ? '#3b82f6' : '#ef4444'}
                   strokeWidth={2}
                   fill={lastR >= 0 ? 'url(#reportGreen)' : 'url(#reportRed)'}
                   dot={false}
@@ -225,7 +225,7 @@ export default function TradingReports() {
                     r: 4,
                     stroke: '#e7e5e4',
                     strokeWidth: 2,
-                    fill: lastR >= 0 ? '#22c55e' : '#ef4444',
+                    fill: lastR >= 0 ? '#3b82f6' : '#ef4444',
                   }}
                 />
               </AreaChart>

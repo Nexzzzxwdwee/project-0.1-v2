@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -318,10 +319,15 @@ export default function TradingDashboard() {
     <div>
       {/* ─── Header ─── */}
       <header className={styles.header}>
-        <span className={styles.titleAccent}>{'// COMMAND CENTRE'}</span>
-        <h1 className={styles.title}>
-          Trading <span className={styles.titleGradient}>Dashboard</span>
-        </h1>
+        <div>
+          <span className={styles.titleAccent}>{'// COMMAND CENTRE'}</span>
+          <h1 className={styles.title}>
+            Trading <span className={styles.titleGradient}>Dashboard</span>
+          </h1>
+        </div>
+        <Link href="/trading/journal?mode=log" className={styles.logTradeBtn}>
+          + Log Trade
+        </Link>
       </header>
 
       {/* ─── Summary Cards ─── */}

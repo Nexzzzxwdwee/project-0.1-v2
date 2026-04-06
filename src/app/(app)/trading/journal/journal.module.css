@@ -513,6 +513,176 @@
   transform: scale(0.98);
 }
 
+/* ─── Modal Tabs ─── */
+.modalTabs {
+  display: flex;
+  margin-bottom: 1.25rem;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  border: 1px solid #1a1a1a;
+}
+
+.modalTab {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  background: #0a0a0a;
+  color: #525252;
+  transition: all 0.15s;
+}
+
+.modalTab:hover {
+  color: #a3a3a3;
+  background: #141414;
+}
+
+.modalTabActive {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.08);
+}
+
+/* ─── Paste from Sheets ─── */
+.pasteSection {
+  margin-bottom: 1rem;
+}
+
+.pasteInstructions {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.625rem;
+  color: #525252;
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.pasteTextarea {
+  width: 100%;
+  min-height: 10rem;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid #262626;
+  background: #0a0a0a;
+  color: #d4d4d4;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.15s;
+}
+
+.pasteTextarea::placeholder {
+  color: #333333;
+}
+
+.pasteTextarea:focus {
+  border-color: #22c55e;
+}
+
+.dateFormatRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.dateFormatLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #525252;
+}
+
+.dateFormatBtn {
+  padding: 0.3125rem 0.625rem;
+  border-radius: 0.25rem;
+  font-size: 0.625rem;
+  font-family: var(--font-mono), monospace;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  border: 1px solid #262626;
+  background: #0a0a0a;
+  color: #525252;
+  transition: all 0.1s;
+}
+
+.dateFormatBtn:hover {
+  color: #a3a3a3;
+  border-color: #404040;
+}
+
+.dateFormatBtnActive {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.rGuide {
+  background: #0d0d0d;
+  border: 1px solid #1a1a1a;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.rGuideTitle {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #525252;
+  margin-bottom: 0.375rem;
+}
+
+.rGuideText {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  line-height: 1.6;
+}
+
+.rGuideGreen {
+  color: #22c55e;
+}
+
+.rGuideRed {
+  color: #ef4444;
+}
+
+.rGuideCols {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.5625rem;
+  color: #404040;
+  margin-top: 0.375rem;
+}
+
+.pastePreview {
+  margin-top: 0.75rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.625rem;
+  color: #525252;
+}
+
+.pastePreviewCount {
+  color: #22c55e;
+  font-weight: 700;
+}
+
+.pasteError {
+  color: #ef4444;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.625rem;
+  margin-top: 0.5rem;
+}
+
 /* ─── Confirm modal ─── */
 .confirmText {
   color: #737373;

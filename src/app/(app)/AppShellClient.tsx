@@ -12,7 +12,6 @@ import styles from './app-shell.module.css';
 const navItems = [
   { href: '/today', label: 'Today', icon: 'calendar-day' },
   { href: '/history', label: 'History', icon: 'clock-rotate-left' },
-  { href: '/weekly', label: 'Weekly', icon: 'calendar-week' },
   { href: '/journal', label: 'Journal', icon: 'book' },
   { href: '/goals', label: 'Goals', icon: 'bullseye' },
   { href: '/earnings', label: 'Earnings', icon: 'coins' },

@@ -17,170 +17,72 @@ const MONTHS = [
   'Jul','Aug','Sep','Oct','Nov','Dec',
 ];
 
-const FX_ASSETS = new Set([
-  'EURUSD','GBPUSD','AUDUSD','USDJPY','NZDUSD','USDCAD','USDCHF',
-  'EURJPY','GBPJPY','EURGBP','EURAUD','AUDCAD','AUDCHF','AUDJPY',
-  'CADCHF','CADJPY','CHFJPY','EURCHF','EURNZD','GBPAUD','GBPCAD',
-  'GBPCHF','GBPNZD','NZDCAD','NZDCHF','NZDJPY',
-]);
-
 const MONTH_MAP: Record<string, number> = {
   jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
   jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
 };
 
-function detectAssetClass(symbol: string): 'Forex' | 'Futures' {
-  return FX_ASSETS.has(symbol.toUpperCase()) ? 'Forex' : 'Futures';
-}
-
-function parseBias(direction: string): 'Bullish' | 'Bearish' | null {
-  const d = direction.toLowerCase().trim();
-  if (d === 'long' || d === 'bullish' || d === 'bull') return 'Bullish';
-  if (d === 'short' || d === 'bearish' || d === 'bear') return 'Bearish';
-  return null;
-}
-
-function isR(s: string): boolean {
-  const t = s.trim().replace(/[rR]$/, '').replace(/^\+/, '');
-  return t !== '' && !isNaN(Number(t));
-}
-
-function parseR(raw: string): number {
-  const s = raw.trim().replace(/[rR]$/,'').replace(/^\+/,'');
-  const n = Number(s);
-  return isNaN(n) ? 0 : n;
-}
-
-function isTime(s: string): boolean {
-  return /^\d{1,2}:\d{2}$/.test(s.trim());
-}
-
-function isSession(s: string): boolean {
-  const u = s.trim().toUpperCase();
-  return u === 'LDN' || u === 'NY';
-}
-
-function isDirection(s: string): boolean {
-  const d = s.toLowerCase().trim();
-  return ['long', 'short', 'bullish', 'bearish', 'bull', 'bear'].includes(d);
-}
-
-function isSymbol(s: string): boolean {
-  const u = s.trim().toUpperCase();
-  return FX_ASSETS.has(u) || ['NQ', 'ES', 'CL', 'GC', 'YM', 'RTY', 'MNQ', 'MES', 'MCL'].includes(u);
-}
-
-/** Try to parse a date from a string. Handles:
- *  - "Mar 13", "Feb 11" (month name + day → uses current year)
- *  - "2024-01-15", "15/01/2024", "01/15/2024" (full dates)
- *  - "15-01-2024", "01-15-2024"
- */
-function tryParseDate(raw: string, format: 'dmy' | 'mdy'): string | null {
-  const s = raw.trim();
-
-  // "Mar 13", "Feb 11" — month name + day
-  const monthNameMatch = s.match(/^([A-Za-z]{3,})\s+(\d{1,2})$/);
-  if (monthNameMatch) {
-    const mi = MONTH_MAP[monthNameMatch[1].toLowerCase().slice(0, 3)];
-    if (mi !== undefined) {
-      const day = parseInt(monthNameMatch[2], 10);
-      const year = new Date().getFullYear();
-      return `${year}-${String(mi + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    }
-  }
-
-  // ISO "2024-01-15"
-  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) return s;
-
-  // Slash or dot separated
-  const parts = s.split(/[\/\-\.]/);
-  if (parts.length === 3) {
-    const [a, b, c] = parts;
-    if (format === 'dmy') {
-      return `${c.padStart(4, '20')}-${b.padStart(2, '0')}-${a.padStart(2, '0')}`;
-    }
-    return `${c.padStart(4, '20')}-${a.padStart(2, '0')}-${b.padStart(2, '0')}`;
-  }
-
-  return null;
-}
-
-/** Check if a value looks like a date */
-function isDateLike(s: string): boolean {
-  const t = s.trim();
-  // "Mar 13"
-  if (/^[A-Za-z]{3,}\s+\d{1,2}$/.test(t)) return true;
-  // "2024-01-15" or "15/01/2024" etc
-  if (/^\d{1,4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,4}$/.test(t)) return true;
-  return false;
+function parseR(raw: string): number | null {
+  const s = raw.trim().replace(/[rR]$/, '').replace(/^\+/, '');
+  if (s === '' || isNaN(Number(s))) return null;
+  return Number(s);
 }
 
 interface ParsedRow {
   date: string;
+  month: string;
   time: string | null;
   asset: string;
   assetClass: 'Forex' | 'Futures';
-  bias: 'Bullish' | 'Bearish' | null;
   session: 'LDN' | 'NY';
   result: number;
   model: string;
-  notes: string | null;
 }
 
 /**
- * Auto-detect column types from cell content.
- * Each cell is classified as: date, time, session, r, direction, symbol, or text (model/notes).
+ * Parse a single tab-separated row from Google Sheets.
+ * Expected column order:
+ *   0: Asset Class (FX / FUTURES)
+ *   1: Asset (EUR/USD, NQ, etc.)
+ *   2: Month (Jan, Feb, Mar...)
+ *   3: Day (7, 11, 14...)
+ *   4: Model (5m Hybrid, LRV...)
+ *   5: Time (14:30, 11:14...)
+ *   6: Session (LDN, NY)
+ *   7: Result (R value: -0.37, 1.2, 3, -1)
  */
-function parseLine(cols: string[], dateFormat: 'dmy' | 'mdy'): ParsedRow | null {
-  let date: string | null = null;
-  let time: string | null = null;
-  let session: 'LDN' | 'NY' = 'LDN';
-  let result: number | null = null;
-  let bias: 'Bullish' | 'Bearish' | null = null;
-  let asset = '';
-  const textParts: string[] = [];
+function parseSheetRow(cols: string[]): ParsedRow | null {
+  if (cols.length < 8) return null;
 
-  for (const raw of cols) {
-    const cell = raw.trim();
-    if (!cell) continue;
+  const rawClass = cols[0].trim().toUpperCase();
+  // Skip header rows or non-data rows
+  if (rawClass !== 'FX' && rawClass !== 'FUTURES') return null;
 
-    if (!date && isDateLike(cell)) {
-      date = tryParseDate(cell, dateFormat);
-    } else if (!time && isTime(cell)) {
-      time = cell;
-    } else if (isSession(cell)) {
-      session = cell.toUpperCase() as 'LDN' | 'NY';
-    } else if (result === null && isR(cell)) {
-      result = parseR(cell);
-    } else if (!bias && isDirection(cell)) {
-      bias = parseBias(cell);
-    } else if (!asset && isSymbol(cell)) {
-      asset = cell.toUpperCase();
-    } else {
-      textParts.push(cell);
-    }
-  }
+  const assetClass: 'Forex' | 'Futures' = rawClass === 'FX' ? 'Forex' : 'Futures';
+  const asset = cols[1].trim().toUpperCase();
+  const monthStr = cols[2].trim();
+  const dayStr = cols[3].trim();
+  const model = cols[4].trim();
+  const time = cols[5].trim() || null;
+  const sessionRaw = cols[6].trim().toUpperCase();
+  const result = parseR(cols[7]);
 
-  if (result === null) return null; // must have at least an R value
-  if (!date) {
-    date = new Date().toISOString().split('T')[0];
-  }
+  if (result === null) return null;
 
-  // First text part = model, rest = notes
-  const model = textParts[0] || '';
-  const notes = textParts.slice(1).join(' ') || null;
+  // Build date from month name + day
+  const mi = MONTH_MAP[monthStr.toLowerCase().slice(0, 3)];
+  if (mi === undefined) return null;
+  const day = parseInt(dayStr, 10);
+  if (isNaN(day)) return null;
 
-  return {
-    date,
-    time,
-    asset,
-    assetClass: asset ? detectAssetClass(asset) : 'Futures',
-    bias,
-    session,
-    result,
-    model,
-    notes,
-  };
+  const year = new Date().getFullYear();
+  const date = `${year}-${String(mi + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const month = MONTHS[mi];
+
+  const session: 'LDN' | 'NY' =
+    sessionRaw === 'LDN' || sessionRaw === 'NY' ? sessionRaw : 'NY';
+
+  return { date, month, time, asset, assetClass, session, result, model };
 }
 
 interface TradeForm {
@@ -238,7 +140,6 @@ export default function TradingJournal() {
   // Paste state
   const [pasteText, setPasteText] = useState('');
   const [pasteAccountIds, setPasteAccountIds] = useState<string[]>([]);
-  const [dateFormat, setDateFormat] = useState<'dmy' | 'mdy'>('dmy');
   const [pasteError, setPasteError] = useState('');
 
   // Delete confirm
@@ -313,14 +214,14 @@ export default function TradingJournal() {
     });
   }, [filteredTrades]);
 
-  // Parse pasted rows — auto-detect column types
+  // Parse pasted rows — fixed column order from Google Sheets
   const parsedPasteRows = useMemo((): ParsedRow[] => {
     if (!pasteText.trim()) return [];
     const lines = pasteText.trim().split('\n').filter((l) => l.trim());
     return lines
-      .map((line) => parseLine(line.split('\t'), dateFormat))
+      .map((line) => parseSheetRow(line.split('\t')))
       .filter((r): r is ParsedRow => r !== null);
-  }, [pasteText, dateFormat]);
+  }, [pasteText]);
 
   const setField = <K extends keyof TradeForm>(field: K, value: TradeForm[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -394,7 +295,7 @@ export default function TradingJournal() {
   const handlePasteImport = async () => {
     if (!userId || saving || pasteAccountIds.length === 0) return;
     if (parsedPasteRows.length === 0) {
-      setPasteError('No valid rows found. Check your paste format.');
+      setPasteError('No valid rows found — expected columns: Asset Class | Asset | Month | Day | Model | Time | Session | R');
       return;
     }
 
@@ -402,30 +303,29 @@ export default function TradingJournal() {
     setPasteError('');
 
     try {
+      // Compute running R from existing trades
       let runningR = trades.reduce((sum, t) => sum + t.result, 0);
       const created: Trade[] = [];
 
       for (const row of parsedPasteRows) {
         runningR += row.result;
-        const dateObj = new Date(row.date + 'T00:00:00');
-        const month = MONTHS[dateObj.getMonth()] || 'Jan';
 
         const trade = await createTrade({
           userId,
           accountIds: pasteAccountIds,
           date: row.date,
-          month,
+          month: row.month,
           asset: row.asset,
           assetClass: row.assetClass,
           model: row.model,
           time: row.time,
           session: row.session,
           result: row.result,
-          bias: row.bias,
+          bias: null,
           rCounter: Math.round(runningR * 100) / 100,
           tradingviewUrl: null,
           biasUrl: null,
-          notes: row.notes,
+          notes: null,
         });
         created.push(trade);
       }
@@ -615,44 +515,67 @@ export default function TradingJournal() {
                     className={styles.pasteTextarea}
                     value={pasteText}
                     onChange={(e) => { setPasteText(e.target.value); setPasteError(''); }}
-                    placeholder={`Paste here:\nMar 13\t5m Hybrid\t14:30\tNY\t2.7\n2024-01-15\t09:30\tEURUSD\tlong\tLDN\t3R\tBOS\n\nColumns are auto-detected from content.\nPositive R = WIN, Negative R = LOSS`}
+                    placeholder={`FX\tEUR/USD\tJan\t7\t5m Hybrid\t14:30\tNY\t-0.37\nFX\tAUD/USD\tJan\t14\t5m Hybrid\t12:21\tLDN\t-1\nFUTURES\tNQ\tJan\t15\tLRV\t11:30\tNY\t3`}
                   />
 
-                  <div className={styles.dateFormatRow}>
-                    <span className={styles.dateFormatLabel}>Date Format</span>
-                    <button
-                      type="button"
-                      className={`${styles.dateFormatBtn} ${dateFormat === 'dmy' ? styles.dateFormatBtnActive : ''}`}
-                      onClick={() => setDateFormat('dmy')}
-                    >
-                      DD/MM/YYYY
-                    </button>
-                    <button
-                      type="button"
-                      className={`${styles.dateFormatBtn} ${dateFormat === 'mdy' ? styles.dateFormatBtnActive : ''}`}
-                      onClick={() => setDateFormat('mdy')}
-                    >
-                      MM/DD/YYYY
-                    </button>
-                  </div>
-
                   {parsedPasteRows.length > 0 && (
-                    <div className={styles.pastePreview}>
-                      <span className={styles.pastePreviewCount}>{parsedPasteRows.length}</span> trade{parsedPasteRows.length !== 1 ? 's' : ''} detected
+                    <>
+                      <div className={styles.pastePreview}>
+                        <span className={styles.pastePreviewCount}>{parsedPasteRows.length}</span> trade{parsedPasteRows.length !== 1 ? 's' : ''} detected
+                      </div>
+                      {/* Preview table — first 5 rows */}
+                      <div className={styles.previewTableWrap}>
+                        <table className={styles.previewTable}>
+                          <thead>
+                            <tr>
+                              <th>Asset</th>
+                              <th>Date</th>
+                              <th>Model</th>
+                              <th>Session</th>
+                              <th>Result</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {parsedPasteRows.slice(0, 5).map((r, i) => (
+                              <tr key={i}>
+                                <td>{r.asset}</td>
+                                <td>{r.date}</td>
+                                <td>{r.model}</td>
+                                <td>{r.session}</td>
+                                <td className={r.result >= 0 ? styles.rPositive : styles.rNegative}>
+                                  {r.result >= 0 ? '+' : ''}{r.result}R
+                                </td>
+                              </tr>
+                            ))}
+                            {parsedPasteRows.length > 5 && (
+                              <tr>
+                                <td colSpan={5} style={{ color: '#525252', textAlign: 'center' }}>
+                                  +{parsedPasteRows.length - 5} more
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                  {pasteText.trim() && parsedPasteRows.length === 0 && (
+                    <div className={styles.pasteError}>
+                      No valid rows found. Expected 8 tab-separated columns starting with FX or FUTURES.
                     </div>
                   )}
                   {pasteError && <div className={styles.pasteError}>{pasteError}</div>}
                 </div>
 
                 <div className={styles.rGuide}>
-                  <div className={styles.rGuideTitle}>R Value Guide</div>
-                  <div className={styles.rGuideText}>
-                    <span className={styles.rGuideGreen}>3R or +3R = WIN 3 risk:reward</span>
-                    {'    '}
-                    <span className={styles.rGuideRed}>-1R = LOSS (SL hit = -1R)</span>
-                  </div>
+                  <div className={styles.rGuideTitle}>Expected Columns</div>
                   <div className={styles.rGuideCols}>
-                    {'Columns auto-detected from content: Date (any format) \u00b7 Time \u00b7 Session (LDN/NY) \u00b7 R value \u00b7 Symbol \u00b7 Direction \u00b7 Model \u00b7 Notes'}
+                    {'Asset Class (FX/FUTURES) \u00b7 Asset \u00b7 Month \u00b7 Day \u00b7 Model \u00b7 Time \u00b7 Session \u00b7 R Value'}
+                  </div>
+                  <div className={styles.rGuideText} style={{ marginTop: '0.375rem' }}>
+                    <span className={styles.rGuideGreen}>+3 or 1.5 = WIN</span>
+                    {'    '}
+                    <span className={styles.rGuideRed}>-1 or -0.37 = LOSS</span>
                   </div>
                 </div>
 

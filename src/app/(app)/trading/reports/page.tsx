@@ -106,11 +106,10 @@ export default function TradingReports() {
 
   // Monthly breakdown by asset class: Month | FX R | Futures R
   const monthlyByAssetClass = useMemo(() => {
-    const fxAssets = new Set(['EURUSD', 'AUDUSD', 'GBPUSD', 'USDJPY', 'NZDUSD', 'USDCAD', 'USDCHF', 'EURJPY', 'GBPJPY', 'EURGBP']);
     const map = new Map<string, { fx: number; futures: number }>();
     for (const t of allTrades) {
       const row = map.get(t.month) || { fx: 0, futures: 0 };
-      if (fxAssets.has(t.asset.toUpperCase())) {
+      if (t.assetClass === 'Forex') {
         row.fx += t.result;
       } else {
         row.futures += t.result;

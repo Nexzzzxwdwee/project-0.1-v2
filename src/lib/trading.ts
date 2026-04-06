@@ -38,15 +38,16 @@ function toTrade(row: any): Trade {
   return {
     id: row.id,
     userId: row.user_id,
-    accountId: row.account_id,
+    accountIds: row.account_ids || [],
     date: row.date,
     month: row.month,
     asset: row.asset,
+    assetClass: row.asset_class || 'Futures',
     model: row.model,
     time: row.time,
     session: row.session,
     result: Number(row.result),
-    bias: row.bias != null ? Number(row.bias) : null,
+    bias: row.bias || null,
     rCounter: row.r_counter != null ? Number(row.r_counter) : null,
     tradingviewUrl: row.tradingview_url,
     biasUrl: row.bias_url,
@@ -125,7 +126,7 @@ export async function getTrades(
     .select('*')
     .eq('user_id', userId);
 
-  if (filters?.accountId) query = query.eq('account_id', filters.accountId);
+  if (filters?.accountId) query = query.contains('account_ids', [filters.accountId]);
   if (filters?.session) query = query.eq('session', filters.session);
   if (filters?.asset) query = query.eq('asset', filters.asset);
   if (filters?.model) query = query.eq('model', filters.model);
@@ -146,10 +147,11 @@ export async function createTrade(
     .from('trades')
     .insert({
       user_id: trade.userId,
-      account_id: trade.accountId,
+      account_ids: trade.accountIds,
       date: trade.date,
       month: trade.month,
       asset: trade.asset,
+      asset_class: trade.assetClass,
       model: trade.model,
       time: trade.time,
       session: trade.session,
@@ -172,10 +174,11 @@ export async function updateTrade(
   updates: Partial<Omit<Trade, 'id' | 'userId' | 'createdAt'>>
 ): Promise<Trade> {
   const row: Record<string, unknown> = {};
-  if (updates.accountId !== undefined) row.account_id = updates.accountId;
+  if (updates.accountIds !== undefined) row.account_ids = updates.accountIds;
   if (updates.date !== undefined) row.date = updates.date;
   if (updates.month !== undefined) row.month = updates.month;
   if (updates.asset !== undefined) row.asset = updates.asset;
+  if (updates.assetClass !== undefined) row.asset_class = updates.assetClass;
   if (updates.model !== undefined) row.model = updates.model;
   if (updates.time !== undefined) row.time = updates.time;
   if (updates.session !== undefined) row.session = updates.session;
@@ -214,12 +217,12 @@ export async function getEquityCurve(
 ): Promise<REquityCurvePoint[]> {
   let query = supabase()
     .from('trades')
-    .select('date, result')
+    .select('date, result, account_ids')
     .eq('user_id', userId)
     .order('date', { ascending: true })
     .order('created_at', { ascending: true });
 
-  if (accountId) query = query.eq('account_id', accountId);
+  if (accountId) query = query.contains('account_ids', [accountId]);
 
   const { data, error } = await query;
   if (error) throw error;

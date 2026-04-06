@@ -93,7 +93,7 @@ export default function TradingDashboard() {
     let trades = allTrades;
 
     if (accountFilter) {
-      trades = trades.filter((t) => t.accountId === accountFilter);
+      trades = trades.filter((t) => t.accountIds.includes(accountFilter));
     }
 
     const range = getDateRange(timeFilter);
@@ -132,10 +132,9 @@ export default function TradingDashboard() {
     // Accounts at risk: group trades by account, check running R
     const accountRTotals = new Map<string, number>();
     for (const t of allTrades) {
-      accountRTotals.set(
-        t.accountId,
-        (accountRTotals.get(t.accountId) || 0) + t.result
-      );
+      for (const aid of t.accountIds) {
+        accountRTotals.set(aid, (accountRTotals.get(aid) || 0) + t.result);
+      }
     }
     const atRisk = activeAccounts.filter((a) => {
       const r = accountRTotals.get(a.id) || 0;
@@ -155,7 +154,9 @@ export default function TradingDashboard() {
   const accountRTotals = useMemo(() => {
     const map = new Map<string, number>();
     for (const t of allTrades) {
-      map.set(t.accountId, (map.get(t.accountId) || 0) + t.result);
+      for (const aid of t.accountIds) {
+        map.set(aid, (map.get(aid) || 0) + t.result);
+      }
     }
     return map;
   }, [allTrades]);

@@ -50,15 +50,16 @@ export interface TradingAccount {
 export interface Trade {
   id: string;
   userId: string;
-  accountId: string;
+  accountIds: string[];
   date: string; // YYYY-MM-DD
   month: string; // e.g. "Jan", "Feb"
   asset: string;
+  assetClass: 'Forex' | 'Futures';
   model: string;
   time: string | null;
   session: 'LDN' | 'NY';
   result: number; // R value
-  bias: number | null;
+  bias: 'Bullish' | 'Bearish' | null;
   rCounter: number | null; // running R total
   tradingviewUrl: string | null;
   biasUrl: string | null;

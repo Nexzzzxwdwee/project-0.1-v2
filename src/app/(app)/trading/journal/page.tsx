@@ -8,7 +8,7 @@ import {
   createTrade,
   deleteTrade,
 } from '@/lib/trading';
-import type { TradingAccount, Trade, TradeFilters } from '@/lib/types';
+import type { TradingAccount, Trade } from '@/lib/types';
 import styles from './journal.module.css';
 
 const MONTHS = [
@@ -17,23 +17,25 @@ const MONTHS = [
 ];
 
 interface TradeForm {
-  accountId: string;
+  accountIds: string[];
   date: string;
   asset: string;
+  assetClass: 'Forex' | 'Futures';
   model: string;
   time: string;
   session: 'LDN' | 'NY';
   result: string;
-  bias: string;
+  bias: '' | 'Bullish' | 'Bearish';
   tradingviewUrl: string;
   biasUrl: string;
   notes: string;
 }
 
-const emptyForm = (defaultAccountId: string): TradeForm => ({
-  accountId: defaultAccountId,
+const emptyForm: TradeForm = {
+  accountIds: [],
   date: new Date().toISOString().split('T')[0],
   asset: '',
+  assetClass: 'Futures',
   model: '',
   time: '',
   session: 'LDN',
@@ -42,7 +44,7 @@ const emptyForm = (defaultAccountId: string): TradeForm => ({
   tradingviewUrl: '',
   biasUrl: '',
   notes: '',
-});
+};
 
 export default function TradingJournal() {
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
@@ -59,7 +61,7 @@ export default function TradingJournal() {
 
   // Add modal
   const [showAddModal, setShowAddModal] = useState(false);
-  const [form, setForm] = useState<TradeForm>(emptyForm(''));
+  const [form, setForm] = useState<TradeForm>(emptyForm);
   const [saving, setSaving] = useState(false);
 
   // Delete confirm
@@ -105,8 +107,7 @@ export default function TradingJournal() {
     [trades]
   );
   const uniqueMonths = useMemo(
-    () =>
-      MONTHS.filter((m) => trades.some((t) => t.month === m)),
+    () => MONTHS.filter((m) => trades.some((t) => t.month === m)),
     [trades]
   );
 
@@ -117,7 +118,7 @@ export default function TradingJournal() {
     if (filterAsset) result = result.filter((t) => t.asset === filterAsset);
     if (filterModel) result = result.filter((t) => t.model === filterModel);
     if (filterMonth) result = result.filter((t) => t.month === filterMonth);
-    if (filterAccount) result = result.filter((t) => t.accountId === filterAccount);
+    if (filterAccount) result = result.filter((t) => t.accountIds.includes(filterAccount));
     return result;
   }, [trades, filterSession, filterAsset, filterModel, filterMonth, filterAccount]);
 
@@ -130,41 +131,52 @@ export default function TradingJournal() {
     });
   }, [filteredTrades]);
 
-  const setField = (field: keyof TradeForm, value: string) => {
+  const setField = <K extends keyof TradeForm>(field: K, value: TradeForm[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const toggleAccount = (id: string) => {
+    setForm((prev) => {
+      const has = prev.accountIds.includes(id);
+      return {
+        ...prev,
+        accountIds: has
+          ? prev.accountIds.filter((a) => a !== id)
+          : [...prev.accountIds, id],
+      };
+    });
+  };
+
   const openAdd = () => {
-    const defaultAcct = accounts.length > 0 ? accounts[0].id : '';
-    setForm(emptyForm(defaultAcct));
+    setForm(emptyForm);
     setShowAddModal(true);
   };
 
   const handleSave = async () => {
-    if (!userId || saving || !form.accountId) return;
+    if (!userId || saving || form.accountIds.length === 0) return;
     setSaving(true);
 
     try {
       const dateObj = new Date(form.date + 'T00:00:00');
       const month = MONTHS[dateObj.getMonth()];
-
-      // Compute r_counter: sum of all trades for this account + new result
-      const accountTrades = trades.filter((t) => t.accountId === form.accountId);
-      const currentR = accountTrades.reduce((sum, t) => sum + t.result, 0);
       const newResult = Number(form.result) || 0;
+
+      // Compute r_counter based on all trades total
+      const currentR = trades.reduce((sum, t) => sum + t.result, 0);
       const rCounter = Math.round((currentR + newResult) * 100) / 100;
 
       const created = await createTrade({
         userId,
-        accountId: form.accountId,
+        accountIds: form.accountIds,
         date: form.date,
         month,
         asset: form.asset,
+        assetClass: form.assetClass,
         model: form.model,
         time: form.time || null,
         session: form.session,
         result: newResult,
-        bias: form.bias ? Number(form.bias) : null,
+        bias: form.bias || null,
         rCounter,
         tradingviewUrl: form.tradingviewUrl || null,
         biasUrl: form.biasUrl || null,
@@ -188,9 +200,14 @@ export default function TradingJournal() {
   const rClass = (r: number) =>
     r > 0 ? styles.rPositive : r < 0 ? styles.rNegative : styles.rZero;
 
-  const accountName = (id: string) => {
-    const a = accounts.find((acc) => acc.id === id);
-    return a ? `${a.firm} ${a.size}` : '—';
+  const accountNames = (ids: string[]) => {
+    if (ids.length === 0) return '—';
+    return ids
+      .map((id) => {
+        const a = accounts.find((acc) => acc.id === id);
+        return a ? `${a.firm} ${a.size}` : '?';
+      })
+      .join(', ');
   };
 
   if (loading) {
@@ -283,8 +300,9 @@ export default function TradingJournal() {
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Account</th>
+                <th>Accounts</th>
                 <th>Asset</th>
+                <th>Class</th>
                 <th>Model</th>
                 <th>Time</th>
                 <th>Session</th>
@@ -292,7 +310,7 @@ export default function TradingJournal() {
                 <th>Bias</th>
                 <th>R Counter</th>
                 <th>TV</th>
-                <th>Bias</th>
+                <th>Bias Chart</th>
                 <th>Notes</th>
                 <th></th>
               </tr>
@@ -301,8 +319,13 @@ export default function TradingJournal() {
               {tradesWithCounter.map((t) => (
                 <tr key={t.id}>
                   <td>{t.date}</td>
-                  <td>{accountName(t.accountId)}</td>
+                  <td>{accountNames(t.accountIds)}</td>
                   <td>{t.asset}</td>
+                  <td>
+                    <span className={`${styles.assetClassBadge} ${t.assetClass === 'Forex' ? styles.assetClassForex : styles.assetClassFutures}`}>
+                      {t.assetClass}
+                    </span>
+                  </td>
                   <td>{t.model}</td>
                   <td>{t.time || '—'}</td>
                   <td>
@@ -315,8 +338,8 @@ export default function TradingJournal() {
                   <td className={rClass(t.result)}>
                     {t.result >= 0 ? '+' : ''}{t.result}R
                   </td>
-                  <td className={rClass(t.bias || 0)}>
-                    {t.bias != null ? (t.bias >= 0 ? '+' : '') + t.bias : '—'}
+                  <td className={t.bias === 'Bullish' ? styles.biasBullish : t.bias === 'Bearish' ? styles.biasBearish : ''}>
+                    {t.bias || '—'}
                   </td>
                   <td className={rClass(t.runningR)}>
                     {t.runningR >= 0 ? '+' : ''}{t.runningR}R
@@ -376,21 +399,27 @@ export default function TradingJournal() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalTitle}>Log Trade</div>
 
-            <div className={styles.formRow}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Account</label>
-                <select
-                  className={styles.formSelect}
-                  value={form.accountId}
-                  onChange={(e) => setField('accountId', e.target.value)}
-                >
-                  {accounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.firm} {a.size}
-                    </option>
-                  ))}
-                </select>
+            {/* Accounts — multi-select checkboxes */}
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Accounts</label>
+              <div className={styles.checkboxGroup}>
+                {accounts.map((a) => (
+                  <label
+                    key={a.id}
+                    className={`${styles.checkboxLabel} ${form.accountIds.includes(a.id) ? styles.checkboxLabelChecked : ''}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={form.accountIds.includes(a.id)}
+                      onChange={() => toggleAccount(a.id)}
+                    />
+                    {a.firm} {a.size}
+                  </label>
+                ))}
               </div>
+            </div>
+
+            <div className={styles.formRow}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Date</label>
                 <input
@@ -399,6 +428,17 @@ export default function TradingJournal() {
                   value={form.date}
                   onChange={(e) => setField('date', e.target.value)}
                 />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Asset Class</label>
+                <select
+                  className={styles.formSelect}
+                  value={form.assetClass}
+                  onChange={(e) => setField('assetClass', e.target.value as 'Forex' | 'Futures')}
+                >
+                  <option value="Futures">Futures</option>
+                  <option value="Forex">Forex</option>
+                </select>
               </div>
             </div>
 
@@ -426,7 +466,7 @@ export default function TradingJournal() {
                 <select
                   className={styles.formSelect}
                   value={form.session}
-                  onChange={(e) => setField('session', e.target.value)}
+                  onChange={(e) => setField('session', e.target.value as 'LDN' | 'NY')}
                 >
                   <option value="LDN">LDN</option>
                   <option value="NY">NY</option>
@@ -448,14 +488,15 @@ export default function TradingJournal() {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Bias</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  className={styles.formInput}
+                <select
+                  className={styles.formSelect}
                   value={form.bias}
-                  onChange={(e) => setField('bias', e.target.value)}
-                  placeholder="e.g. 1 or -1"
-                />
+                  onChange={(e) => setField('bias', e.target.value as '' | 'Bullish' | 'Bearish')}
+                >
+                  <option value="">—</option>
+                  <option value="Bullish">Bullish</option>
+                  <option value="Bearish">Bearish</option>
+                </select>
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Time</label>
@@ -511,7 +552,7 @@ export default function TradingJournal() {
                 type="button"
                 className={styles.saveBtn}
                 onClick={handleSave}
-                disabled={saving || !form.accountId || !form.asset || !form.result}
+                disabled={saving || form.accountIds.length === 0 || !form.asset || !form.result}
               >
                 {saving ? 'Saving...' : 'Log Trade'}
               </button>

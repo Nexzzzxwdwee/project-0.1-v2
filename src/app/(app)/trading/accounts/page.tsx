@@ -93,7 +93,9 @@ export default function TradingAccounts() {
   const accountRTotals = useMemo(() => {
     const map = new Map<string, number>();
     for (const t of allTrades) {
-      map.set(t.accountId, (map.get(t.accountId) || 0) + t.result);
+      for (const aid of t.accountIds) {
+        map.set(aid, (map.get(aid) || 0) + t.result);
+      }
     }
     return map;
   }, [allTrades]);

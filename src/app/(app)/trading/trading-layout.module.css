@@ -1,0 +1,70 @@
+/* ═══════════════════════════════════════════════
+   Trading Hub — Sub-navigation Layout
+   ═══════════════════════════════════════════════ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  min-height: 0;
+}
+
+/* ─── Sub Nav ─── */
+.subNav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: rgba(28, 25, 23, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  width: fit-content;
+}
+
+.subNavItem {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--font-space), sans-serif;
+  color: #78716c;
+  text-decoration: none;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.subNavItem:hover {
+  color: #e7e5e4;
+  background: rgba(28, 25, 23, 0.6);
+}
+
+.subNavItemActive {
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.06);
+  border-color: rgba(34, 197, 94, 0.12);
+}
+
+/* ─── Content area ─── */
+.content {
+  min-height: 0;
+}
+
+/* ─── Mobile: scrollable sub-nav ─── */
+@media (max-width: 767px) {
+  .subNav {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .subNav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .subNavItem {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+}

@@ -54,5 +54,6 @@ export const config = {
     '/habits/:path*',
     '/settings/:path*',
     '/day/:path*',
+    '/trading/:path*',
   ],
 };

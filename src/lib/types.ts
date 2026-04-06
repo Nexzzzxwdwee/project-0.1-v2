@@ -31,3 +31,53 @@ export interface Transaction {
   note?: string;
   createdAt: number;
 }
+
+// ── Trading Hub ──────────────────────────────────────────────
+
+export interface TradingAccount {
+  id: string;
+  userId: string;
+  firm: string;
+  size: string;
+  stage: string;
+  model: string;
+  asset: string;
+  status: 'active' | 'passed' | 'blown' | 'limbo';
+  maxAllocation: number | null;
+  createdAt: string;
+}
+
+export interface Trade {
+  id: string;
+  userId: string;
+  accountId: string;
+  date: string; // YYYY-MM-DD
+  month: string; // e.g. "Jan", "Feb"
+  asset: string;
+  model: string;
+  time: string | null;
+  session: 'LDN' | 'NY';
+  result: number; // R value
+  bias: number | null;
+  rCounter: number | null; // running R total
+  tradingviewUrl: string | null;
+  biasUrl: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface TradeFilters {
+  dateFrom?: string;
+  dateTo?: string;
+  session?: 'LDN' | 'NY';
+  asset?: string;
+  model?: string;
+  accountId?: string;
+  month?: string;
+}
+
+export interface REquityCurvePoint {
+  date: string;
+  cumulativeR: number;
+  tradeNumber: number;
+}

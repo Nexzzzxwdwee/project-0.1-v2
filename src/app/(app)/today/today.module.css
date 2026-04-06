@@ -84,6 +84,37 @@
   color: #a8a29e;
 }
 
+/* Trading button */
+.tradingBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+  transition: all 0.2s;
+}
+
+.tradingBtn:hover {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.3);
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.15);
+}
+
+.tradingBtnIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
 .icon {
   width: 1em;
   height: 1em;

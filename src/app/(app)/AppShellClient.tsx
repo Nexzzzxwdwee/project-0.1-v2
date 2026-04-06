@@ -18,6 +18,7 @@ const navItems = [
   { href: '/earnings', label: 'Earnings', icon: 'coins' },
   { href: '/rank', label: 'Rank', icon: 'medal' },
   { href: '/habits', label: 'Habits', icon: 'heart' },
+  { href: '/trading', label: 'Trading', icon: 'chart-line' },
 ];
 
 function getIconSVG(iconName: string) {
@@ -170,7 +171,7 @@ export default function AppShellClient({
   const renderNavItems = () => (
     <>
       {navItems.map((item) => {
-        const isActive = pathname === item.href;
+        const isActive = pathname === item.href || (item.href === '/trading' && pathname.startsWith('/trading/'));
         return (
           <Link
             key={item.href}

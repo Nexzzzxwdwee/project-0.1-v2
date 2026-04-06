@@ -24,6 +24,11 @@ const FX_ASSETS = new Set([
   'GBPCHF','GBPNZD','NZDCAD','NZDCHF','NZDJPY',
 ]);
 
+const MONTH_MAP: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+};
+
 function detectAssetClass(symbol: string): 'Forex' | 'Futures' {
   return FX_ASSETS.has(symbol.toUpperCase()) ? 'Forex' : 'Futures';
 }
@@ -35,20 +40,147 @@ function parseBias(direction: string): 'Bullish' | 'Bearish' | null {
   return null;
 }
 
+function isR(s: string): boolean {
+  const t = s.trim().replace(/[rR]$/, '').replace(/^\+/, '');
+  return t !== '' && !isNaN(Number(t));
+}
+
 function parseR(raw: string): number {
   const s = raw.trim().replace(/[rR]$/,'').replace(/^\+/,'');
   const n = Number(s);
   return isNaN(n) ? 0 : n;
 }
 
-function parseDateStr(raw: string, format: 'dmy' | 'mdy'): string {
-  const parts = raw.trim().split(/[\/\-\.]/);
-  if (parts.length < 3) return raw.trim();
-  const [a, b, c] = parts;
-  if (format === 'dmy') {
-    return `${c.padStart(4,'20')}-${b.padStart(2,'0')}-${a.padStart(2,'0')}`;
+function isTime(s: string): boolean {
+  return /^\d{1,2}:\d{2}$/.test(s.trim());
+}
+
+function isSession(s: string): boolean {
+  const u = s.trim().toUpperCase();
+  return u === 'LDN' || u === 'NY';
+}
+
+function isDirection(s: string): boolean {
+  const d = s.toLowerCase().trim();
+  return ['long', 'short', 'bullish', 'bearish', 'bull', 'bear'].includes(d);
+}
+
+function isSymbol(s: string): boolean {
+  const u = s.trim().toUpperCase();
+  return FX_ASSETS.has(u) || ['NQ', 'ES', 'CL', 'GC', 'YM', 'RTY', 'MNQ', 'MES', 'MCL'].includes(u);
+}
+
+/** Try to parse a date from a string. Handles:
+ *  - "Mar 13", "Feb 11" (month name + day → uses current year)
+ *  - "2024-01-15", "15/01/2024", "01/15/2024" (full dates)
+ *  - "15-01-2024", "01-15-2024"
+ */
+function tryParseDate(raw: string, format: 'dmy' | 'mdy'): string | null {
+  const s = raw.trim();
+
+  // "Mar 13", "Feb 11" — month name + day
+  const monthNameMatch = s.match(/^([A-Za-z]{3,})\s+(\d{1,2})$/);
+  if (monthNameMatch) {
+    const mi = MONTH_MAP[monthNameMatch[1].toLowerCase().slice(0, 3)];
+    if (mi !== undefined) {
+      const day = parseInt(monthNameMatch[2], 10);
+      const year = new Date().getFullYear();
+      return `${year}-${String(mi + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
   }
-  return `${c.padStart(4,'20')}-${a.padStart(2,'0')}-${b.padStart(2,'0')}`;
+
+  // ISO "2024-01-15"
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) return s;
+
+  // Slash or dot separated
+  const parts = s.split(/[\/\-\.]/);
+  if (parts.length === 3) {
+    const [a, b, c] = parts;
+    if (format === 'dmy') {
+      return `${c.padStart(4, '20')}-${b.padStart(2, '0')}-${a.padStart(2, '0')}`;
+    }
+    return `${c.padStart(4, '20')}-${a.padStart(2, '0')}-${b.padStart(2, '0')}`;
+  }
+
+  return null;
+}
+
+/** Check if a value looks like a date */
+function isDateLike(s: string): boolean {
+  const t = s.trim();
+  // "Mar 13"
+  if (/^[A-Za-z]{3,}\s+\d{1,2}$/.test(t)) return true;
+  // "2024-01-15" or "15/01/2024" etc
+  if (/^\d{1,4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,4}$/.test(t)) return true;
+  return false;
+}
+
+interface ParsedRow {
+  date: string;
+  time: string | null;
+  asset: string;
+  assetClass: 'Forex' | 'Futures';
+  bias: 'Bullish' | 'Bearish' | null;
+  session: 'LDN' | 'NY';
+  result: number;
+  model: string;
+  notes: string | null;
+}
+
+/**
+ * Auto-detect column types from cell content.
+ * Each cell is classified as: date, time, session, r, direction, symbol, or text (model/notes).
+ */
+function parseLine(cols: string[], dateFormat: 'dmy' | 'mdy'): ParsedRow | null {
+  let date: string | null = null;
+  let time: string | null = null;
+  let session: 'LDN' | 'NY' = 'LDN';
+  let result: number | null = null;
+  let bias: 'Bullish' | 'Bearish' | null = null;
+  let asset = '';
+  const textParts: string[] = [];
+
+  for (const raw of cols) {
+    const cell = raw.trim();
+    if (!cell) continue;
+
+    if (!date && isDateLike(cell)) {
+      date = tryParseDate(cell, dateFormat);
+    } else if (!time && isTime(cell)) {
+      time = cell;
+    } else if (isSession(cell)) {
+      session = cell.toUpperCase() as 'LDN' | 'NY';
+    } else if (result === null && isR(cell)) {
+      result = parseR(cell);
+    } else if (!bias && isDirection(cell)) {
+      bias = parseBias(cell);
+    } else if (!asset && isSymbol(cell)) {
+      asset = cell.toUpperCase();
+    } else {
+      textParts.push(cell);
+    }
+  }
+
+  if (result === null) return null; // must have at least an R value
+  if (!date) {
+    date = new Date().toISOString().split('T')[0];
+  }
+
+  // First text part = model, rest = notes
+  const model = textParts[0] || '';
+  const notes = textParts.slice(1).join(' ') || null;
+
+  return {
+    date,
+    time,
+    asset,
+    assetClass: asset ? detectAssetClass(asset) : 'Futures',
+    bias,
+    session,
+    result,
+    model,
+    notes,
+  };
 }
 
 interface TradeForm {
@@ -181,33 +313,13 @@ export default function TradingJournal() {
     });
   }, [filteredTrades]);
 
-  // Parse pasted rows
-  const parsedPasteRows = useMemo(() => {
+  // Parse pasted rows — auto-detect column types
+  const parsedPasteRows = useMemo((): ParsedRow[] => {
     if (!pasteText.trim()) return [];
     const lines = pasteText.trim().split('\n').filter((l) => l.trim());
-    return lines.map((line) => {
-      const cols = line.split('\t');
-      if (cols.length < 6) return null;
-      const [rawDate, time, symbol, direction, session, rVal, model, ...rest] = cols;
-      const date = parseDateStr(rawDate, dateFormat);
-      const asset = (symbol || '').trim().toUpperCase();
-      const sessionVal = (session || '').trim().toUpperCase();
-      return {
-        date,
-        time: (time || '').trim() || null,
-        asset,
-        assetClass: detectAssetClass(asset),
-        bias: parseBias(direction || ''),
-        session: (sessionVal === 'LDN' || sessionVal === 'NY' ? sessionVal : 'LDN') as 'LDN' | 'NY',
-        result: parseR(rVal || '0'),
-        model: (model || '').trim(),
-        notes: rest.join(' ').trim() || null,
-      };
-    }).filter(Boolean) as Array<{
-      date: string; time: string | null; asset: string; assetClass: 'Forex' | 'Futures';
-      bias: 'Bullish' | 'Bearish' | null; session: 'LDN' | 'NY';
-      result: number; model: string; notes: string | null;
-    }>;
+    return lines
+      .map((line) => parseLine(line.split('\t'), dateFormat))
+      .filter((r): r is ParsedRow => r !== null);
   }, [pasteText, dateFormat]);
 
   const setField = <K extends keyof TradeForm>(field: K, value: TradeForm[K]) => {
@@ -503,7 +615,7 @@ export default function TradingJournal() {
                     className={styles.pasteTextarea}
                     value={pasteText}
                     onChange={(e) => { setPasteText(e.target.value); setPasteError(''); }}
-                    placeholder={`Paste here:\n2024-01-15\t09:30\tEURUSD\tlong\tLDN\t3R\tBOS\n2024-01-16\t14:00\tNQ\tshort\tNY\t-1R\tMSS\n\nPositive R (3R, +1.5R) = WIN\nNegative R (-1R, -0.5R) = LOSS (SL hit)`}
+                    placeholder={`Paste here:\nMar 13\t5m Hybrid\t14:30\tNY\t2.7\n2024-01-15\t09:30\tEURUSD\tlong\tLDN\t3R\tBOS\n\nColumns are auto-detected from content.\nPositive R = WIN, Negative R = LOSS`}
                   />
 
                   <div className={styles.dateFormatRow}>
@@ -540,7 +652,7 @@ export default function TradingJournal() {
                     <span className={styles.rGuideRed}>-1R = LOSS (SL hit = -1R)</span>
                   </div>
                   <div className={styles.rGuideCols}>
-                    {'Columns (auto-detected): Date \u00b7 Time \u00b7 Symbol \u00b7 Direction \u00b7 Session \u00b7 R \u00b7 Setup \u00b7 Notes'}
+                    {'Columns auto-detected from content: Date (any format) \u00b7 Time \u00b7 Session (LDN/NY) \u00b7 R value \u00b7 Symbol \u00b7 Direction \u00b7 Model \u00b7 Notes'}
                   </div>
                 </div>
 

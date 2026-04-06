@@ -306,6 +306,135 @@ export async function getModelStats(userId: string): Promise<StatRow[]> {
   return aggregateBy(trades, (t) => t.model);
 }
 
+// ── Streak Stats ─────────────────────────────────────────────
+
+export interface StreakStats {
+  currentWinStreak: number;
+  highestWinStreak: number;
+  currentLossStreak: number;
+  streakIsActive: boolean;
+  streakBrokenDate: string | null;
+}
+
+export async function getStreakStats(userId: string): Promise<StreakStats> {
+  const trades = await getTrades(userId);
+  // trades are ordered by date ascending
+
+  let highestWin = 0;
+  let currentRun = 0;
+  let currentRunType: 'win' | 'loss' | null = null;
+  let currentWin = 0;
+  let currentLoss = 0;
+  let streakBrokenDate: string | null = null;
+
+  for (const t of trades) {
+    const isWin = t.result > 0;
+    if (isWin) {
+      if (currentRunType === 'win') {
+        currentRun++;
+      } else {
+        currentRun = 1;
+        currentRunType = 'win';
+      }
+      if (currentRun > highestWin) highestWin = currentRun;
+    } else {
+      if (currentRunType === 'loss') {
+        currentRun++;
+      } else {
+        if (currentRunType === 'win') {
+          streakBrokenDate = t.date;
+        }
+        currentRun = 1;
+        currentRunType = 'loss';
+      }
+    }
+  }
+
+  if (currentRunType === 'win') {
+    currentWin = currentRun;
+  } else if (currentRunType === 'loss') {
+    currentLoss = currentRun;
+  }
+
+  return {
+    currentWinStreak: currentWin,
+    highestWinStreak: highestWin,
+    currentLossStreak: currentLoss,
+    streakIsActive: currentRunType === 'win',
+    streakBrokenDate,
+  };
+}
+
+// ── Performance Ratios ───────────────────────────────────────
+
+export interface PerformanceRatios {
+  profitFactor: number;
+  expectancyPerTrade: number;
+  avgWin: number;
+  avgLoss: number;
+  bestMonthLabel: string;
+  bestMonthR: number;
+  consistencyScore: number; // % of trading days profitable
+}
+
+export async function getPerformanceRatios(userId: string): Promise<PerformanceRatios> {
+  const trades = await getTrades(userId);
+
+  const wins = trades.filter((t) => t.result > 0);
+  const losses = trades.filter((t) => t.result <= 0);
+
+  const grossWin = wins.reduce((s, t) => s + t.result, 0);
+  const grossLoss = Math.abs(losses.reduce((s, t) => s + t.result, 0));
+
+  const avgWin = wins.length > 0 ? Math.round((grossWin / wins.length) * 100) / 100 : 0;
+  const avgLoss = losses.length > 0 ? Math.round((grossLoss / losses.length) * 100) / 100 : 0;
+
+  const profitFactor = grossLoss > 0 ? Math.round((grossWin / grossLoss) * 100) / 100 : grossWin > 0 ? Infinity : 0;
+
+  const winRate = trades.length > 0 ? wins.length / trades.length : 0;
+  const lossRate = 1 - winRate;
+  const expectancyPerTrade = trades.length > 0
+    ? Math.round((winRate * avgWin - lossRate * avgLoss) * 100) / 100
+    : 0;
+
+  // Best month
+  const months = [
+    'Jan','Feb','Mar','Apr','May','Jun',
+    'Jul','Aug','Sep','Oct','Nov','Dec',
+  ];
+  const monthMap = new Map<string, number>();
+  for (const t of trades) {
+    monthMap.set(t.month, (monthMap.get(t.month) || 0) + t.result);
+  }
+  let bestMonthLabel = '—';
+  let bestMonthR = 0;
+  for (const [m, r] of monthMap) {
+    if (r > bestMonthR) {
+      bestMonthR = Math.round(r * 100) / 100;
+      bestMonthLabel = m;
+    }
+  }
+
+  // Consistency: % of unique trading days that were net positive
+  const dayMap = new Map<string, number>();
+  for (const t of trades) {
+    dayMap.set(t.date, (dayMap.get(t.date) || 0) + t.result);
+  }
+  const tradingDays = dayMap.size;
+  const profitableDays = Array.from(dayMap.values()).filter((r) => r > 0).length;
+  const consistencyScore = tradingDays > 0 ? Math.round((profitableDays / tradingDays) * 100) : 0;
+
+  return {
+    profitFactor,
+    expectancyPerTrade,
+    avgWin,
+    avgLoss,
+    bestMonthLabel,
+    bestMonthR,
+    consistencyScore,
+  };
+}
+
 // ── DCA Plan ─────────────────────────────────────────────────
 
 export async function getDCABudget(userId: string): Promise<DCABudget | null> {

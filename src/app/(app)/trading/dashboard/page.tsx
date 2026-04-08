@@ -116,6 +116,7 @@ export default function TradingDashboard() {
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [accountFilter, setAccountFilter] = useState<string | null>(null);
+  const [modelFilter, setModelFilter] = useState<string | null>(null);
   const [streakStats, setStreakStats] = useState<StreakStats | null>(null);
   const [perfRatios, setPerfRatios] = useState<PerformanceRatios | null>(null);
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
@@ -148,6 +149,7 @@ export default function TradingDashboard() {
   const filteredCurve = useMemo(() => {
     let trades = allTrades;
     if (accountFilter) trades = trades.filter((t) => t.accountIds.includes(accountFilter));
+    if (modelFilter) trades = trades.filter((t) => t.model === modelFilter);
     const range = getDateRange(timeFilter);
     if (range.from) trades = trades.filter((t) => t.date >= range.from!);
     if (range.to) trades = trades.filter((t) => t.date <= range.to!);
@@ -156,7 +158,13 @@ export default function TradingDashboard() {
       cumulative += t.result;
       return { date: t.date, cumulativeR: Math.round(cumulative * 100) / 100, tradeNumber: i + 1 };
     });
-  }, [allTrades, timeFilter, accountFilter]);
+  }, [allTrades, timeFilter, accountFilter, modelFilter]);
+
+  // Unique models from trades for filter
+  const uniqueModels = useMemo(() => {
+    const set = new Set(allTrades.map((t) => t.model).filter(Boolean));
+    return Array.from(set).sort();
+  }, [allTrades]);
 
   // Stats
   const stats = useMemo(() => {
@@ -353,8 +361,8 @@ export default function TradingDashboard() {
           <div className={styles.chartHeader}>
             <span className={styles.chartTitle}>R Equity Curve</span>
             <div className={styles.chartFilters}>
-              <button type="button" className={`${styles.chartFilterBtn} ${accountFilter === null ? styles.chartFilterBtnActive : ''}`} onClick={() => setAccountFilter(null)}>All</button>
-              {accounts.map((a) => <button key={a.id} type="button" className={`${styles.chartFilterBtn} ${accountFilter === a.id ? styles.chartFilterBtnActive : ''}`} onClick={() => setAccountFilter(a.id)}>{a.firm} {a.size}</button>)}
+              <button type="button" className={`${styles.chartFilterBtn} ${modelFilter === null ? styles.chartFilterBtnActive : ''}`} onClick={() => setModelFilter(null)}>All Models</button>
+              {uniqueModels.map((m) => <button key={m} type="button" className={`${styles.chartFilterBtn} ${modelFilter === m ? styles.chartFilterBtnActive : ''}`} onClick={() => setModelFilter(m)}>{m}</button>)}
             </div>
             <div className={styles.chartFilters}>
               {(['all', '3m', '1m', '1w'] as TimeFilter[]).map((f) => <button key={f} type="button" className={`${styles.chartFilterBtn} ${timeFilter === f ? styles.chartFilterBtnActive : ''}`} onClick={() => setTimeFilter(f)}>{f === 'all' ? 'All Time' : f.toUpperCase()}</button>)}

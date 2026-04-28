@@ -830,15 +830,13 @@ export default function TodayPage() {
             {/* IDLE state */}
             {!focusActiveSession && (
               <div className={styles.deepWorkIdleRow}>
-                <select
-                  className={styles.deepWorkLabelSelect}
+                <input
+                  type="text"
+                  className={styles.deepWorkLabelInput}
                   value={focusLabel}
                   onChange={(e) => setFocusLabel(e.target.value)}
-                >
-                  {FOCUS_LABELS.map(l => (
-                    <option key={l} value={l}>{l}</option>
-                  ))}
-                </select>
+                  placeholder="Label (e.g. Trading)"
+                />
                 <button
                   type="button"
                   className={styles.deepWorkStartBtn}

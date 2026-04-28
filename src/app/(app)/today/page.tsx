@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import styles from './today.module.css';
 import InteractiveCheckbox from '@/components/ui/InteractiveCheckbox';
@@ -29,6 +29,14 @@ import { sealDay } from '@/lib/services';
 import { useRankData } from '@/hooks/useRankData';
 import SealDayModal from '@/components/ui/SealDayModal';
 import TimePicker from '@/components/ui/TimePicker';
+import {
+  startSession as focusStartSession,
+  endSession as focusEndSession,
+  getActiveSession,
+  getTodayTotal,
+  deleteSession as focusDeleteSession,
+  getCurrentUserId,
+} from '@/lib/focus';
 
 function formatTime(time: string | undefined): string {
   if (!time) return '';
@@ -71,6 +79,196 @@ export default function TodayPage() {
   const [sealModalOpen, setSealModalOpen] = useState(false);
   const [streak, setStreak] = useState(0);
   const { userProgress, rankInfo, refresh: refreshRank } = useRankData();
+
+  // ── Deep Work state ──────────────────────────────────────────
+  const [focusUserId, setFocusUserId] = useState<string | null>(null);
+  const [focusActiveSession, setFocusActiveSession] = useState<{
+    id: string; startedAt: string; label: string | null;
+  } | null>(null);
+  const [focusTodayTotal, setFocusTodayTotal] = useState(0);
+  const [focusElapsed, setFocusElapsed] = useState(0);
+  const [focusPaused, setFocusPaused] = useState(false);
+  const [focusPausedAt, setFocusPausedAt] = useState<number | null>(null);
+  const [focusTotalPaused, setFocusTotalPaused] = useState(0);
+  const [focusLabel, setFocusLabel] = useState('Trading');
+  const [focusEndModalOpen, setFocusEndModalOpen] = useState(false);
+  const [focusEndNotes, setFocusEndNotes] = useState('');
+  const [focusEndLabel, setFocusEndLabel] = useState('');
+  const [focusEndDuration, setFocusEndDuration] = useState(0);
+  const [focusDiscardConfirm, setFocusDiscardConfirm] = useState(false);
+  const focusTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const FOCUS_LABELS = ['Trading', 'Coding', 'Reading', 'Planning', 'Review', 'Custom'];
+
+  // Load focus settings default label
+  useEffect(() => {
+    try {
+      const s = JSON.parse(localStorage.getItem('focus_settings') || '{}');
+      if (s.defaultLabel) setFocusLabel(s.defaultLabel);
+    } catch { /* ignore */ }
+  }, []);
+
+  const focusDailyTarget = useMemo(() => {
+    if (typeof window === 'undefined') return 4;
+    try {
+      const s = JSON.parse(localStorage.getItem('focus_settings') || '{}');
+      return s.dailyTarget || 4;
+    } catch { return 4; }
+  }, []);
+
+  const loadFocusData = useCallback(async () => {
+    try {
+      const uid = await getCurrentUserId();
+      setFocusUserId(uid);
+      const [active, todayTot] = await Promise.all([
+        getActiveSession(uid),
+        getTodayTotal(uid),
+      ]);
+      setFocusTodayTotal(todayTot);
+      if (active) {
+        setFocusActiveSession({ id: active.id, startedAt: active.startedAt, label: active.label });
+        // Recover: check localStorage for pause state
+        const savedPause = localStorage.getItem('focus_paused');
+        if (savedPause) {
+          try {
+            const p = JSON.parse(savedPause);
+            if (p.sessionId === active.id) {
+              setFocusPaused(true);
+              setFocusPausedAt(p.pausedAt);
+              setFocusTotalPaused(p.totalPaused || 0);
+            }
+          } catch { /* ignore */ }
+        }
+      } else {
+        setFocusActiveSession(null);
+        localStorage.removeItem('focus_active_session_id');
+        localStorage.removeItem('focus_paused');
+      }
+    } catch { /* user not authed yet or supabase not ready */ }
+  }, []);
+
+  useEffect(() => { loadFocusData(); }, [loadFocusData]);
+
+  // Timer tick
+  useEffect(() => {
+    if (!focusActiveSession) {
+      if (focusTimerRef.current) clearInterval(focusTimerRef.current);
+      return;
+    }
+    const tick = () => {
+      if (focusPaused && focusPausedAt) {
+        // frozen — show time at pause point
+        const raw = (focusPausedAt - new Date(focusActiveSession.startedAt).getTime()) / 1000;
+        setFocusElapsed(Math.max(0, raw - focusTotalPaused));
+      } else {
+        const raw = (Date.now() - new Date(focusActiveSession.startedAt).getTime()) / 1000;
+        setFocusElapsed(Math.max(0, raw - focusTotalPaused));
+      }
+    };
+    tick();
+    focusTimerRef.current = setInterval(tick, 1000);
+    return () => { if (focusTimerRef.current) clearInterval(focusTimerRef.current); };
+  }, [focusActiveSession, focusPaused, focusPausedAt, focusTotalPaused]);
+
+  const handleFocusStart = async () => {
+    if (!focusUserId) return;
+    const sessionId = await focusStartSession(focusUserId, focusLabel);
+    const now = new Date().toISOString();
+    setFocusActiveSession({ id: sessionId, startedAt: now, label: focusLabel });
+    setFocusPaused(false);
+    setFocusPausedAt(null);
+    setFocusTotalPaused(0);
+    setFocusElapsed(0);
+    localStorage.setItem('focus_active_session_id', sessionId);
+    localStorage.removeItem('focus_paused');
+  };
+
+  const handleFocusPause = () => {
+    const now = Date.now();
+    setFocusPaused(true);
+    setFocusPausedAt(now);
+    if (focusActiveSession) {
+      localStorage.setItem('focus_paused', JSON.stringify({
+        sessionId: focusActiveSession.id,
+        pausedAt: now,
+        totalPaused: focusTotalPaused,
+      }));
+    }
+  };
+
+  const handleFocusResume = () => {
+    if (focusPausedAt) {
+      const additionalPaused = (Date.now() - focusPausedAt) / 1000;
+      const newTotal = focusTotalPaused + additionalPaused;
+      setFocusTotalPaused(newTotal);
+      if (focusActiveSession) {
+        localStorage.setItem('focus_paused', JSON.stringify({
+          sessionId: focusActiveSession.id,
+          pausedAt: null,
+          totalPaused: newTotal,
+        }));
+      }
+    }
+    setFocusPaused(false);
+    setFocusPausedAt(null);
+  };
+
+  const handleFocusEndClick = () => {
+    // If paused, calculate current elapsed
+    let elapsed = focusElapsed;
+    if (focusPaused && focusPausedAt) {
+      const raw = (focusPausedAt - new Date(focusActiveSession!.startedAt).getTime()) / 1000;
+      elapsed = Math.max(0, raw - focusTotalPaused);
+    }
+    setFocusEndDuration(elapsed);
+    setFocusEndLabel(focusActiveSession?.label || focusLabel);
+    setFocusEndNotes('');
+    setFocusEndModalOpen(true);
+  };
+
+  const handleFocusSave = async () => {
+    if (!focusActiveSession) return;
+    await focusEndSession(focusActiveSession.id, focusEndDuration, focusEndNotes || undefined);
+    setFocusActiveSession(null);
+    setFocusPaused(false);
+    setFocusPausedAt(null);
+    setFocusTotalPaused(0);
+    setFocusEndModalOpen(false);
+    localStorage.removeItem('focus_active_session_id');
+    localStorage.removeItem('focus_paused');
+    // Refresh today total
+    if (focusUserId) {
+      const tot = await getTodayTotal(focusUserId);
+      setFocusTodayTotal(tot);
+    }
+  };
+
+  const handleFocusDiscard = async () => {
+    if (!focusActiveSession || !focusUserId) return;
+    await focusDeleteSession(focusUserId, focusActiveSession.id);
+    setFocusActiveSession(null);
+    setFocusPaused(false);
+    setFocusPausedAt(null);
+    setFocusTotalPaused(0);
+    setFocusDiscardConfirm(false);
+    setFocusEndModalOpen(false);
+    localStorage.removeItem('focus_active_session_id');
+    localStorage.removeItem('focus_paused');
+  };
+
+  function formatFocusTimer(s: number): string {
+    const h = String(Math.floor(s / 3600)).padStart(2, '0');
+    const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+    const sec = String(Math.floor(s % 60)).padStart(2, '0');
+    return `${h}:${m}:${sec}`;
+  }
+
+  function formatFocusShort(s: number): string {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  }
 
   // Load day plan, presets, and user progress on mount
   useEffect(() => {
@@ -604,6 +802,152 @@ export default function TodayPage() {
           </div>
         </div>
       </section>
+
+      {/* Deep Work Widget */}
+      {focusUserId && (
+        <section className={styles.deepWorkSection}>
+          <div className={`${styles.deepWorkCard} ${focusActiveSession ? styles.deepWorkCardActive : ''}`}>
+            <div className={styles.deepWorkHeader}>
+              <span className={styles.deepWorkTitle}>{'// DEEP WORK'}</span>
+              {focusActiveSession ? (
+                focusPaused ? (
+                  <span className={styles.deepWorkPausedBadge}>
+                    <span>&#9208;</span> PAUSED
+                  </span>
+                ) : (
+                  <span className={styles.deepWorkLiveBadge}>
+                    <span className={styles.deepWorkLiveDot} />
+                    LIVE
+                  </span>
+                )
+              ) : (
+                <span className={styles.deepWorkTodayTotal}>
+                  TODAY: <span className={styles.deepWorkTodayValue}>{formatFocusShort(focusTodayTotal)}</span>
+                </span>
+              )}
+            </div>
+
+            {/* IDLE state */}
+            {!focusActiveSession && (
+              <div className={styles.deepWorkIdleRow}>
+                <select
+                  className={styles.deepWorkLabelSelect}
+                  value={focusLabel}
+                  onChange={(e) => setFocusLabel(e.target.value)}
+                >
+                  {FOCUS_LABELS.map(l => (
+                    <option key={l} value={l}>{l}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className={styles.deepWorkStartBtn}
+                  onClick={handleFocusStart}
+                >
+                  &#9654; START SESSION
+                </button>
+              </div>
+            )}
+
+            {/* ACTIVE / PAUSED state */}
+            {focusActiveSession && (
+              <div className={styles.deepWorkActiveBody}>
+                <div className={styles.deepWorkActiveLabel}>{focusActiveSession.label || 'Focus'}</div>
+                <div className={styles.deepWorkTimer}>{formatFocusTimer(focusElapsed)}</div>
+                <div className={styles.deepWorkProgressTrack}>
+                  <div
+                    className={styles.deepWorkProgressFill}
+                    style={{ width: `${Math.min(100, (focusElapsed / (focusDailyTarget * 3600)) * 100)}%` }}
+                  />
+                </div>
+                <div className={styles.deepWorkProgressLabel}>target: {focusDailyTarget}h</div>
+                <div className={styles.deepWorkActions}>
+                  {focusPaused ? (
+                    <>
+                      <button type="button" className={styles.deepWorkResumeBtn} onClick={handleFocusResume}>
+                        &#9654; RESUME
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.deepWorkDiscardBtn}
+                        onClick={() => setFocusDiscardConfirm(true)}
+                      >
+                        DISCARD
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" className={styles.deepWorkPauseBtn} onClick={handleFocusPause}>
+                      &#9208; PAUSE
+                    </button>
+                  )}
+                  <button type="button" className={styles.deepWorkEndBtn} onClick={handleFocusEndClick}>
+                    &#9632; END SESSION
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* End Session Modal */}
+      {focusEndModalOpen && (
+        <div className={styles.deepWorkModalOverlay} onClick={() => setFocusEndModalOpen(false)}>
+          <div className={styles.deepWorkModalCard} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.deepWorkModalTitle}>End Session</h3>
+            <p className={styles.deepWorkModalInfo}>
+              {focusEndLabel} &middot; {new Date(focusActiveSession?.startedAt || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &rarr; {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
+            <div className={styles.deepWorkModalDuration}>{formatFocusTimer(focusEndDuration)}</div>
+            <select
+              className={styles.deepWorkModalLabelSelect}
+              value={focusEndLabel}
+              onChange={(e) => setFocusEndLabel(e.target.value)}
+            >
+              {FOCUS_LABELS.map(l => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+            <textarea
+              className={styles.deepWorkModalNotesInput}
+              placeholder="What did you work on?"
+              value={focusEndNotes}
+              onChange={(e) => setFocusEndNotes(e.target.value)}
+            />
+            <div className={styles.deepWorkModalActions}>
+              <button type="button" className={styles.deepWorkModalDiscardBtn} onClick={() => setFocusDiscardConfirm(true)}>
+                DISCARD
+              </button>
+              <button type="button" className={styles.deepWorkModalSaveBtn} onClick={handleFocusSave}>
+                SAVE SESSION
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Discard Confirm Modal */}
+      {focusDiscardConfirm && (
+        <div className={styles.deepWorkModalOverlay} onClick={() => setFocusDiscardConfirm(false)}>
+          <div className={styles.deepWorkModalCard} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.deepWorkModalTitle}>Discard Session?</h3>
+            <p className={styles.deepWorkModalInfo}>This will permanently delete this focus session.</p>
+            <div className={styles.deepWorkModalActions}>
+              <button
+                type="button"
+                className={styles.deepWorkModalSaveBtn}
+                onClick={() => setFocusDiscardConfirm(false)}
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+              >
+                CANCEL
+              </button>
+              <button type="button" className={styles.deepWorkModalDiscardBtn} onClick={handleFocusDiscard}>
+                DISCARD
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Preset Selector */}
       {Object.keys(presets).length > 0 && (

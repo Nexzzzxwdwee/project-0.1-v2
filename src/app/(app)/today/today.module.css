@@ -556,6 +556,433 @@
   margin-top: 0.5rem;
 }
 
+/* Deep Work Widget */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.deepWorkSection {
+  margin-bottom: 3rem;
+  animation: fadeInUp 0.5s var(--ease-out-expo, cubic-bezier(0.19, 1, 0.22, 1)) 0.20s both;
+}
+
+.deepWorkCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-subtle);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
+}
+
+.deepWorkCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.deepWorkCardActive {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.deepWorkHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.deepWorkTitle {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 600;
+}
+
+.deepWorkTodayTotal {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.deepWorkTodayValue {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.deepWorkLiveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  color: var(--accent);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.deepWorkLiveDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+.deepWorkPausedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  color: var(--warning);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Idle state */
+.deepWorkIdleRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.deepWorkLabelSelect {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-input);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a8a29e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  padding-right: 1.75rem;
+}
+
+.deepWorkLabelSelect:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.deepWorkStartBtn {
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-input);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: var(--bg);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.deepWorkStartBtn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
+}
+
+.deepWorkStartBtn:active {
+  transform: translateY(1px);
+}
+
+/* Active state */
+.deepWorkActiveBody {
+  text-align: center;
+}
+
+.deepWorkActiveLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.deepWorkTimer {
+  font-family: var(--font-mono), monospace;
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  line-height: 1;
+}
+
+@media (min-width: 768px) {
+  .deepWorkTimer {
+    font-size: 3rem;
+  }
+}
+
+.deepWorkProgressTrack {
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin-bottom: 0.375rem;
+}
+
+.deepWorkProgressFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+  transition: width 1s linear;
+}
+
+.deepWorkProgressLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  text-align: right;
+  margin-bottom: 1rem;
+}
+
+.deepWorkActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.deepWorkPauseBtn {
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-input);
+  background: color-mix(in srgb, var(--warning) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning) 30%, transparent);
+  color: var(--warning);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.deepWorkPauseBtn:hover {
+  background: color-mix(in srgb, var(--warning) 25%, transparent);
+  border-color: var(--warning);
+}
+
+.deepWorkResumeBtn {
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-input);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: var(--bg);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.deepWorkResumeBtn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.deepWorkEndBtn {
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-input);
+  background: color-mix(in srgb, var(--danger) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  color: var(--danger);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.deepWorkEndBtn:hover {
+  background: color-mix(in srgb, var(--danger) 25%, transparent);
+  border-color: var(--danger);
+}
+
+.deepWorkDiscardBtn {
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-input);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 20%, transparent);
+  color: var(--danger);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deepWorkDiscardBtn:hover {
+  background: color-mix(in srgb, var(--danger) 20%, transparent);
+  border-color: var(--danger);
+}
+
+/* End session modal */
+.deepWorkModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+
+.deepWorkModalCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 1.5rem;
+  max-width: 28rem;
+  width: 90%;
+}
+
+.deepWorkModalTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.deepWorkModalInfo {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.deepWorkModalDuration {
+  font-family: var(--font-mono), monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+.deepWorkModalLabelSelect {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-input);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.deepWorkModalNotesInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-input);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  resize: vertical;
+  min-height: 3rem;
+  font-family: var(--font-space), sans-serif;
+}
+
+.deepWorkModalNotesInput::placeholder {
+  color: var(--text-muted);
+}
+
+.deepWorkModalNotesInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.deepWorkModalActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.deepWorkModalSaveBtn {
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-input);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: var(--bg);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deepWorkModalSaveBtn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.deepWorkModalDiscardBtn {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-input);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 20%, transparent);
+  color: var(--danger);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deepWorkModalDiscardBtn:hover {
+  background: color-mix(in srgb, var(--danger) 20%, transparent);
+  border-color: var(--danger);
+}
+
 /* Grid Layout */
 .grid {
   display: grid;
@@ -1155,6 +1582,14 @@
   }
 
   .statusDot {
+    animation: none;
+  }
+
+  .deepWorkSection {
+    animation: none;
+  }
+
+  .deepWorkLiveDot {
     animation: none;
   }
 }

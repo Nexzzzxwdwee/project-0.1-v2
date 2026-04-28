@@ -89,6 +89,36 @@ export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'frida
 export type DCAFrequency = 'weekly' | 'biweekly' | 'monthly';
 export type DCACurrency = 'GBP' | 'USD';
 
+// ── Focus / Deep Work ───────────────────────────────────────
+
+export interface FocusSession {
+  id: string;
+  userId: string;
+  startedAt: string; // ISO timestamptz
+  endedAt: string | null;
+  durationSeconds: number | null;
+  label: string | null;
+  notes: string | null;
+  date: string; // YYYY-MM-DD
+  createdAt: string;
+}
+
+export interface FocusDailyTotal {
+  date: string; // YYYY-MM-DD
+  totalSeconds: number;
+  sessionCount: number;
+}
+
+export interface FocusStats {
+  todayTotal: number; // seconds
+  weekTotal: number; // seconds
+  dailyAverage: number; // seconds (last 30 days)
+  personalBest: { date: string; totalSeconds: number } | null;
+  currentStreak: number; // consecutive days with >= 1 session
+}
+
+// ── DCA Plan ─────────────────────────────────────────────────
+
 export interface DCABudget {
   id: string;
   userId: string;

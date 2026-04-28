@@ -10,6 +10,25 @@ export default function SettingsPage() {
   const router = useRouter();
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
+  // Deep Work settings
+  const [focusDailyTarget, setFocusDailyTarget] = useState(4);
+  const [focusDefaultLabel, setFocusDefaultLabel] = useState('Trading');
+
+  // Load focus settings on mount
+  useState(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const s = JSON.parse(localStorage.getItem('focus_settings') || '{}');
+      if (s.dailyTarget) setFocusDailyTarget(s.dailyTarget);
+      if (s.defaultLabel) setFocusDefaultLabel(s.defaultLabel);
+    } catch { /* ignore */ }
+  });
+
+  const saveFocusSettings = (target: number, label: string) => {
+    const settings = { dailyTarget: target, defaultLabel: label };
+    localStorage.setItem('focus_settings', JSON.stringify(settings));
+  };
+
   const handleExportData = () => {
     // Collect all p01: prefixed data
     const keys = listKeys(P01_PREFIX);
@@ -145,6 +164,66 @@ export default function SettingsPage() {
                   {resetConfirmOpen ? 'Confirm Reset' : 'Reset'}
                 </button>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Deep Work Section */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <svg className={styles.sectionIcon} viewBox="0 0 448 512" fill="currentColor">
+              <path d="M176 0c-17.7 0-32 14.3-32 32s14.3 32 32 32h16V98.4C92.3 113.8 16 200 16 304c0 114.9 93.1 208 208 208s208-93.1 208-208c0-41.8-12.3-80.7-33.5-113.3l24.1-24.1c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L355.7 143c-3.1-3.3-6.4-6.5-9.8-9.5C326.2 116.3 303.9 103.5 280 96.7V64h16c17.7 0 32-14.3 32-32s-14.3-32-32-32H176zM288 304a64 64 0 1 0 -128 0 64 64 0 1 0 128 0z" />
+            </svg>
+            <h2 className={styles.sectionTitle}>Deep Work</h2>
+          </div>
+
+          <p className={styles.sectionDescription}>
+            Configure your focus timer defaults.
+          </p>
+
+          <div className={styles.actionList}>
+            <div className={styles.actionItem}>
+              <div className={styles.actionContent}>
+                <div>
+                  <h3 className={styles.actionTitle}>Daily Target (hours)</h3>
+                  <p className={styles.actionDescription}>How many hours of deep work per day</p>
+                </div>
+              </div>
+              <input
+                type="number"
+                min="1"
+                max="16"
+                value={focusDailyTarget}
+                onChange={(e) => {
+                  const val = Math.max(1, Math.min(16, parseInt(e.target.value) || 4));
+                  setFocusDailyTarget(val);
+                  saveFocusSettings(val, focusDefaultLabel);
+                }}
+                className={styles.actionButton}
+                style={{ width: '4rem', textAlign: 'center' }}
+              />
+            </div>
+
+            <div className={styles.actionItem}>
+              <div className={styles.actionContent}>
+                <div>
+                  <h3 className={styles.actionTitle}>Default Label</h3>
+                  <p className={styles.actionDescription}>Pre-selected label when starting a session</p>
+                </div>
+              </div>
+              <select
+                value={focusDefaultLabel}
+                onChange={(e) => {
+                  setFocusDefaultLabel(e.target.value);
+                  saveFocusSettings(focusDailyTarget, e.target.value);
+                }}
+                className={styles.actionButton}
+                style={{ cursor: 'pointer' }}
+              >
+                {['Trading', 'Coding', 'Reading', 'Planning', 'Review', 'Custom'].map(l => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
             </div>
           </div>
         </section>

@@ -228,24 +228,34 @@ export default function TodayPage() {
 
   const handleFocusSave = async () => {
     if (!focusActiveSession) return;
-    await focusEndSession(focusActiveSession.id, focusEndDuration, focusEndNotes || undefined);
+    try {
+      await focusEndSession(focusActiveSession.id, focusEndDuration, focusEndNotes || undefined);
+    } catch (error) {
+      console.error('Failed to save focus session:', error);
+    }
     setFocusActiveSession(null);
     setFocusPaused(false);
     setFocusPausedAt(null);
     setFocusTotalPaused(0);
     setFocusEndModalOpen(false);
+    setFocusDiscardConfirm(false);
     localStorage.removeItem('focus_active_session_id');
     localStorage.removeItem('focus_paused');
-    // Refresh today total
     if (focusUserId) {
-      const tot = await getTodayTotal(focusUserId);
-      setFocusTodayTotal(tot);
+      try {
+        const tot = await getTodayTotal(focusUserId);
+        setFocusTodayTotal(tot);
+      } catch { /* ignore */ }
     }
   };
 
   const handleFocusDiscard = async () => {
     if (!focusActiveSession || !focusUserId) return;
-    await focusDeleteSession(focusUserId, focusActiveSession.id);
+    try {
+      await focusDeleteSession(focusUserId, focusActiveSession.id);
+    } catch (error) {
+      console.error('Failed to delete focus session:', error);
+    }
     setFocusActiveSession(null);
     setFocusPaused(false);
     setFocusPausedAt(null);
@@ -897,15 +907,13 @@ export default function TodayPage() {
               {focusEndLabel} &middot; {new Date(focusActiveSession?.startedAt || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &rarr; {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </p>
             <div className={styles.deepWorkModalDuration}>{formatFocusTimer(focusEndDuration)}</div>
-            <select
+            <input
+              type="text"
               className={styles.deepWorkModalLabelSelect}
               value={focusEndLabel}
               onChange={(e) => setFocusEndLabel(e.target.value)}
-            >
-              {FOCUS_LABELS.map(l => (
-                <option key={l} value={l}>{l}</option>
-              ))}
-            </select>
+              placeholder="Label"
+            />
             <textarea
               className={styles.deepWorkModalNotesInput}
               placeholder="What did you work on?"

@@ -62,7 +62,7 @@ export default function InputModal({
     >
       <div
         style={{
-          background: '#1c1917',
+          background: '#1a1a1a',
           border: '1px solid #292524',
           borderRadius: '0.75rem',
           padding: '1.5rem',
@@ -71,7 +71,7 @@ export default function InputModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ margin: '0 0 1rem', color: '#e7e5e4', fontSize: '1rem' }}>
+        <h3 style={{ margin: '0 0 1rem', color: '#FFFFFF', fontSize: '1rem' }}>
           {title}
         </h3>
         <form onSubmit={handleSubmit}>
@@ -84,8 +84,8 @@ export default function InputModal({
             style={{
               width: '100%',
               padding: '0.5rem 0.75rem',
-              background: '#0c0a09',
-              color: '#e7e5e4',
+              background: '#080808',
+              color: '#FFFFFF',
               border: '1px solid #292524',
               borderRadius: '0.5rem',
               fontSize: '0.875rem',
@@ -100,7 +100,7 @@ export default function InputModal({
               style={{
                 padding: '0.4rem 1rem',
                 background: 'transparent',
-                color: '#a8a29e',
+                color: '#AAAAAA',
                 border: '1px solid #292524',
                 borderRadius: '0.5rem',
                 cursor: 'pointer',

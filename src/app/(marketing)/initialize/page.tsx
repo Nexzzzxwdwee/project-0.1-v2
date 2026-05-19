@@ -88,7 +88,7 @@ function InitializeForm() {
           <Link href="/" className={styles.brandIcon}>
             <img
               className={styles.brandLogoImg}
-              src="/ttc-logo.png"
+              src="/ttc-logo.svg"
               alt="TTC"
             />
           </Link>
@@ -245,7 +245,7 @@ export default function InitializePage() {
           alignItems: 'center', 
           justifyContent: 'center', 
           height: '100vh',
-          color: '#a8a29e'
+          color: '#AAAAAA'
         }}>
           Loading...
         </div>

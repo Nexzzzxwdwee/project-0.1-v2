@@ -386,7 +386,7 @@
 
 .labelTrading { background: color-mix(in srgb, #3b82f6 15%, transparent); color: #3b82f6; border: 1px solid color-mix(in srgb, #3b82f6 30%, transparent); }
 .labelCoding { background: color-mix(in srgb, #8b5cf6 15%, transparent); color: #8b5cf6; border: 1px solid color-mix(in srgb, #8b5cf6 30%, transparent); }
-.labelReading { background: color-mix(in srgb, #f59e0b 15%, transparent); color: #f59e0b; border: 1px solid color-mix(in srgb, #f59e0b 30%, transparent); }
+.labelReading { background: color-mix(in srgb, #E0002B 15%, transparent); color: #E0002B; border: 1px solid color-mix(in srgb, #E0002B 30%, transparent); }
 .labelPlanning { background: color-mix(in srgb, #14b8a6 15%, transparent); color: #14b8a6; border: 1px solid color-mix(in srgb, #14b8a6 30%, transparent); }
 .labelReview { background: color-mix(in srgb, #64748b 15%, transparent); color: #64748b; border: 1px solid color-mix(in srgb, #64748b 30%, transparent); }
 .labelCustom { background: color-mix(in srgb, #E00030 15%, transparent); color: #E00030; border: 1px solid color-mix(in srgb, #E00030 30%, transparent); }

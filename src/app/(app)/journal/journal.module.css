@@ -699,10 +699,10 @@
 }
 
 .ttBaselineTier_mid {
-  background: #eab308;
+  background: #E0002B;
   border-color: #a16207;
-  color: #1c1917;
-  box-shadow: 0 0 10px color-mix(in srgb, #eab308 35%, transparent);
+  color: #1a1a1a;
+  box-shadow: 0 0 10px color-mix(in srgb, #E0002B 35%, transparent);
 }
 
 .ttBaselineTier_high {
@@ -753,9 +753,9 @@
 }
 
 .ttBaselineOption.ttBaselineTier_mid {
-  color: #eab308;
+  color: #E0002B;
   background: transparent;
-  border-color: #eab308;
+  border-color: #E0002B;
   box-shadow: none;
 }
 
@@ -779,8 +779,8 @@
 
 .ttBaselineOption.ttBaselineTier_mid:hover,
 .ttBaselineOption.ttBaselineTier_mid.ttBaselineOptionActive {
-  background: #eab308;
-  color: #1c1917;
+  background: #E0002B;
+  color: #1a1a1a;
 }
 
 .ttBaselineOption.ttBaselineTier_high:hover,
@@ -823,7 +823,7 @@
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  background: linear-gradient(90deg, var(--accent), var(--gold, #eab308));
+  background: linear-gradient(90deg, var(--accent), var(--gold, #E0002B));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

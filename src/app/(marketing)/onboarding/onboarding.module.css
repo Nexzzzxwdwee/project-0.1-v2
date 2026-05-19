@@ -1,8 +1,8 @@
 /* Onboarding Page Styles - Komposo Export */
 
 .mainContent {
-  background: #0c0a09;
-  color: #e7e5e4;
+  background: #080808;
+  color: #FFFFFF;
   font-family: var(--font-space), sans-serif;
   min-height: 100vh;
   position: relative;
@@ -11,7 +11,7 @@
 }
 
 .mainContent ::selection {
-  background: rgba(20, 83, 45, 0.5);
+  background: rgba(224, 0, 43, 0.5);
   color: #FFB3C1;
 }
 
@@ -32,7 +32,7 @@
   left: 0;
   width: 100%;
   height: 8rem;
-  background: linear-gradient(to bottom, #0c0a09, transparent);
+  background: linear-gradient(to bottom, #080808, transparent);
   z-index: 10;
   pointer-events: none;
 }
@@ -43,7 +43,7 @@
   left: 0;
   width: 100%;
   height: 8rem;
-  background: linear-gradient(to top, #0c0a09, transparent);
+  background: linear-gradient(to top, #080808, transparent);
   z-index: 10;
   pointer-events: none;
 }
@@ -82,7 +82,7 @@
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   border: 1px solid #292524;
-  background: rgba(28, 25, 23, 0.5);
+  background: rgba(17, 17, 17, 0.5);
   backdrop-filter: blur(4px);
   margin-bottom: 1rem;
   align-self: center;
@@ -109,7 +109,7 @@
   font-size: 0.625rem;
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  color: #a8a29e;
+  color: #AAAAAA;
   font-family: var(--font-mono), monospace;
 }
 
@@ -139,14 +139,14 @@
 }
 
 .titleGradient {
-  background: linear-gradient(to right, #FF003C, #FFE4E9, #e7e5e4);
+  background: linear-gradient(to right, #FF003C, #FFE4E9, #FFFFFF);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .subtitle {
-  color: #a8a29e;
+  color: #AAAAAA;
   font-size: 0.875rem;
   max-width: 28rem;
   margin: 0 auto;
@@ -198,13 +198,13 @@
 }
 
 .iconYellow {
-  color: #ca8a04;
+  color: #7a0016;
 }
 
 .sectionLabel {
   font-size: 0.625rem;
   font-family: var(--font-mono), monospace;
-  color: #78716c;
+  color: #555555;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -218,7 +218,7 @@
 
 .habitItem {
   position: relative;
-  background: rgba(28, 25, 23, 0.2);
+  background: rgba(17, 17, 17, 0.2);
   border: 1px solid transparent;
   border-radius: 0.5rem;
   transition: all 0.3s;
@@ -230,7 +230,7 @@
 }
 
 .habitItem:hover {
-  background: rgba(28, 25, 23, 0.4);
+  background: rgba(17, 17, 17, 0.4);
   border-color: #292524;
 }
 
@@ -243,7 +243,7 @@
   display: block;
   font-size: 0.625rem;
   font-family: var(--font-mono), monospace;
-  color: #78716c;
+  color: #555555;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-bottom: 0.25rem;
@@ -255,14 +255,14 @@
   background: transparent;
   border: none;
   padding: 0;
-  color: #e7e5e4;
+  color: #FFFFFF;
   font-family: var(--font-space), sans-serif;
   font-size: 1rem;
   font-weight: 500;
 }
 
 .habitInput::placeholder {
-  color: #78716c;
+  color: #555555;
 }
 
 .habitInput:focus {
@@ -294,7 +294,7 @@
 }
 
 .deleteButton {
-  color: #78716c;
+  color: #555555;
   transition: color 0.2s;
   padding: 0.25rem;
   background: none;
@@ -319,8 +319,8 @@
 }
 
 .taskItem {
-  background: rgba(28, 25, 23, 0.2);
-  border: 1px solid rgba(41, 37, 36, 0.5);
+  background: rgba(17, 17, 17, 0.2);
+  border: 1px solid rgba(26, 26, 26, 0.5);
   border-radius: 0.5rem;
   padding: 1rem;
   display: flex;
@@ -335,7 +335,7 @@
 
 .taskText {
   flex: 1;
-  color: #d6d3d1;
+  color: #AAAAAA;
   font-family: var(--font-space), sans-serif;
   background: transparent;
   border: none;
@@ -353,7 +353,7 @@
   opacity: 0;
   transition: opacity 0.3s;
   padding: 0.5rem;
-  color: #78716c;
+  color: #555555;
   background: none;
   border: none;
   cursor: pointer;
@@ -366,7 +366,7 @@
 
 .taskDeleteButton:hover {
   color: #ef4444;
-  background: rgba(28, 25, 23, 0.5);
+  background: rgba(17, 17, 17, 0.5);
 }
 
 .taskDeleteButton .icon {
@@ -379,7 +379,7 @@
   appearance: none;
   width: 20px;
   height: 20px;
-  border: 2px solid #57534e;
+  border: 2px solid #555555;
   border-radius: 4px;
   background-color: transparent;
   cursor: pointer;
@@ -398,7 +398,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0c0a09;
+  color: #080808;
   font-weight: bold;
   font-size: 12px;
   position: absolute;
@@ -449,10 +449,10 @@
   width: 100%;
   margin-top: 1rem;
   padding: 0.75rem 1rem;
-  background: rgba(41, 37, 36, 0.5);
-  border: 1px solid #44403c;
+  background: rgba(26, 26, 26, 0.5);
+  border: 1px solid #222222;
   border-radius: 0.5rem;
-  color: #a8a29e;
+  color: #AAAAAA;
   font-family: var(--font-space), sans-serif;
   transition: all 0.3s;
   display: flex;
@@ -463,9 +463,9 @@
 }
 
 .addTaskButton:hover {
-  color: #ca8a04;
+  color: #7a0016;
   border-color: rgba(202, 138, 4, 0.3);
-  background: rgba(41, 37, 36, 0.8);
+  background: rgba(26, 26, 26, 0.8);
 }
 
 .addTaskButton .icon {
@@ -475,7 +475,7 @@
 
 /* Rules Card */
 .rulesCard {
-  background: linear-gradient(to bottom right, rgba(28, 25, 23, 1), #0c0a09);
+  background: linear-gradient(to bottom right, rgba(17, 17, 17, 1), #080808);
   border: 1px solid #292524;
   border-radius: 0.75rem;
   padding: 1.5rem;
@@ -500,7 +500,7 @@
 
 .rulesQuote {
   margin-top: 0.25rem;
-  color: #44403c;
+  color: #222222;
 }
 
 .rulesQuote .icon {
@@ -516,14 +516,14 @@
 
 .rulesTextMain {
   font-size: 0.875rem;
-  color: #d6d3d1;
+  color: #AAAAAA;
   font-weight: 500;
   line-height: 1.6;
 }
 
 .rulesTextSub {
   font-size: 0.75rem;
-  color: #78716c;
+  color: #555555;
   line-height: 1.6;
 }
 
@@ -537,7 +537,7 @@
 .footerBlur {
   position: absolute;
   inset: 0;
-  background: #0c0a09;
+  background: #080808;
   filter: blur(24px);
   transform: scale(1.1);
   z-index: -10;
@@ -547,8 +547,8 @@
   width: 100%;
   position: relative;
   overflow: hidden;
-  border-radius: 0.5rem;
-  background: white;
+  border-radius: 4px;
+  background: var(--color-red-primary);
   padding: 1px;
   cursor: pointer;
   border: none;
@@ -557,7 +557,7 @@
 
 .submitButton:focus {
   outline: none;
-  box-shadow: 0 0 0 2px #a8a29e, 0 0 0 4px rgba(168, 162, 158, 0.2);
+  box-shadow: 0 0 0 2px #AAAAAA, 0 0 0 4px rgba(168, 162, 158, 0.2);
 }
 
 .submitButton::before {
@@ -581,7 +581,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.5rem;
-  background: #0c0a09;
+  background: #080808;
   padding: 1rem 2rem;
   font-size: 0.875rem;
   font-weight: bold;
@@ -592,7 +592,7 @@
 }
 
 .submitButton:hover .submitButtonInner {
-  background: rgba(28, 25, 23, 1);
+  background: rgba(17, 17, 17, 1);
 }
 
 .submitButtonText {
@@ -619,11 +619,11 @@
 }
 
 .submitButton:disabled .submitButtonInner {
-  background: rgba(28, 25, 23, 0.5);
+  background: rgba(17, 17, 17, 0.5);
 }
 
 .submitButton:disabled:hover .submitButtonInner {
-  background: rgba(28, 25, 23, 0.5);
+  background: rgba(17, 17, 17, 0.5);
 }
 
 .errorMessage {
@@ -641,7 +641,7 @@
   text-align: center;
   margin-top: 1rem;
   font-size: 0.625rem;
-  color: #78716c;
+  color: #555555;
   font-family: var(--font-mono), monospace;
   text-transform: uppercase;
   letter-spacing: 0.1em;

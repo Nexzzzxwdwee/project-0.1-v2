@@ -364,7 +364,7 @@ export default function EarningsPage() {
           <h2 className={styles.sectionTitle}>Transaction Log</h2>
 
           {filteredTransactions.length === 0 ? (
-            <p style={{ color: '#78716c', textAlign: 'center', padding: '2rem 0' }}>
+            <p style={{ color: '#555555', textAlign: 'center', padding: '2rem 0' }}>
               No transactions yet. Add your first entry above.
             </p>
           ) : (

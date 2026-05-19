@@ -292,7 +292,7 @@ export default function AppShellClient({
             <div className={styles.brandIcon}>
               <img
                 className={styles.brandLogo}
-                src="/ttc-logo.png"
+                src="/ttc-logo.svg"
                 alt="TTC"
               />
             </div>
@@ -361,7 +361,7 @@ export default function AppShellClient({
             <div className={styles.brandIcon}>
               <img
                 className={styles.brandLogo}
-                src="/ttc-logo.png"
+                src="/ttc-logo.svg"
                 alt="TTC"
               />
             </div>

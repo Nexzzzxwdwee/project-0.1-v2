@@ -15,8 +15,8 @@ export interface RankTier {
  * XP thresholds are cumulative — a user with 2500 XP is Specialist.
  */
 export const RANK_TIERS: RankTier[] = [
-  { name: 'Recruit',    xpRequired: 0,      color: '#a8a29e', colorMuted: '#44403c' },
-  { name: 'Operator',   xpRequired: 1000,   color: '#eab308', colorMuted: '#854d0e' },
+  { name: 'Recruit',    xpRequired: 0,      color: '#AAAAAA', colorMuted: '#222222' },
+  { name: 'Operator',   xpRequired: 1000,   color: '#E0002B', colorMuted: '#7a0016' },
   { name: 'Specialist',  xpRequired: 2500,   color: '#a78bfa', colorMuted: '#5b21b6' },
   { name: 'Tactician',  xpRequired: 5000,   color: '#3b82f6', colorMuted: '#1e40af' },
   { name: 'Sentinel',   xpRequired: 10000,  color: '#06b6d4', colorMuted: '#155e75' },
@@ -24,9 +24,9 @@ export const RANK_TIERS: RankTier[] = [
   { name: 'Warden',     xpRequired: 30000,  color: '#f97316', colorMuted: '#9a3412' },
   { name: 'Phantom',    xpRequired: 50000,  color: '#ec4899', colorMuted: '#9d174d' },
   { name: 'Architect',  xpRequired: 80000,  color: '#f43f5e', colorMuted: '#9f1239' },
-  { name: 'Sovereign',  xpRequired: 120000, color: '#fbbf24', colorMuted: '#92400e' },
+  { name: 'Sovereign',  xpRequired: 120000, color: '#FF1744', colorMuted: '#7a0016' },
   { name: 'Apex',       xpRequired: 175000, color: '#e2e8f0', colorMuted: '#475569' },
-  { name: 'Mythic',     xpRequired: 250000, color: '#fef08a', colorMuted: '#a16207' },
+  { name: 'Mythic',     xpRequired: 250000, color: '#FFFFFF', colorMuted: '#7a0016' },
 ];
 
 export interface RankInfo {

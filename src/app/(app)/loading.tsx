@@ -6,7 +6,7 @@ export default function AppLoading() {
         alignItems: 'center',
         justifyContent: 'center',
         height: '100%',
-        color: '#a8a29e',
+        color: '#AAAAAA',
       }}
     >
       Loading...

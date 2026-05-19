@@ -81,7 +81,7 @@ function getWeekDayDates(): string[] {
 const LABEL_COLORS: Record<string, string> = {
   Trading: '#3b82f6',
   Coding: '#8b5cf6',
-  Reading: '#f59e0b',
+  Reading: '#E0002B',
   Planning: '#14b8a6',
   Review: '#64748b',
 };

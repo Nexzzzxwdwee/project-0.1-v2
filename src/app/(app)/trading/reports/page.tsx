@@ -223,7 +223,7 @@ export default function TradingReports() {
                   dot={false}
                   activeDot={{
                     r: 4,
-                    stroke: '#e7e5e4',
+                    stroke: '#FFFFFF',
                     strokeWidth: 2,
                     fill: lastR >= 0 ? '#3b82f6' : '#ef4444',
                   }}

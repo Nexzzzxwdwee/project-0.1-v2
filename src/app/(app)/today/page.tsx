@@ -444,13 +444,13 @@ export default function TodayPage() {
         return {
           label: 'Unbroken',
           subtitle: 'Perfect execution. Day sealed.',
-          color: '#eab308',
+          color: '#E0002B',
         };
       } else {
         return {
           label: operatorPct >= 70 ? 'Elite' : operatorPct >= 1 ? 'Strong' : 'Building',
           subtitle: 'Day sealed.',
-          color: operatorPct === 100 ? '#eab308' : operatorPct >= 70 ? '#E00030' : operatorPct >= 1 ? '#3b82f6' : '#a8a29e',
+          color: operatorPct === 100 ? '#E0002B' : operatorPct >= 70 ? '#E00030' : operatorPct >= 1 ? '#3b82f6' : '#AAAAAA',
         };
       }
     }
@@ -460,7 +460,7 @@ export default function TodayPage() {
       return {
         label: 'Building',
         subtitle: 'Foundation phase. Start executing.',
-        color: '#a8a29e',
+        color: '#AAAAAA',
       };
     } else if (operatorPct >= 1 && operatorPct <= 69) {
       return {
@@ -796,7 +796,7 @@ export default function TodayPage() {
                   <span className={styles.streakSubtitle}>No streak — 100% operator days.</span>
                 ) : streak > 0 && dayPlan.isSealed && operatorPct === 100 ? (
                   <>
-                    <svg className={styles.icon} viewBox="0 0 384 512" fill="currentColor" style={{ color: '#eab308' }}>
+                    <svg className={styles.icon} viewBox="0 0 384 512" fill="currentColor" style={{ color: '#E0002B' }}>
                       <path d="M153.6 29.9l16-21.3C173.6 3.2 180 0 186.7 0C198.4 0 208 9.6 208 21.3V43.5c0 8.7 3.5 17 9.7 23.1L278.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L350.3 66.6c6.2-6.1 9.7-14.4 9.7-23.1V21.3C360 9.6 369.6 0 381.3 0c6.7 0 13.1 3.2 17.1 8.6l16 21.3c6 8 9.4 17.5 9.4 27.1V384c0 70.7-57.3 128-128 128H128C57.3 512 0 454.7 0 384V57.7c0-9.6 3.4-19.1 9.4-27.1l16-21.3C29.5 3.2 35.9 0 42.7 0C54.4 0 64 9.6 64 21.3V43.5c0 8.7 3.5 17 9.7 23.1L134.4 96l-9.5 7.6c-2.1 1.7-3.3 4.2-3.3 6.9v64c0 5.5 4.5 10 10 10h80c5.5 0 10-4.5 10-10v-64c0-2.7-1.2-5.2-3.3-6.9l-9.5-7.6L153.6 29.9z" />
                     </svg>
                     <span className={styles.streakSubtitle}>Consecutive 100% operator days.</span>

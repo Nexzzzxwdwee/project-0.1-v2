@@ -32,7 +32,7 @@
 }
 
 .titleGradient {
-  background: linear-gradient(90deg, var(--accent), #eab308);
+  background: linear-gradient(90deg, var(--accent), #E0002B);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

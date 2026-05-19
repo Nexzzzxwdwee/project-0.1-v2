@@ -22,7 +22,7 @@ export default function AppError({
         justifyContent: 'center',
         height: '100%',
         padding: '2rem',
-        color: '#a8a29e',
+        color: '#AAAAAA',
         textAlign: 'center',
         gap: '1rem',
       }}

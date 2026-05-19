@@ -1,7 +1,7 @@
 .loading {
   padding: 4rem 1rem;
   text-align: center;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
 }
 
 .backLink {
@@ -10,7 +10,7 @@
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
   text-decoration: none;
   margin-bottom: 1.5rem;
   transition: color 0.15s;
@@ -35,7 +35,7 @@
   font-size: 0.7rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
   margin-bottom: 0.4rem;
 }
 
@@ -44,7 +44,7 @@
   font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: var(--text-primary, #f5f5f4);
+  color: var(--text-primary, #FFFFFF);
 }
 
 .metaRow {
@@ -53,13 +53,13 @@
   flex-wrap: wrap;
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
 }
 
 .metaItem::before {
   content: '·';
   margin-right: 0.5rem;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
 }
 
 .metaItem:first-child::before {
@@ -129,7 +129,7 @@
 .tab {
   background: transparent;
   border: none;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
   padding: 0.6rem 0.9rem;
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
@@ -143,7 +143,7 @@
 }
 
 .tab:hover {
-  color: var(--text-primary, #f5f5f4);
+  color: var(--text-primary, #FFFFFF);
 }
 
 .tabActive {
@@ -176,7 +176,7 @@
 }
 
 .statCard {
-  background: var(--surface, rgba(28, 25, 23, 0.6));
+  background: var(--surface, rgba(17, 17, 17, 0.6));
   border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
   border-radius: 0.6rem;
   padding: 1rem;
@@ -190,7 +190,7 @@
   font-size: 0.6rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
 }
 
 .statValue {
@@ -203,11 +203,11 @@
 .statSub {
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
-  color: var(--text-secondary, #d6d3d1);
+  color: var(--text-secondary, #AAAAAA);
 }
 
 .subsection {
-  background: var(--surface, rgba(28, 25, 23, 0.6));
+  background: var(--surface, rgba(17, 17, 17, 0.6));
   border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
   border-radius: 0.6rem;
   padding: 1.25rem;
@@ -218,19 +218,19 @@
   font-size: 0.7rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--text-secondary, #d6d3d1);
+  color: var(--text-secondary, #AAAAAA);
   margin: 0 0 0.85rem;
   font-weight: 600;
 }
 
 .empty {
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
   font-size: 0.9rem;
   font-style: italic;
 }
 
 .muted {
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
 }
 
 /* ── Flags list ── */
@@ -244,7 +244,7 @@
 }
 
 .flagItem {
-  background: var(--bg, #0c0a09);
+  background: var(--bg, #080808);
   border: 1px solid rgba(239, 68, 68, 0.25);
   border-radius: 0.4rem;
   padding: 0.75rem 0.9rem;
@@ -260,12 +260,12 @@
 .flagItemDate {
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
 }
 
 .flagItemBody {
   margin: 0;
-  color: var(--text-primary, #f5f5f4);
+  color: var(--text-primary, #FFFFFF);
   font-size: 0.9rem;
   line-height: 1.5;
 }
@@ -281,7 +281,7 @@
 }
 
 .journalItem {
-  background: var(--bg, #0c0a09);
+  background: var(--bg, #080808);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
   border-radius: 0.5rem;
   padding: 0.85rem 1rem;
@@ -298,7 +298,7 @@
 
 .journalBody {
   margin: 0;
-  color: var(--text-primary, #f5f5f4);
+  color: var(--text-primary, #FFFFFF);
   font-size: 0.92rem;
   line-height: 1.6;
   white-space: pre-wrap;
@@ -319,7 +319,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.55rem 0.7rem;
-  background: var(--bg, #0c0a09);
+  background: var(--bg, #080808);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
   border-radius: 0.4rem;
 }
@@ -348,7 +348,7 @@
 }
 
 .goalText {
-  color: var(--text-primary, #f5f5f4);
+  color: var(--text-primary, #FFFFFF);
   font-size: 0.92rem;
 }
 
@@ -356,7 +356,7 @@
   font-family: var(--font-mono), monospace;
   font-size: 0.65rem;
   letter-spacing: 0.1em;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
   padding: 0.15rem 0.4rem;
   border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
   border-radius: 999px;
@@ -364,7 +364,7 @@
 
 /* ── Presets / habits ── */
 .presetCard {
-  background: var(--bg, #0c0a09);
+  background: var(--bg, #080808);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
   border-radius: 0.5rem;
   padding: 0.85rem 1rem;
@@ -394,7 +394,7 @@
   font-size: 0.65rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
   display: block;
   margin-bottom: 0.4rem;
 }
@@ -404,7 +404,7 @@
   padding-left: 1.25rem;
   margin: 0;
   font-size: 0.9rem;
-  color: var(--text-secondary, #d6d3d1);
+  color: var(--text-secondary, #AAAAAA);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -412,7 +412,7 @@
 
 /* ── Time log ── */
 .timeLogCard {
-  background: var(--bg, #0c0a09);
+  background: var(--bg, #080808);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
   border-radius: 0.5rem;
   padding: 0.9rem 1rem;
@@ -457,11 +457,11 @@
 .slotKey {
   font-family: var(--font-mono), monospace;
   font-size: 0.75rem;
-  color: var(--text-secondary, #d6d3d1);
+  color: var(--text-secondary, #AAAAAA);
 }
 
 .slotActivity {
-  color: var(--text-primary, #f5f5f4);
+  color: var(--text-primary, #FFFFFF);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -470,7 +470,7 @@
 .slotBaseline {
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
 }
 
 .timeLogSummary {
@@ -478,7 +478,7 @@
   padding-top: 0.6rem;
   border-top: 1px solid var(--border, rgba(255, 255, 255, 0.06));
   font-size: 0.85rem;
-  color: var(--text-secondary, #d6d3d1);
+  color: var(--text-secondary, #AAAAAA);
 }
 
 .timeLogSummary p {
@@ -494,7 +494,7 @@
 
 .noteSection,
 .notesList {
-  background: var(--surface, rgba(28, 25, 23, 0.6));
+  background: var(--surface, rgba(17, 17, 17, 0.6));
   border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
   border-radius: 0.6rem;
   padding: 1.1rem;
@@ -502,22 +502,22 @@
 
 .helperText {
   font-size: 0.8rem;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
   margin: 0 0 0.6rem;
   line-height: 1.4;
 }
 
 .helperText strong {
-  color: var(--text-primary, #f5f5f4);
+  color: var(--text-primary, #FFFFFF);
   text-transform: capitalize;
 }
 
 .noteInput {
   width: 100%;
-  background: var(--bg, #0c0a09);
+  background: var(--bg, #080808);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
   border-radius: 0.4rem;
-  color: var(--text-primary, #f5f5f4);
+  color: var(--text-primary, #FFFFFF);
   padding: 0.65rem 0.8rem;
   font-family: var(--font-space), sans-serif;
   font-size: 0.9rem;
@@ -574,7 +574,7 @@
 }
 
 .notesItem {
-  background: var(--bg, #0c0a09);
+  background: var(--bg, #080808);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
   border-radius: 0.4rem;
   padding: 0.7rem 0.85rem;
@@ -598,19 +598,19 @@
 .notesDate {
   font-family: var(--font-mono), monospace;
   font-size: 0.65rem;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
 }
 
 .notesRead {
   margin-left: auto;
   font-family: var(--font-mono), monospace;
   font-size: 0.6rem;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
 }
 
 .notesBody {
   margin: 0;
-  color: var(--text-primary, #f5f5f4);
+  color: var(--text-primary, #FFFFFF);
   font-size: 0.88rem;
   line-height: 1.55;
   white-space: pre-wrap;
@@ -633,7 +633,7 @@
 .modal {
   width: 100%;
   max-width: 28rem;
-  background: var(--surface, rgba(28, 25, 23, 0.95));
+  background: var(--surface, rgba(17, 17, 17, 0.95));
   border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
   border-radius: 0.75rem;
   padding: 1.5rem;
@@ -648,7 +648,7 @@
 
 .modalSubtitle {
   margin: 0 0 0.85rem;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
   font-size: 0.85rem;
 }
 
@@ -663,7 +663,7 @@
 .linkBtn {
   background: transparent;
   border: none;
-  color: var(--text-muted, #a8a29e);
+  color: var(--text-muted, #AAAAAA);
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
   letter-spacing: 0.1em;

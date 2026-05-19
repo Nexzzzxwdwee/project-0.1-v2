@@ -309,7 +309,7 @@
 .badgeActive { color: var(--success); background: rgba(224, 0, 48, 0.1); border: 1px solid rgba(224, 0, 48, 0.2); }
 .badgePassed { color: var(--text-secondary); background: rgba(113, 113, 122, 0.08); border: 1px solid rgba(113, 113, 122, 0.15); }
 .badgeBlown { color: var(--danger); background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); }
-.badgeLimbo { color: var(--warning); background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); }
+.badgeLimbo { color: var(--warning); background: rgba(224, 0, 43, 0.1); border: 1px solid rgba(224, 0, 43, 0.2); }
 
 .accountMeta {
   display: flex;

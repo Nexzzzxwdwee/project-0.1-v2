@@ -38,12 +38,47 @@ function currentSlotKey(interval: TimeLogInterval): string {
   return slotKey(h, m);
 }
 
+function baselineTier(n: number): 'none' | 'low' | 'mid' | 'high' {
+  if (n <= 0) return 'none';
+  if (n <= 3) return 'low';
+  if (n <= 6) return 'mid';
+  return 'high';
+}
+
 export default function TimeTracker({ date, onSaveStatusChange }: TimeTrackerProps) {
   const [log, setLog] = useState<TimeLog>(() => createDefaultTimeLog(date));
   const [loaded, setLoaded] = useState(false);
   const [nowKey, setNowKey] = useState(() => currentSlotKey(60));
+  const [popoverKey, setPopoverKey] = useState<string | null>(null);
+  const [popoverAnchor, setPopoverAnchor] = useState<{ top: number; right: number } | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const todayHere = isToday(date);
+
+  const closePopover = useCallback(() => {
+    setPopoverKey(null);
+    setPopoverAnchor(null);
+  }, []);
+
+  // Close popover on outside click, scroll, or resize
+  useEffect(() => {
+    if (!popoverKey) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (!t) return;
+      if (t.closest(`.${styles.ttBaselinePopover}`)) return;
+      if (t.closest(`.${styles.ttBaselineCircle}`)) return;
+      closePopover();
+    };
+    const onScrollOrResize = () => closePopover();
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('scroll', onScrollOrResize, true);
+    window.addEventListener('resize', onScrollOrResize);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('scroll', onScrollOrResize, true);
+      window.removeEventListener('resize', onScrollOrResize);
+    };
+  }, [popoverKey, closePopover]);
 
   // Load log when date changes
   useEffect(() => {
@@ -201,20 +236,26 @@ export default function TimeTracker({ date, onSaveStatusChange }: TimeTrackerPro
                     onChange={(e) => setSlotActivity(key, e.target.value)}
                   />
                   <div className={styles.ttRowBaseline}>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {
-                      const active = slot.baseline === n;
-                      return (
-                        <button
-                          key={n}
-                          type="button"
-                          aria-label={`Baseline ${n}`}
-                          className={`${styles.ttBaselineDot} ${active ? styles.ttBaselineDotActive : ''} ${styles[`ttBaselineLevel${n}`]}`}
-                          onClick={() => setSlotBaseline(key, n)}
-                        >
-                          {n}
-                        </button>
-                      );
-                    })}
+                    <button
+                      type="button"
+                      aria-label={slot.baseline ? `Baseline ${slot.baseline}` : 'Set baseline'}
+                      aria-expanded={popoverKey === key}
+                      className={`${styles.ttBaselineCircle} ${styles[`ttBaselineTier_${baselineTier(slot.baseline)}`]}`}
+                      onClick={(e) => {
+                        if (popoverKey === key) {
+                          closePopover();
+                          return;
+                        }
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setPopoverKey(key);
+                        setPopoverAnchor({
+                          top: rect.bottom + 6,
+                          right: window.innerWidth - rect.right,
+                        });
+                      }}
+                    >
+                      {slot.baseline || '—'}
+                    </button>
                   </div>
                 </div>
               );
@@ -263,6 +304,36 @@ export default function TimeTracker({ date, onSaveStatusChange }: TimeTrackerPro
           />
         </label>
       </div>
+
+      {popoverKey && popoverAnchor && (
+        <div
+          className={styles.ttBaselinePopover}
+          style={{ top: popoverAnchor.top, right: popoverAnchor.right }}
+          role="dialog"
+          aria-label="Pick emotional baseline"
+        >
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {
+            const tier = baselineTier(n);
+            const current = log.slots[popoverKey] ?? { activity: '', baseline: 0 };
+            const active = current.baseline === n;
+            return (
+              <button
+                key={n}
+                type="button"
+                aria-label={`Baseline ${n}`}
+                aria-pressed={active}
+                className={`${styles.ttBaselineOption} ${styles[`ttBaselineTier_${tier}`]} ${active ? styles.ttBaselineOptionActive : ''}`}
+                onClick={() => {
+                  setSlotBaseline(popoverKey, n);
+                  closePopover();
+                }}
+              >
+                {n}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

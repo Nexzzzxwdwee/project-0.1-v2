@@ -389,7 +389,7 @@
 .labelReading { background: color-mix(in srgb, #f59e0b 15%, transparent); color: #f59e0b; border: 1px solid color-mix(in srgb, #f59e0b 30%, transparent); }
 .labelPlanning { background: color-mix(in srgb, #14b8a6 15%, transparent); color: #14b8a6; border: 1px solid color-mix(in srgb, #14b8a6 30%, transparent); }
 .labelReview { background: color-mix(in srgb, #64748b 15%, transparent); color: #64748b; border: 1px solid color-mix(in srgb, #64748b 30%, transparent); }
-.labelCustom { background: color-mix(in srgb, #22c55e 15%, transparent); color: #22c55e; border: 1px solid color-mix(in srgb, #22c55e 30%, transparent); }
+.labelCustom { background: color-mix(in srgb, #E00030 15%, transparent); color: #E00030; border: 1px solid color-mix(in srgb, #E00030 30%, transparent); }
 
 .sessionNotes {
   font-size: 0.75rem;
@@ -469,10 +469,10 @@
 }
 
 .heatmapCellEmpty { background: #111; }
-.heatmapCellL1 { background: color-mix(in srgb, #22c55e 20%, #111); }
-.heatmapCellL2 { background: color-mix(in srgb, #22c55e 40%, #111); }
-.heatmapCellL3 { background: color-mix(in srgb, #22c55e 70%, #111); }
-.heatmapCellL4 { background: #22c55e; }
+.heatmapCellL1 { background: color-mix(in srgb, #E00030 20%, #111); }
+.heatmapCellL2 { background: color-mix(in srgb, #E00030 40%, #111); }
+.heatmapCellL3 { background: color-mix(in srgb, #E00030 70%, #111); }
+.heatmapCellL4 { background: #E00030; }
 .heatmapCellHidden { visibility: hidden; }
 
 .heatmapLegend {

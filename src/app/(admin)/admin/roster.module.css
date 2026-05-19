@@ -20,7 +20,7 @@
 }
 
 .titleGradient {
-  background: linear-gradient(90deg, var(--accent, #22c55e), #eab308);
+  background: linear-gradient(90deg, var(--accent, #E00030), #eab308);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -77,7 +77,7 @@
 }
 
 .table tbody tr:hover {
-  background: color-mix(in srgb, var(--accent, #22c55e) 4%, transparent);
+  background: color-mix(in srgb, var(--accent, #E00030) 4%, transparent);
 }
 
 .table td {
@@ -156,9 +156,9 @@
 }
 
 .statusOn {
-  color: var(--accent, #22c55e);
-  border-color: color-mix(in srgb, var(--accent, #22c55e) 40%, transparent);
-  background: color-mix(in srgb, var(--accent, #22c55e) 10%, transparent);
+  color: var(--accent, #E00030);
+  border-color: color-mix(in srgb, var(--accent, #E00030) 40%, transparent);
+  background: color-mix(in srgb, var(--accent, #E00030) 10%, transparent);
 }
 
 .statusOff {
@@ -174,5 +174,5 @@
 }
 
 .openLink:hover {
-  color: var(--accent, #22c55e);
+  color: var(--accent, #E00030);
 }

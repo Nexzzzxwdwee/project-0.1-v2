@@ -33,8 +33,18 @@ export default function AdminShellClient({
     <div className={styles.shell}>
       <aside className={styles.sidebar}>
         <div className={styles.brand}>
-          <span className={styles.brandTag}>{'// COMMAND'}</span>
-          <span className={styles.brandTitle}>Operators</span>
+          <div className={styles.brandLogoRow}>
+            <img
+              className={styles.brandLogoImg}
+              src="/ttc-logo.png"
+              alt="TTC"
+            />
+            <div className={styles.brandTextCol}>
+              <span className={styles.brandTitle}>OPERATORS</span>
+              <span className={styles.brandSub}>by TTC</span>
+            </div>
+          </div>
+          <span className={styles.brandTag}>{'// OPS COMMAND'}</span>
           <span className={styles.brandRole}>Admin</span>
         </div>
         <nav className={styles.nav}>

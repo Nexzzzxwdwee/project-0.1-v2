@@ -39,7 +39,7 @@ export default function AppError({
           marginTop: '0.5rem',
           padding: '0.5rem 1.5rem',
           background: '#166534',
-          color: '#bbf7d0',
+          color: '#FFB3C1',
           border: 'none',
           borderRadius: '0.5rem',
           cursor: 'pointer',

@@ -450,7 +450,7 @@ export default function TodayPage() {
         return {
           label: operatorPct >= 70 ? 'Elite' : operatorPct >= 1 ? 'Strong' : 'Building',
           subtitle: 'Day sealed.',
-          color: operatorPct === 100 ? '#eab308' : operatorPct >= 70 ? '#22c55e' : operatorPct >= 1 ? '#3b82f6' : '#a8a29e',
+          color: operatorPct === 100 ? '#eab308' : operatorPct >= 70 ? '#E00030' : operatorPct >= 1 ? '#3b82f6' : '#a8a29e',
         };
       }
     }
@@ -472,14 +472,14 @@ export default function TodayPage() {
       return {
         label: 'Elite',
         subtitle: 'Execution is optimal. Maintain trajectory.',
-        color: '#22c55e',
+        color: '#E00030',
       };
     } else {
       // 100% but not sealed
       return {
         label: 'Elite',
         subtitle: 'Perfect execution. Seal to lock it in.',
-        color: '#22c55e',
+        color: '#E00030',
       };
     }
   }, [operatorPct, dayPlan.isSealed]);
@@ -660,7 +660,7 @@ export default function TodayPage() {
       <div className={styles.page}>
         <header className={styles.header}>
           <div>
-            <h1 className={styles.title}>Project 0.1</h1>
+            <h1 className={styles.title}>OPERATORS DASHBOARD</h1>
             <div className={styles.dateRow}>
               <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
                 <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192z" />

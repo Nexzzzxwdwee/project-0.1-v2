@@ -97,7 +97,7 @@ function getLabelClass(label: string | null): string {
 }
 
 function getLabelColor(label: string | null): string {
-  return LABEL_COLORS[label || ''] || '#22c55e';
+  return LABEL_COLORS[label || ''] || '#E00030';
 }
 
 type LogFilter = 'THIS_WEEK' | 'THIS_MONTH' | 'ALL';

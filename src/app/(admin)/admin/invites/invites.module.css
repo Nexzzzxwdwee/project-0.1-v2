@@ -20,7 +20,7 @@
 }
 
 .titleGradient {
-  background: linear-gradient(90deg, var(--accent, #22c55e), #eab308);
+  background: linear-gradient(90deg, var(--accent, #E00030), #eab308);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -46,7 +46,7 @@
 }
 
 .primaryBtn {
-  background: var(--accent, #22c55e);
+  background: var(--accent, #E00030);
   color: #052e16;
   border: none;
   padding: 0.7rem 1.1rem;
@@ -62,7 +62,7 @@
 
 .primaryBtn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--accent, #22c55e) 25%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--accent, #E00030) 25%, transparent);
 }
 
 .primaryBtn:disabled {
@@ -151,9 +151,9 @@
 }
 
 .status_pending {
-  color: var(--accent, #22c55e);
-  background: color-mix(in srgb, var(--accent, #22c55e) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent, #22c55e) 40%, transparent);
+  color: var(--accent, #E00030);
+  background: color-mix(in srgb, var(--accent, #E00030) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent, #E00030) 40%, transparent);
 }
 
 .status_used {
@@ -197,8 +197,8 @@
 }
 
 .secondaryBtn:hover {
-  color: var(--accent, #22c55e);
-  border-color: color-mix(in srgb, var(--accent, #22c55e) 40%, transparent);
+  color: var(--accent, #E00030);
+  border-color: color-mix(in srgb, var(--accent, #E00030) 40%, transparent);
 }
 
 .dangerBtn {

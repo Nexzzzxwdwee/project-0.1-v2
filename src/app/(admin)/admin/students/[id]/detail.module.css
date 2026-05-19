@@ -17,7 +17,7 @@
 }
 
 .backLink:hover {
-  color: var(--accent, #22c55e);
+  color: var(--accent, #E00030);
 }
 
 .header {
@@ -147,8 +147,8 @@
 }
 
 .tabActive {
-  color: var(--accent, #22c55e);
-  border-bottom-color: var(--accent, #22c55e);
+  color: var(--accent, #E00030);
+  border-bottom-color: var(--accent, #E00030);
 }
 
 .grid {
@@ -197,7 +197,7 @@
   font-size: 1.5rem;
   font-weight: 700;
   font-family: var(--font-space), sans-serif;
-  color: var(--accent, #22c55e);
+  color: var(--accent, #E00030);
 }
 
 .statSub {
@@ -290,7 +290,7 @@
 .journalHead {
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
-  color: var(--accent, #22c55e);
+  color: var(--accent, #E00030);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 0.5rem;
@@ -334,7 +334,7 @@
 
 .goalMark {
   font-family: var(--font-mono), monospace;
-  color: var(--accent, #22c55e);
+  color: var(--accent, #E00030);
   font-size: 1rem;
   flex-shrink: 0;
 }
@@ -425,7 +425,7 @@
   align-items: baseline;
   font-family: var(--font-mono), monospace;
   font-size: 0.75rem;
-  color: var(--accent, #22c55e);
+  color: var(--accent, #E00030);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-bottom: 0.5rem;
@@ -530,8 +530,8 @@
 }
 
 .noteInput:focus {
-  border-color: var(--accent, #22c55e);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #22c55e) 18%, transparent);
+  border-color: var(--accent, #E00030);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #E00030) 18%, transparent);
 }
 
 .noteInput:disabled {
@@ -539,7 +539,7 @@
 }
 
 .primaryBtn {
-  background: var(--accent, #22c55e);
+  background: var(--accent, #E00030);
   color: #052e16;
   border: none;
   padding: 0.6rem 0.9rem;
@@ -592,7 +592,7 @@
   font-size: 0.6rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--accent, #22c55e);
+  color: var(--accent, #E00030);
 }
 
 .notesDate {
@@ -672,7 +672,7 @@
 }
 
 .linkBtn:hover:not(:disabled) {
-  color: var(--accent, #22c55e);
+  color: var(--accent, #E00030);
 }
 
 .linkBtn:disabled {

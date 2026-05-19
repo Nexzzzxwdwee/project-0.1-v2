@@ -51,7 +51,7 @@ export default function SettingsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `project-0.1-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `operators-export-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -97,7 +97,7 @@ export default function SettingsPage() {
         <div>
           <span className={styles.titleAccent}>{'// SYSTEM CONFIG'}</span>
           <h1 className={styles.title}><span className={styles.titleGradient}>Settings</span></h1>
-          <p className={styles.subtitle}>Manage your Project 0.1 account and data</p>
+          <p className={styles.subtitle}>Manage your Operators account and data</p>
         </div>
       </header>
 
@@ -254,7 +254,7 @@ export default function SettingsPage() {
                 </svg>
                 <div>
                   <h3 className={styles.actionTitle}>Log Out</h3>
-                  <p className={styles.actionDescription}>Sign out of your Project 0.1 account</p>
+                  <p className={styles.actionDescription}>Sign out of your Operators account</p>
                 </div>
               </div>
               <button
@@ -271,7 +271,7 @@ export default function SettingsPage() {
 
       {/* Footer */}
       <div className={styles.footer}>
-        <p className={styles.footerText}>Project 0.1 • Settings</p>
+        <p className={styles.footerText}>Operators • Settings</p>
       </div>
     </div>
   );

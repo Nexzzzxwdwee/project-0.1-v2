@@ -226,8 +226,8 @@
 
 .sessionLDN {
   color: var(--success);
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(224, 0, 48, 0.1);
+  border: 1px solid rgba(224, 0, 48, 0.2);
 }
 
 .sessionNY {
@@ -263,8 +263,8 @@
 
 .assetClassForex {
   color: var(--success);
-  background: rgba(34, 197, 94, 0.08);
-  border: 1px solid rgba(34, 197, 94, 0.15);
+  background: rgba(224, 0, 48, 0.08);
+  border: 1px solid rgba(224, 0, 48, 0.15);
 }
 
 .assetClassFutures {

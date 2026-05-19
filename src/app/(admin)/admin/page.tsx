@@ -75,7 +75,7 @@ export default function AdminRosterPage() {
   return (
     <div>
       <header className={styles.header}>
-        <span className={styles.accent}>{'// COMMAND CENTER'}</span>
+        <span className={styles.accent}>{'// OPS COMMAND'}</span>
         <h1 className={styles.title}>
           <span className={styles.titleGradient}>Student Roster</span>
         </h1>

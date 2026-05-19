@@ -17,7 +17,7 @@ const navItems = [
   { href: '/history', label: 'History', icon: 'clock-rotate-left' },
   { href: '/journal', label: 'Journal', icon: 'book' },
   { href: '/goals', label: 'Goals', icon: 'bullseye' },
-  { href: '/feedback', label: 'Feedback', icon: 'bell' },
+  { href: '/feedback', label: 'Mentor Intel', icon: 'bell' },
   { href: '/earnings', label: 'Earnings', icon: 'coins' },
   { href: '/rank', label: 'Rank', icon: 'medal' },
   { href: '/habits', label: 'Habits', icon: 'heart' },
@@ -271,7 +271,7 @@ export default function AppShellClient({
             <path d={getIconSVG('menu')} />
           </svg>
         </button>
-        <span className={styles.mobileTitle}>Project 0.1</span>
+        <span className={styles.mobileTitle}>OPERATORS</span>
       </div>
 
       {/* Mobile Drawer Overlay */}
@@ -290,9 +290,16 @@ export default function AppShellClient({
         <div className={styles.mobileDrawerHeader}>
           <div className={styles.mobileDrawerBrand}>
             <div className={styles.brandIcon}>
-              <span className={styles.brandText}>0.1</span>
+              <img
+                className={styles.brandLogo}
+                src="/ttc-logo.png"
+                alt="TTC"
+              />
             </div>
-            <span className={styles.brandLabel}>Project 0.1</span>
+            <div className={styles.brandTextWrap}>
+              <span className={styles.brandLabel}>OPERATORS</span>
+              <span className={styles.brandSub}>by TTC</span>
+            </div>
           </div>
           <button
             type="button"
@@ -352,9 +359,16 @@ export default function AppShellClient({
         <div>
           <div className={styles.sidebarBrand}>
             <div className={styles.brandIcon}>
-              <span className={styles.brandText}>0.1</span>
+              <img
+                className={styles.brandLogo}
+                src="/ttc-logo.png"
+                alt="TTC"
+              />
             </div>
-            <span className={styles.brandLabel}>Project 0.1</span>
+            <div className={styles.brandTextWrap}>
+              <span className={styles.brandLabel}>OPERATORS</span>
+              <span className={styles.brandSub}>by TTC</span>
+            </div>
           </div>
 
           <nav className={styles.nav}>{renderNavItems()}</nav>

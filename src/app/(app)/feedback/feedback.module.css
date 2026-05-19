@@ -73,6 +73,7 @@
 .note {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
   border-radius: var(--radius-card);
   padding: 1.1rem 1.25rem;
   animation: fadeInUp 0.35s cubic-bezier(0.19, 1, 0.22, 1) both;

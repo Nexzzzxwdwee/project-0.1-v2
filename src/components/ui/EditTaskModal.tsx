@@ -133,7 +133,7 @@ export default function EditTaskModal({
               style={{
                 padding: '0.4rem 1rem',
                 background: '#166534',
-                color: '#bbf7d0',
+                color: '#FFB3C1',
                 border: 'none',
                 borderRadius: '0.5rem',
                 cursor: 'pointer',

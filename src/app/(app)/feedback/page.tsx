@@ -58,9 +58,9 @@ export default function FeedbackPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <span className={styles.titleAccent}>{'// MENTOR FEEDBACK'}</span>
+        <span className={styles.titleAccent}>{'// MENTOR INTEL'}</span>
         <h1 className={styles.title}>
-          <span className={styles.titleGradient}>Feedback</span>
+          <span className={styles.titleGradient}>Mentor Intel</span>
         </h1>
         <p className={styles.subtitle}>
           Notes from your admin. One-way — but read them carefully.

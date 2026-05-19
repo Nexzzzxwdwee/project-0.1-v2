@@ -1791,10 +1791,10 @@
 }
 
 .timeLogBaselineTier_high {
-  background: #22c55e;
-  border-color: #15803d;
+  background: #E00030;
+  border-color: #A00020;
   color: #052e16;
-  box-shadow: 0 0 10px color-mix(in srgb, #22c55e 35%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, #E00030 35%, transparent);
 }
 
 /* Popover */
@@ -1845,9 +1845,9 @@
 }
 
 .timeLogBaselineOption.timeLogBaselineTier_high {
-  color: #22c55e;
+  color: #E00030;
   background: transparent;
-  border-color: #22c55e;
+  border-color: #E00030;
   box-shadow: none;
 }
 
@@ -1865,6 +1865,6 @@
 
 .timeLogBaselineOption.timeLogBaselineTier_high:hover,
 .timeLogBaselineOption.timeLogBaselineTier_high.timeLogBaselineOptionActive {
-  background: #22c55e;
+  background: #E00030;
   color: #052e16;
 }

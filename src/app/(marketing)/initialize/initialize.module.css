@@ -14,7 +14,7 @@
 }
 
 .mainContent ::selection {
-  background: #22c55e;
+  background: #E00030;
   color: #0c0a09;
 }
 
@@ -40,7 +40,7 @@
   left: -10%;
   width: 800px;
   height: 800px;
-  background: #22c55e;
+  background: #E00030;
   border-radius: 50%;
   filter: blur(120px);
   opacity: 0.08;
@@ -84,36 +84,39 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  margin-bottom: 1rem;
-  border-radius: 0.75rem;
-  background: #1c1917;
-  border: 1px solid #292520;
-  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
-  transition: all 0.3s;
-  color: #22c55e;
+  width: 7.5rem;
+  height: 7.5rem;
+  margin-bottom: 1.25rem;
+  background: transparent;
+  filter: drop-shadow(0 0 25px rgba(255, 0, 60, 0.45));
+  transition: filter 0.3s;
 }
 
 .brandIcon:hover {
-  border-color: #22c55e;
+  filter: drop-shadow(0 0 35px rgba(255, 0, 60, 0.65));
 }
 
-.brandIcon:hover .icon {
-  transform: scale(1.1);
+.brandLogoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .brandTitle {
-  font-size: 1.875rem;
-  font-weight: bold;
-  letter-spacing: -0.025em;
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: white;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
 }
 
 .brandSubtitle {
   color: #a8a29e;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   font-family: var(--font-mono), monospace;
 }
 
@@ -134,7 +137,7 @@
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(to right, transparent, #22c55e, transparent);
+  background: linear-gradient(to right, transparent, #E00030, transparent);
   opacity: 0.5;
 }
 
@@ -163,8 +166,8 @@
 
 .tabActive {
   color: white;
-  border-bottom-color: #22c55e;
-  background: rgba(34, 197, 94, 0.05);
+  border-bottom-color: #E00030;
+  background: rgba(224, 0, 48, 0.05);
 }
 
 .formContent {
@@ -207,7 +210,7 @@
 }
 
 .forgotLink:hover {
-  color: #22c55e;
+  color: #E00030;
 }
 
 .inputWrapper {
@@ -235,8 +238,8 @@
 
 .textInput:focus {
   outline: none;
-  border-color: #22c55e;
-  box-shadow: 0 0 0 1px #22c55e, inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-color: #E00030;
+  box-shadow: 0 0 0 1px #E00030, inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .inputIconLeft {
@@ -278,11 +281,11 @@
 .btnSubmit {
   width: 100%;
   padding: 0.875rem 1rem;
-  background: #22c55e;
+  background: #E00030;
   color: #0c0a09;
   font-weight: bold;
   border-radius: 0.5rem;
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 0 20px rgba(224, 0, 48, 0.3);
   transition: all 0.2s;
   display: flex;
   align-items: center;
@@ -294,8 +297,8 @@
 }
 
 .btnSubmit:hover {
-  background: #16a34a;
-  box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+  background: #CC0000;
+  box-shadow: 0 0 30px rgba(224, 0, 48, 0.5);
   transform: translateY(-2px);
 }
 
@@ -385,7 +388,7 @@
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  background: #22c55e;
+  background: #E00030;
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
@@ -435,8 +438,8 @@
 }
 
 .footerLink:hover {
-  color: #22c55e;
-  text-decoration-color: #22c55e;
+  color: #E00030;
+  text-decoration-color: #E00030;
 }
 
 .decoLeft {
@@ -457,7 +460,7 @@
 .decoText {
   font-family: var(--font-mono), monospace;
   font-size: 0.625rem;
-  color: #22c55e;
+  color: #E00030;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -494,7 +497,7 @@
   position: absolute;
   width: 200px;
   height: 200px;
-  border: 1px solid #22c55e;
+  border: 1px solid #E00030;
   border-radius: 50%;
   opacity: 0.2;
 }

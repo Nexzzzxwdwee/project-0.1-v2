@@ -11,7 +11,7 @@
 }
 
 .mainContainer ::selection {
-  background: rgba(34, 197, 94, 0.3);
+  background: rgba(224, 0, 48, 0.3);
   color: var(--text-primary);
 }
 
@@ -171,14 +171,20 @@
 }
 
 .brandIcon {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: var(--radius-input);
-  background: var(--accent);
+  width: 2.25rem;
+  height: 2.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: transparent;
+}
+
+.brandLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .brandText {
@@ -188,12 +194,28 @@
   font-size: 0.75rem;
 }
 
+.brandTextWrap {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
 .brandLabel {
-  font-size: 1.125rem;
-  font-weight: 600;
-  letter-spacing: -0.025em;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--text-primary);
   font-family: var(--font-space), sans-serif;
+}
+
+.brandSub {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
 }
 
 /* ─── Section Labels ─── */

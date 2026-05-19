@@ -3,10 +3,10 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Project 0.1',
-    template: '%s | Project 0.1',
+    default: 'Operators | TTC',
+    template: '%s | Operators',
   },
-  description: 'Daily habit tracking and productivity system with rank progression.',
+  description: 'Operators Dashboard — TTC Private Network',
 };
 
 export default function RootLayout({

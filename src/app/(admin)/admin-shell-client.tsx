@@ -10,6 +10,7 @@ import styles from './admin-shell.module.css';
 const navItems = [
   { href: '/admin', label: 'Roster' },
   { href: '/admin/invites', label: 'Invites' },
+  { href: '/today', label: 'Habit Tracker' },
 ];
 
 export default function AdminShellClient({

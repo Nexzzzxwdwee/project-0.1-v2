@@ -40,6 +40,7 @@ export default function AppShellClient({
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
   const [unreadNotes, setUnreadNotes] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Check auth status on mount (run once)
   useEffect(() => {
@@ -75,8 +76,8 @@ export default function AppShellClient({
           return;
         }
 
-        // Role-aware routing: admins land in /admin; everyone else flows
-        // through onboarding (if needed) into the regular app.
+        // Deactivated accounts are signed out. Admin role unlocks the
+        // Admin Dashboard link; /initialize handles the post-signin landing.
         const { data: profile } = await supabase
           .from('profiles')
           .select('role, is_active')
@@ -90,11 +91,7 @@ export default function AppShellClient({
           return;
         }
 
-        if (profile?.role === 'admin' && !currentPath.startsWith('/admin')) {
-          router.push('/admin');
-          setLoading(false);
-          return;
-        }
+        setIsAdmin(profile?.role === 'admin');
 
         if (currentPath !== '/onboarding') {
           const activePresetId = await getActivePresetId();
@@ -317,6 +314,22 @@ export default function AppShellClient({
 
         <div className={styles.sidebarFooter}>
           <div className={styles.sectionLabel}>SYSTEM</div>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={styles.navItem}
+              onClick={closeDrawer}
+            >
+              <svg
+                className={styles.navIcon}
+                viewBox="0 0 512 512"
+                fill="currentColor"
+              >
+                <path d={getIconSVG('shield-halved')} />
+              </svg>
+              <span className={styles.navLabel}>Admin Dashboard</span>
+            </Link>
+          )}
           <Link
             href="/settings"
             className={`${styles.navItem} ${pathname === '/settings' ? styles.navItemActive : ''}`}
@@ -349,6 +362,18 @@ export default function AppShellClient({
 
         <div className={styles.sidebarFooter}>
           <div className={styles.sectionLabel}>SYSTEM</div>
+          {isAdmin && (
+            <Link href="/admin" className={styles.navItem}>
+              <svg
+                className={styles.navIcon}
+                viewBox="0 0 512 512"
+                fill="currentColor"
+              >
+                <path d={getIconSVG('shield-halved')} />
+              </svg>
+              <span className={styles.navLabel}>Admin Dashboard</span>
+            </Link>
+          )}
           <Link
             href="/settings"
             className={`${styles.navItem} ${pathname === '/settings' ? styles.navItemActive : ''}`}

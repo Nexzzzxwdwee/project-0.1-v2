@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { listStudents, setStudentActive, type StudentSummary } from '@/lib/mentor';
+import BulkExportButton from '@/components/export/BulkExportButton';
 import styles from './roster.module.css';
 
 function formatRelative(iso: string | null): string {
@@ -74,14 +75,17 @@ export default function AdminRosterPage() {
 
   return (
     <div>
-      <header className={styles.header}>
-        <span className={styles.accent}>{'// OPS COMMAND'}</span>
-        <h1 className={styles.title}>
-          <span className={styles.titleGradient}>Student Roster</span>
-        </h1>
-        <p className={styles.subtitle}>
-          Active operators under your mentorship. Click a row to open their detail view.
-        </p>
+      <header className={styles.header} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+        <div>
+          <span className={styles.accent}>{'// OPS COMMAND'}</span>
+          <h1 className={styles.title}>
+            <span className={styles.titleGradient}>Student Roster</span>
+          </h1>
+          <p className={styles.subtitle}>
+            Active operators under your mentorship. Click a row to open their detail view.
+          </p>
+        </div>
+        <BulkExportButton />
       </header>
 
       {error && <div className={styles.errorBox}>{error}</div>}

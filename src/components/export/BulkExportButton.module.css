@@ -1,0 +1,125 @@
+.button {
+  padding: 0.6rem 1.1rem;
+  background: transparent;
+  border: 1px solid var(--color-red-primary);
+  color: var(--color-red-primary);
+  border-radius: 4px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-red-primary) 12%, transparent);
+  border-color: var(--color-red-glow);
+  color: var(--color-red-glow);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1.75rem 1.6rem 1.5rem;
+  max-width: 28rem;
+  width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+}
+
+.modalAccent {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--color-red-primary);
+  text-transform: uppercase;
+}
+
+.modalTitle {
+  margin: 0.4rem 0 0.75rem;
+  color: var(--color-white);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.modalBody {
+  margin: 0 0 1.25rem;
+  color: var(--color-grey-1);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.cancelBtn {
+  padding: 0.55rem 1rem;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-grey-1);
+  border-radius: 4px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.cancelBtn:hover:not(:disabled) {
+  border-color: var(--color-grey-2);
+  color: var(--color-white);
+}
+
+.confirmBtn {
+  composes: button;
+}
+
+.error {
+  margin: 0.5rem 0 0;
+  padding: 0.55rem 0.75rem;
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 40%, transparent);
+  color: var(--color-red-glow);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-family: var(--font-mono), monospace;
+}

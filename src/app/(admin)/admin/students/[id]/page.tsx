@@ -17,6 +17,7 @@ import type {
   MentorNoteEntryType,
   Flag,
 } from '@/lib/types';
+import ExportButtons from '@/components/export/ExportButtons';
 import styles from './detail.module.css';
 
 type Section = 'overview' | 'journal' | 'goals' | 'habits' | 'time_log';
@@ -342,6 +343,14 @@ export default function StudentDetailPage({ params }: { params: { id: string } }
       </header>
 
       {error && <div className={styles.errorBox}>{error}</div>}
+
+      <section style={{ margin: '1.5rem 0' }}>
+        <ExportButtons
+          mode={{ kind: 'student', studentId: profile.id }}
+          label="// EXPORT STUDENT DATA"
+          description={`Download a full copy of ${profile.displayName || profile.email || 'this student'}'s data.`}
+        />
+      </section>
 
       <nav className={styles.tabs}>
         {([

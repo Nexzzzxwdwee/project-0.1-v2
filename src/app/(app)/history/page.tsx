@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { getAllSealedDaySummaries, getUserProgress, type DaySummary, type DayStatus, type UserProgress } from '@/lib/presets';
+import ExportButtons from '@/components/export/ExportButtons';
 import styles from './history.module.css';
 
 // ── Types ───────────────────────────────────────────────────────
@@ -315,6 +316,13 @@ export default function HistoryPage() {
         <span className={styles.titleAccent}>{'// MISSION LOG'}</span>
         <h1 className={styles.title}><span className={styles.titleGradient}>History</span></h1>
         <p className={styles.subtitle}>A record of your daily execution.</p>
+        <div style={{ marginTop: '1.25rem' }}>
+          <ExportButtons
+            mode={{ kind: 'self' }}
+            label="// QUICK EXPORT"
+            description="Download all of your history and tracker data."
+          />
+        </div>
       </header>
 
       {/* SECTION 1: Top Stats Bar */}

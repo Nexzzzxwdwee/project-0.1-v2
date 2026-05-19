@@ -6,7 +6,8 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { clearUserIdCache } from '@/lib/storage/supabase';
 import { clearStorageCache } from '@/lib/storage';
 import styles from './settings.module.css';
-import { P01_PREFIX, listKeys, getJSON } from '@/lib/p01Storage';
+import { P01_PREFIX, listKeys } from '@/lib/p01Storage';
+import ExportButtons from '@/components/export/ExportButtons';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -28,34 +29,6 @@ export default function SettingsPage() {
   const saveFocusSettings = (target: number, label: string) => {
     const settings = { dailyTarget: target, defaultLabel: label };
     localStorage.setItem('focus_settings', JSON.stringify(settings));
-  };
-
-  const handleExportData = () => {
-    // Collect all p01: prefixed data
-    const keys = listKeys(P01_PREFIX);
-    const exportData: Record<string, unknown> = {};
-    
-    keys.forEach((key) => {
-      const value = localStorage.getItem(key);
-      if (value) {
-        try {
-          exportData[key] = JSON.parse(value);
-        } catch {
-          exportData[key] = value;
-        }
-      }
-    });
-
-    // Create download
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `operators-export-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   const handleResetData = () => {
@@ -117,24 +90,9 @@ export default function SettingsPage() {
           </p>
 
           <div className={styles.actionList}>
-            {/* Export Data Button */}
+            {/* Data Export — Supabase-backed, full payload */}
             <div className={styles.actionItem}>
-              <div className={styles.actionContent}>
-                <svg className={styles.actionIcon} viewBox="0 0 512 512" fill="currentColor">
-                  <path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32V274.7l-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7V32zM64 352c-35.3 0-64 28.7-64 64v32c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64v-32c0-35.3-28.7-64-64-64H346.5l-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352H64zm368 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z" />
-                </svg>
-                <div>
-                  <h3 className={styles.actionTitle}>Export Your Data</h3>
-                  <p className={styles.actionDescription}>Download all your habits, tasks, and progress data as JSON</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleExportData}
-                className={styles.actionButton}
-              >
-                Export
-              </button>
+              <ExportButtons mode={{ kind: 'self' }} />
             </div>
 
             {/* Reset Data Button */}

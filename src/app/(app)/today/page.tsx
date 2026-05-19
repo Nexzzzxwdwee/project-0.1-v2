@@ -5,6 +5,7 @@ import Link from 'next/link';
 import styles from './today.module.css';
 import InteractiveCheckbox from '@/components/ui/InteractiveCheckbox';
 import PresetSyncModal from '@/components/ui/PresetSyncModal';
+import TimeLogQuickEntry from './TimeLogQuickEntry';
 import {
   getDayPlan,
   saveDayPlan,
@@ -905,6 +906,9 @@ export default function TodayPage() {
           </div>
         </div>
       )}
+
+      {/* Time Log Quick Entry */}
+      <TimeLogQuickEntry />
 
       {/* Preset Selector */}
       {Object.keys(presets).length > 0 && (

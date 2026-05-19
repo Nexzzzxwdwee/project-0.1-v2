@@ -1,0 +1,178 @@
+.header {
+  margin-bottom: 2rem;
+}
+
+.accent {
+  display: block;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted, #a8a29e);
+  margin-bottom: 0.4rem;
+}
+
+.title {
+  margin: 0 0 0.4rem;
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.titleGradient {
+  background: linear-gradient(90deg, var(--accent, #22c55e), #eab308);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--text-secondary, #d6d3d1);
+  font-size: 0.95rem;
+}
+
+.errorBox {
+  padding: 0.75rem 0.9rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 0.5rem;
+  color: #fca5a5;
+  margin-bottom: 1rem;
+}
+
+.tableWrap {
+  background: var(--surface, rgba(28, 25, 23, 0.6));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+  border-radius: 0.75rem;
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table thead {
+  background: var(--bg, #0c0a09);
+}
+
+.table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted, #a8a29e);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+}
+
+.table tbody tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--border, rgba(255,255,255,0.06)) 60%, transparent);
+  transition: background 0.15s;
+}
+
+.table tbody tr:hover {
+  background: color-mix(in srgb, var(--accent, #22c55e) 4%, transparent);
+}
+
+.table td {
+  padding: 0.85rem 1rem;
+  vertical-align: middle;
+}
+
+.empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted, #a8a29e);
+  font-style: italic;
+}
+
+.inactiveRow {
+  opacity: 0.5;
+}
+
+.studentLink {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  text-decoration: none;
+}
+
+.studentName {
+  color: var(--text-primary, #f5f5f4);
+  font-weight: 600;
+}
+
+.studentEmail {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  color: var(--text-muted, #a8a29e);
+}
+
+.mono {
+  font-family: var(--font-mono), monospace;
+  color: var(--text-secondary, #d6d3d1);
+  font-size: 0.85rem;
+}
+
+.muted {
+  color: var(--text-muted, #a8a29e);
+}
+
+.flagBadge {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 0.2rem 0.5rem;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 999px;
+}
+
+.statusToggle {
+  background: transparent;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+  color: var(--text-secondary, #d6d3d1);
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.statusToggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.statusOn {
+  color: var(--accent, #22c55e);
+  border-color: color-mix(in srgb, var(--accent, #22c55e) 40%, transparent);
+  background: color-mix(in srgb, var(--accent, #22c55e) 10%, transparent);
+}
+
+.statusOff {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.openLink {
+  color: var(--text-secondary, #d6d3d1);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.openLink:hover {
+  color: var(--accent, #22c55e);
+}

@@ -13,10 +13,8 @@ function InitializeForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userExistsError, setUserExistsError] = useState(false);
-  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
 
-  // Check for error and tab in URL params
+  // Check for error in URL params
   useEffect(() => {
     const errorParam = searchParams.get('error');
     if (errorParam === 'auth_failed') {
@@ -24,20 +22,7 @@ function InitializeForm() {
     } else if (errorParam === 'supabase_not_configured') {
       setError('Authentication service is not available. Please contact support.');
     }
-
-    // Set initial tab from query param
-    const tabParam = searchParams.get('tab');
-    if (tabParam === 'signup') {
-      setActiveTab('signup');
-    } else if (tabParam === 'signin') {
-      setActiveTab('signin');
-    }
   }, [searchParams]);
-
-  // Clear user exists error when switching tabs
-  useEffect(() => {
-    setUserExistsError(false);
-  }, [activeTab]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,78 +37,39 @@ function InitializeForm() {
     }
 
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (signInError) {
-        setError(signInError.message);
+      if (signInError || !signInData.user) {
+        setError(signInError?.message || 'Sign in failed.');
         setLoading(false);
         return;
       }
 
-      // Success - redirect to today
-      router.push('/today');
+      // Look up role to decide where to land. Admin → /admin, student → /today.
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, is_active')
+        .eq('id', signInData.user.id)
+        .maybeSingle();
+
+      if (profile && !profile.is_active) {
+        await supabase.auth.signOut();
+        setError('Your account has been deactivated. Contact your admin.');
+        setLoading(false);
+        return;
+      }
+
+      router.push(profile?.role === 'admin' ? '/admin' : '/today');
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
       setLoading(false);
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) {
-      setError('Supabase is not configured. Please contact support.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (signUpError) {
-        // Check if error indicates user already exists
-        const errorMessage = signUpError.message.toLowerCase();
-        const isUserExists = 
-          errorMessage.includes('user already registered') ||
-          errorMessage.includes('already registered') ||
-          errorMessage.includes('email already exists') ||
-          errorMessage.includes('user already exists') ||
-          signUpError.status === 422; // Common status for validation errors including existing user
-        
-        if (isUserExists) {
-          setUserExistsError(true);
-          setError(null);
-          // Switch to signin tab
-          setActiveTab('signin');
-        } else {
-          setError(signUpError.message);
-          setUserExistsError(false);
-        }
-        setLoading(false);
-        return;
-      }
-
-      // Success - redirect to onboarding
-      router.push('/onboarding');
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = activeTab === 'signin' ? handleSignIn : handleSignUp;
+  const handleSubmit = handleSignIn;
 
   return (
     <main className={styles.mainContent}>
@@ -152,50 +98,9 @@ function InitializeForm() {
         <div className={styles.cardAuthMain}>
           <div className={styles.accentLine}></div>
 
-          {/* Tabs */}
-          <div className={styles.sectionTabs}>
-            <button 
-              type="button"
-              className={`${styles.tab} ${activeTab === 'signin' ? styles.tabActive : ''}`}
-              onClick={() => {
-                setActiveTab('signin');
-                setError(null);
-                setUserExistsError(false);
-              }}
-            >
-              Sign In
-            </button>
-            <button 
-              type="button"
-              className={`${styles.tab} ${activeTab === 'signup' ? styles.tabActive : ''}`}
-              onClick={() => {
-                setActiveTab('signup');
-                setError(null);
-                setUserExistsError(false);
-              }}
-            >
-              Sign Up
-            </button>
-          </div>
-
           {/* Form Content */}
           <div className={styles.formContent}>
             <form className={styles.formLogin} onSubmit={handleSubmit}>
-              {/* User Exists Error Message */}
-              {userExistsError && (
-                <div style={{ 
-                  padding: '0.75rem', 
-                  background: 'rgba(239, 68, 68, 0.1)', 
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  borderRadius: '0.5rem',
-                  marginBottom: '1rem',
-                  color: '#ef4444',
-                  fontSize: '0.875rem'
-                }}>
-                  Account already exists — please sign in
-                </div>
-              )}
-
               {/* General Error Message */}
               {error && (
                 <div style={{ 
@@ -242,11 +147,6 @@ function InitializeForm() {
                   <label htmlFor="password" className={styles.label}>
                     Password
                   </label>
-                  {activeTab === 'signin' && (
-                    <a href="#" className={styles.forgotLink}>
-                      Forgot?
-                    </a>
-                  )}
                 </div>
                 <div className={styles.inputWrapper}>
                   <div className={styles.inputIconLeft}>
@@ -279,7 +179,7 @@ function InitializeForm() {
                 className={styles.btnSubmit}
                 disabled={loading}
               >
-                <span>{loading ? (activeTab === 'signin' ? 'Signing In...' : 'Creating Account...') : (activeTab === 'signin' ? 'Authenticate' : 'Sign Up')}</span>
+                <span>{loading ? 'Signing In…' : 'Authenticate'}</span>
                 <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
                   <path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z" />
                 </svg>

@@ -1,0 +1,220 @@
+.header {
+  margin-bottom: 1.5rem;
+}
+
+.accent {
+  display: block;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted, #a8a29e);
+  margin-bottom: 0.4rem;
+}
+
+.title {
+  margin: 0 0 0.4rem;
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.titleGradient {
+  background: linear-gradient(90deg, var(--accent, #22c55e), #eab308);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--text-secondary, #d6d3d1);
+  font-size: 0.95rem;
+}
+
+.errorBox {
+  padding: 0.75rem 0.9rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 0.5rem;
+  color: #fca5a5;
+  margin-bottom: 1rem;
+}
+
+.actions {
+  margin-bottom: 1.5rem;
+}
+
+.primaryBtn {
+  background: var(--accent, #22c55e);
+  color: #052e16;
+  border: none;
+  padding: 0.7rem 1.1rem;
+  border-radius: 0.5rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--accent, #22c55e) 25%, transparent);
+}
+
+.primaryBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted, #a8a29e);
+  margin: 0 0 0.75rem;
+  font-weight: 600;
+}
+
+.empty {
+  padding: 1.25rem;
+  background: var(--surface, rgba(28, 25, 23, 0.6));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+  border-radius: 0.5rem;
+  color: var(--text-muted, #a8a29e);
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--surface, rgba(28, 25, 23, 0.6));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+  border-radius: 0.6rem;
+}
+
+.cardUsed {
+  opacity: 0.6;
+}
+
+.cardLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.codeRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.code {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.95rem;
+  color: var(--text-primary, #f5f5f4);
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.5rem;
+  background: var(--bg, #0c0a09);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+  border-radius: 0.3rem;
+}
+
+.statusBadge {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+}
+
+.status_pending {
+  color: var(--accent, #22c55e);
+  background: color-mix(in srgb, var(--accent, #22c55e) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent, #22c55e) 40%, transparent);
+}
+
+.status_used {
+  color: var(--text-muted, #a8a29e);
+  background: var(--bg, #0c0a09);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+}
+
+.status_expired {
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+}
+
+.metaRow {
+  display: flex;
+  gap: 1rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  color: var(--text-muted, #a8a29e);
+}
+
+.cardRight {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.secondaryBtn {
+  background: transparent;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+  color: var(--text-secondary, #d6d3d1);
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.4rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.secondaryBtn:hover {
+  color: var(--accent, #22c55e);
+  border-color: color-mix(in srgb, var(--accent, #22c55e) 40%, transparent);
+}
+
+.dangerBtn {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.4rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dangerBtn:hover {
+  background: rgba(239, 68, 68, 0.1);
+}

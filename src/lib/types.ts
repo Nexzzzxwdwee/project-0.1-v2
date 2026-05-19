@@ -2,6 +2,54 @@
  * Shared domain types
  */
 
+// ── Auth / Roles ────────────────────────────────────────────
+
+export type UserRole = 'admin' | 'student';
+
+export interface Profile {
+  id: string; // matches auth.users.id
+  role: UserRole;
+  invitedBy: string | null;
+  displayName: string | null;
+  email: string | null;
+  isActive: boolean;
+  lastActiveAt: string | null; // ISO
+  createdAt: string;
+}
+
+export interface Invite {
+  id: string;
+  code: string;
+  createdBy: string | null;
+  usedBy: string | null;
+  usedAt: string | null;
+  expiresAt: string | null;
+  isUsed: boolean;
+  createdAt: string;
+}
+
+export type MentorNoteEntryType = 'journal' | 'goal' | 'habit' | 'time_log' | 'general';
+
+export interface MentorNote {
+  id: string;
+  adminId: string;
+  studentId: string;
+  noteText: string;
+  entryType: MentorNoteEntryType;
+  entryRefId: string | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface Flag {
+  id: string;
+  adminId: string;
+  studentId: string;
+  reason: string;
+  resolved: boolean;
+  createdAt: string;
+}
+
 export interface JournalEntry {
   id: string;
   createdAt: number;

@@ -38,6 +38,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  // Role gate: /admin/* is admin-only.
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, is_active')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (!profile || profile.role !== 'admin' || !profile.is_active) {
+      return NextResponse.redirect(new URL('/today', request.url));
+    }
+  }
+
   return response;
 }
 
@@ -54,7 +66,9 @@ export const config = {
     '/rank/:path*',
     '/habits/:path*',
     '/settings/:path*',
+    '/feedback/:path*',
     '/day/:path*',
     '/trading/:path*',
+    '/admin/:path*',
   ],
 };

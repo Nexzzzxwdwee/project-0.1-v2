@@ -5,6 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { getActivePresetId } from '@/lib/presets';
+import { touchLastActive } from '@/lib/profiles';
+import { getMyUnreadCount } from '@/lib/mentor';
 import type { User } from '@supabase/supabase-js';
 import { iconPaths } from '@/components/ui/icons';
 import styles from './app-shell.module.css';
@@ -15,6 +17,7 @@ const navItems = [
   { href: '/history', label: 'History', icon: 'clock-rotate-left' },
   { href: '/journal', label: 'Journal', icon: 'book' },
   { href: '/goals', label: 'Goals', icon: 'bullseye' },
+  { href: '/feedback', label: 'Feedback', icon: 'bell' },
   { href: '/earnings', label: 'Earnings', icon: 'coins' },
   { href: '/rank', label: 'Rank', icon: 'medal' },
   { href: '/habits', label: 'Habits', icon: 'heart' },
@@ -36,6 +39,7 @@ export default function AppShellClient({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  const [unreadNotes, setUnreadNotes] = useState(0);
 
   // Check auth status on mount (run once)
   useEffect(() => {
@@ -71,6 +75,27 @@ export default function AppShellClient({
           return;
         }
 
+        // Role-aware routing: admins land in /admin; everyone else flows
+        // through onboarding (if needed) into the regular app.
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, is_active')
+          .eq('id', validatedUser.id)
+          .maybeSingle();
+
+        if (profile && !profile.is_active) {
+          await supabase.auth.signOut();
+          router.push('/initialize?error=deactivated');
+          setLoading(false);
+          return;
+        }
+
+        if (profile?.role === 'admin' && !currentPath.startsWith('/admin')) {
+          router.push('/admin');
+          setLoading(false);
+          return;
+        }
+
         if (currentPath !== '/onboarding') {
           const activePresetId = await getActivePresetId();
           if (!activePresetId && currentPath !== '/onboarding') {
@@ -79,6 +104,10 @@ export default function AppShellClient({
             return;
           }
         }
+
+        // Touch last_active (fire-and-forget) and load unread notes.
+        touchLastActive().catch(() => { /* ignore */ });
+        getMyUnreadCount().then(setUnreadNotes).catch(() => { /* ignore */ });
 
         setLoading(false);
       } catch (error) {
@@ -146,7 +175,11 @@ export default function AppShellClient({
   useEffect(() => {
     closeDrawer();
     mainRef.current?.scrollTo(0, 0);
-  }, [pathname]);
+    // Refresh unread count when route changes (e.g., after viewing /feedback).
+    if (authChecked && user) {
+      getMyUnreadCount().then(setUnreadNotes).catch(() => { /* ignore */ });
+    }
+  }, [pathname, authChecked, user]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -176,6 +209,7 @@ export default function AppShellClient({
       <div className={styles.sectionLabel}>MAIN</div>
       {navItems.map((item) => {
         const isActive = pathname === item.href || (item.href === '/trading' && pathname.startsWith('/trading/'));
+        const showBadge = item.href === '/feedback' && unreadNotes > 0;
         return (
           <Link
             key={item.href}
@@ -191,6 +225,11 @@ export default function AppShellClient({
               <path d={getIconSVG(item.icon)} />
             </svg>
             <span className={styles.navLabel}>{item.label}</span>
+            {showBadge && (
+              <span className={styles.navBadge} aria-label={`${unreadNotes} unread`}>
+                {unreadNotes > 9 ? '9+' : unreadNotes}
+              </span>
+            )}
           </Link>
         );
       })}

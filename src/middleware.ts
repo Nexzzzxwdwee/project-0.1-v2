@@ -45,6 +45,7 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/today/:path*',
+    '/focus/:path*',
     '/history/:path*',
     '/weekly/:path*',
     '/journal/:path*',

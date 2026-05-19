@@ -6,7 +6,7 @@ import {
   getJournalEntries,
   saveJournalEntries,
   getActiveEntryId,
-  setActiveEntryId,
+  setActiveEntryId as persistActiveEntryId,
 } from '@/lib/presets';
 import type { JournalEntry } from '@/lib/types';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -102,7 +102,7 @@ export default function JournalPage() {
       };
           loadedEntries.push(newEntry);
           await saveJournalEntries(loadedEntries);
-          await setActiveEntryId(newEntry.id);
+          await persistActiveEntryId(newEntry.id);
           setActiveEntryId(newEntry.id);
         }
 
@@ -114,11 +114,11 @@ export default function JournalPage() {
         // Set active entry (prioritize loaded, fallback to first)
         const activeId = loadedActiveId || (loadedEntries.length > 0 ? loadedEntries[0].id : null);
         if (activeId && loadedEntries.find((e) => e.id === activeId)) {
-          await setActiveEntryId(activeId);
+          await persistActiveEntryId(activeId);
           setActiveEntryId(activeId);
         } else if (loadedEntries.length > 0) {
           const firstId = loadedEntries[0].id;
-          await setActiveEntryId(firstId);
+          await persistActiveEntryId(firstId);
           setActiveEntryId(firstId);
         }
         
@@ -222,7 +222,7 @@ export default function JournalPage() {
       const updated = [newEntry, ...entries];
       await saveJournalEntries(updated);
       setEntries(updated);
-      await setActiveEntryId(newEntry.id);
+      await persistActiveEntryId(newEntry.id);
       setActiveEntryId(newEntry.id);
 
       // Focus textarea after a brief delay
@@ -264,10 +264,10 @@ export default function JournalPage() {
 
       setEntries(updated);
       if (nextId) {
-        await setActiveEntryId(nextId);
+        await persistActiveEntryId(nextId);
         setActiveEntryId(nextId);
       } else {
-        await setActiveEntryId(null);
+        await persistActiveEntryId(null);
         setActiveEntryId(null);
       }
     } catch (error) {
@@ -289,7 +289,7 @@ export default function JournalPage() {
     const saveActive = async () => {
       try {
   
-        await setActiveEntryId(activeEntryId);
+        await persistActiveEntryId(activeEntryId);
       } catch (error) {
         console.error('Failed to save active entry:', error);
       }

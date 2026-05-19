@@ -78,7 +78,7 @@ async function getUserId(): Promise<string> {
 /**
  * Clear cached user ID (call when auth state changes)
  */
-function clearUserIdCache(): void {
+export function clearUserIdCache(): void {
   cachedUserId = null;
   userIdPromise = null;
 }
@@ -673,14 +673,15 @@ export function supabaseAdapter(): StorageAdapter {
       }
 
       const interval = (data.interval_minutes === 15 ? 15 : 60) as TimeLogInterval;
+      const str = (v: unknown): string => (typeof v === 'string' ? v : '');
       return {
         date: data.date,
         interval,
-        slots: (data.slots || {}) as Record<string, TimeLogSlot>,
-        wins: data.wins || '',
-        learnt: data.learnt || '',
-        tomorrow: data.tomorrow || '',
-        notes: data.notes || '',
+        slots: (data.slots && typeof data.slots === 'object' ? data.slots : {}) as Record<string, TimeLogSlot>,
+        wins: str(data.wins),
+        learnt: str(data.learnt),
+        tomorrow: str(data.tomorrow),
+        notes: str(data.notes),
         updatedAt: Number(data.updated_at) || Date.now(),
       };
     },

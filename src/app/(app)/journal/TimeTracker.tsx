@@ -52,6 +52,7 @@ export default function TimeTracker({ date, onSaveStatusChange }: TimeTrackerPro
   const [popoverKey, setPopoverKey] = useState<string | null>(null);
   const [popoverAnchor, setPopoverAnchor] = useState<{ top: number; right: number } | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingLogRef = useRef<TimeLog | null>(null);
   const todayHere = isToday(date);
 
   const closePopover = useCallback(() => {
@@ -113,27 +114,63 @@ export default function TimeTracker({ date, onSaveStatusChange }: TimeTrackerPro
 
   const scheduleSave = useCallback(
     (next: TimeLog) => {
+      pendingLogRef.current = next;
       onSaveStatusChange?.('saving');
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(async () => {
-        try {
-          await saveTimeLog(next);
+        const toSave = pendingLogRef.current;
+        pendingLogRef.current = null;
+        debounceRef.current = null;
+        if (!toSave) {
           onSaveStatusChange?.('saved');
+          return;
+        }
+        try {
+          await saveTimeLog(toSave);
         } catch (error) {
           console.error('Failed to save time log:', error);
-          onSaveStatusChange?.('saved');
         }
-        debounceRef.current = null;
+        onSaveStatusChange?.('saved');
       }, 600);
     },
     [onSaveStatusChange],
   );
 
+  // Flush any pending edit on unmount or when switching to a different
+  // entry's date — otherwise typed text would silently drop.
   useEffect(() => {
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      const toSave = pendingLogRef.current;
+      pendingLogRef.current = null;
+      if (toSave) {
+        saveTimeLog(toSave).catch((error) => {
+          console.error('Failed to flush time log on unmount:', error);
+        });
+      }
     };
   }, []);
+
+  // On date change, flush the in-flight write for the *old* date before
+  // the load effect resets state to the new date's log.
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      const toSave = pendingLogRef.current;
+      pendingLogRef.current = null;
+      if (toSave) {
+        saveTimeLog(toSave).catch((error) => {
+          console.error('Failed to flush time log on date change:', error);
+        });
+      }
+    };
+  }, [date]);
 
   const updateLog = (mutator: (prev: TimeLog) => TimeLog) => {
     setLog((prev) => {

@@ -50,6 +50,17 @@ export async function startSession(userId: string, label?: string): Promise<stri
   if (!supabase) throw new Error('Supabase not configured');
 
   const now = new Date().toISOString();
+
+  // Close any prior open session for this user. If a previous endSession
+  // failed mid-write, the row would still have ended_at = null and
+  // getActiveSession would re-attach it on the next load. Mark them
+  // ended at zero duration so we never start with an orphan in flight.
+  await supabase
+    .from('focus_sessions')
+    .update({ ended_at: now, duration_seconds: 0 })
+    .eq('user_id', userId)
+    .is('ended_at', null);
+
   const { data, error } = await supabase
     .from('focus_sessions')
     .insert({

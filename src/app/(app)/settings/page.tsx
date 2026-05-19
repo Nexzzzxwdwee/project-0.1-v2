@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { clearUserIdCache } from '@/lib/storage/supabase';
+import { clearStorageCache } from '@/lib/storage';
 import styles from './settings.module.css';
 import { P01_PREFIX, listKeys, getJSON } from '@/lib/p01Storage';
 
@@ -15,14 +17,13 @@ export default function SettingsPage() {
   const [focusDefaultLabel, setFocusDefaultLabel] = useState('Trading');
 
   // Load focus settings on mount
-  useState(() => {
-    if (typeof window === 'undefined') return;
+  useEffect(() => {
     try {
       const s = JSON.parse(localStorage.getItem('focus_settings') || '{}');
       if (s.dailyTarget) setFocusDailyTarget(s.dailyTarget);
       if (s.defaultLabel) setFocusDefaultLabel(s.defaultLabel);
     } catch { /* ignore */ }
-  });
+  }, []);
 
   const saveFocusSettings = (target: number, label: string) => {
     const settings = { dailyTarget: target, defaultLabel: label };
@@ -75,11 +76,16 @@ export default function SettingsPage() {
 
   const handleLogout = async () => {
     const supabase = getSupabaseBrowserClient();
-    
+
     if (supabase) {
       await supabase.auth.signOut();
     }
-    
+
+    // Drop cached user id and storage adapter so the next sign-in
+    // doesn't read/write under the previous account.
+    clearUserIdCache();
+    clearStorageCache();
+
     // Redirect to home page
     router.push('/');
   };

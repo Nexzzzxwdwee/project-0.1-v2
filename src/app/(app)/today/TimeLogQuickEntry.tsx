@@ -48,6 +48,7 @@ export default function TimeLogQuickEntry() {
   const [popoverAnchor, setPopoverAnchor] = useState<{ top: number; right: number } | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const activityFocusedRef = useRef(false);
+  const pendingLogRef = useRef<TimeLog | null>(null);
 
   // Load today's log
   useEffect(() => {
@@ -83,20 +84,36 @@ export default function TimeLogQuickEntry() {
   }, [log.interval]);
 
   const scheduleSave = useCallback((next: TimeLog) => {
+    pendingLogRef.current = next;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
+      const toSave = pendingLogRef.current;
+      pendingLogRef.current = null;
+      debounceRef.current = null;
+      if (!toSave) return;
       try {
-        await saveTimeLog(next);
+        await saveTimeLog(toSave);
       } catch (error) {
         console.error('Failed to save time log:', error);
       }
-      debounceRef.current = null;
     }, 600);
   }, []);
 
+  // On unmount, flush any pending edit so navigating away within the
+  // debounce window doesn't drop the user's text.
   useEffect(() => {
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      const toSave = pendingLogRef.current;
+      pendingLogRef.current = null;
+      if (toSave) {
+        saveTimeLog(toSave).catch((error) => {
+          console.error('Failed to flush time log on unmount:', error);
+        });
+      }
     };
   }, []);
 

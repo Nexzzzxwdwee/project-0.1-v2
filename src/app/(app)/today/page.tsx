@@ -94,6 +94,15 @@ export default function TodayPage() {
   const [focusLabel, setFocusLabel] = useState('Trading');
   const [focusDiscardConfirm, setFocusDiscardConfirm] = useState(false);
   const focusTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sealingRef = useRef(false);
+  const dayPlanRef = useRef<DayPlan>({
+    date: getTodayDateString(),
+    activePresetId: null,
+    presetUpdatedAt: null,
+    items: [],
+    archived: [],
+    isSealed: false,
+  });
 
   const FOCUS_LABELS = ['Trading', 'Coding', 'Reading', 'Planning', 'Review', 'Custom'];
 
@@ -360,11 +369,19 @@ export default function TodayPage() {
     loadData();
   }, []);
 
-  // Save day plan whenever it changes
+  // Mirror dayPlan into a ref so functions outside React's render
+  // cycle (sequential async clicks) can read the latest value.
+  useEffect(() => {
+    dayPlanRef.current = dayPlan;
+  }, [dayPlan]);
+
+  // Save day plan whenever it changes. Read the latest plan via ref so
+  // rapid sequential calls don't clobber each other through stale closures.
   const updateDayPlan = async (updater: (plan: DayPlan) => DayPlan) => {
-    if (dayPlan.isSealed) return; // Don't allow changes when sealed
-    
-    const updated = updater(dayPlan);
+    if (dayPlanRef.current.isSealed) return;
+
+    const updated = updater(dayPlanRef.current);
+    dayPlanRef.current = updated;
     setDayPlan(updated);
     try {
       await saveDayPlan(updated);
@@ -616,17 +633,21 @@ export default function TodayPage() {
 
   const handleSealConfirm = async () => {
     if (dayPlan.isSealed) return;
+    if (sealingRef.current) return;
+    sealingRef.current = true;
 
     try {
       const { updatedPlan, streak: newStreak } = await sealDay(dayPlan);
       setDayPlan(updatedPlan);
+      dayPlanRef.current = updatedPlan;
       setStreak(newStreak);
       await refreshRank();
     } catch (error) {
       console.error('Failed to seal day:', error);
+    } finally {
+      sealingRef.current = false;
+      setSealModalOpen(false);
     }
-
-    setSealModalOpen(false);
   };
 
   // Get active preset for display (only after mount to avoid hydration mismatch)

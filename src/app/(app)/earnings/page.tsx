@@ -66,9 +66,18 @@ export default function EarningsPage() {
     }
   };
 
-  const filteredTransactions = selectedTag
-    ? transactions.filter((t) => t.tag === selectedTag)
-    : transactions;
+  // Filter by selected month (currentMonth is first-of-month) and the
+  // base currency so totals don't mix incompatible amounts. Optionally
+  // also narrow by tag if one is selected.
+  const monthYear = currentMonth.getFullYear();
+  const monthIndex = currentMonth.getMonth();
+  const filteredTransactions = transactions.filter((t) => {
+    if (t.currency !== baseCurrency) return false;
+    if (selectedTag && t.tag !== selectedTag) return false;
+    const d = new Date(t.date + 'T00:00:00');
+    if (Number.isNaN(d.getTime())) return false;
+    return d.getFullYear() === monthYear && d.getMonth() === monthIndex;
+  });
 
   const totalIncome = filteredTransactions
     .filter((t) => t.type === 'income')

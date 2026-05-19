@@ -238,8 +238,20 @@
 
 .textInput:focus {
   outline: none;
-  border-color: #E00030;
-  box-shadow: 0 0 0 1px #E00030, inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-color: #E0002B;
+  box-shadow: 0 0 0 1px #E0002B, inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Prevent browser autofill from painting a white background over our dark input */
+.textInput:-webkit-autofill,
+.textInput:-webkit-autofill:hover,
+.textInput:-webkit-autofill:focus,
+.textInput:-webkit-autofill:active {
+  -webkit-text-fill-color: #FFFFFF;
+  -webkit-box-shadow: 0 0 0 1000px #1a1a1a inset !important;
+  box-shadow: 0 0 0 1000px #1a1a1a inset !important;
+  caret-color: #FFFFFF;
+  transition: background-color 9999s ease-in-out 0s;
 }
 
 .inputIconLeft {
@@ -281,11 +293,12 @@
 .btnSubmit {
   width: 100%;
   padding: 0.875rem 1rem;
-  background: #E00030;
-  color: #080808;
-  font-weight: bold;
-  border-radius: 0.5rem;
-  box-shadow: 0 0 20px rgba(224, 0, 48, 0.3);
+  background: var(--color-red-primary);
+  color: var(--color-white);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  box-shadow: 0 0 20px rgba(224, 0, 43, 0.4);
   transition: all 0.2s;
   display: flex;
   align-items: center;
@@ -297,8 +310,8 @@
 }
 
 .btnSubmit:hover {
-  background: #CC0000;
-  box-shadow: 0 0 30px rgba(224, 0, 48, 0.5);
+  background: var(--color-red-glow);
+  box-shadow: 0 0 30px rgba(255, 23, 68, 0.55);
   transform: translateY(-2px);
 }
 

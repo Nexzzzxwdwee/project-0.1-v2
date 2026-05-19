@@ -91,10 +91,6 @@ export default function TodayPage() {
   const [focusPausedAt, setFocusPausedAt] = useState<number | null>(null);
   const [focusTotalPaused, setFocusTotalPaused] = useState(0);
   const [focusLabel, setFocusLabel] = useState('Trading');
-  const [focusEndModalOpen, setFocusEndModalOpen] = useState(false);
-  const [focusEndNotes, setFocusEndNotes] = useState('');
-  const [focusEndLabel, setFocusEndLabel] = useState('');
-  const [focusEndDuration, setFocusEndDuration] = useState(0);
   const [focusDiscardConfirm, setFocusDiscardConfirm] = useState(false);
   const focusTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -213,23 +209,15 @@ export default function TodayPage() {
     setFocusPausedAt(null);
   };
 
-  const handleFocusEndClick = () => {
-    // If paused, calculate current elapsed
+  const handleFocusEndClick = async () => {
+    if (!focusActiveSession) return;
     let elapsed = focusElapsed;
     if (focusPaused && focusPausedAt) {
-      const raw = (focusPausedAt - new Date(focusActiveSession!.startedAt).getTime()) / 1000;
+      const raw = (focusPausedAt - new Date(focusActiveSession.startedAt).getTime()) / 1000;
       elapsed = Math.max(0, raw - focusTotalPaused);
     }
-    setFocusEndDuration(elapsed);
-    setFocusEndLabel(focusActiveSession?.label || focusLabel);
-    setFocusEndNotes('');
-    setFocusEndModalOpen(true);
-  };
-
-  const handleFocusSave = async () => {
-    if (!focusActiveSession) return;
     try {
-      await focusEndSession(focusActiveSession.id, focusEndDuration, focusEndNotes || undefined);
+      await focusEndSession(focusActiveSession.id, elapsed);
     } catch (error) {
       console.error('Failed to save focus session:', error);
     }
@@ -237,8 +225,6 @@ export default function TodayPage() {
     setFocusPaused(false);
     setFocusPausedAt(null);
     setFocusTotalPaused(0);
-    setFocusEndModalOpen(false);
-    setFocusDiscardConfirm(false);
     localStorage.removeItem('focus_active_session_id');
     localStorage.removeItem('focus_paused');
     if (focusUserId) {
@@ -261,7 +247,6 @@ export default function TodayPage() {
     setFocusPausedAt(null);
     setFocusTotalPaused(0);
     setFocusDiscardConfirm(false);
-    setFocusEndModalOpen(false);
     localStorage.removeItem('focus_active_session_id');
     localStorage.removeItem('focus_paused');
   };
@@ -896,40 +881,6 @@ export default function TodayPage() {
             )}
           </div>
         </section>
-      )}
-
-      {/* End Session Modal */}
-      {focusEndModalOpen && (
-        <div className={styles.deepWorkModalOverlay} onClick={() => setFocusEndModalOpen(false)}>
-          <div className={styles.deepWorkModalCard} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.deepWorkModalTitle}>End Session</h3>
-            <p className={styles.deepWorkModalInfo}>
-              {focusEndLabel} &middot; {new Date(focusActiveSession?.startedAt || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &rarr; {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </p>
-            <div className={styles.deepWorkModalDuration}>{formatFocusTimer(focusEndDuration)}</div>
-            <input
-              type="text"
-              className={styles.deepWorkModalLabelSelect}
-              value={focusEndLabel}
-              onChange={(e) => setFocusEndLabel(e.target.value)}
-              placeholder="Label"
-            />
-            <textarea
-              className={styles.deepWorkModalNotesInput}
-              placeholder="What did you work on?"
-              value={focusEndNotes}
-              onChange={(e) => setFocusEndNotes(e.target.value)}
-            />
-            <div className={styles.deepWorkModalActions}>
-              <button type="button" className={styles.deepWorkModalDiscardBtn} onClick={() => setFocusDiscardConfirm(true)}>
-                DISCARD
-              </button>
-              <button type="button" className={styles.deepWorkModalSaveBtn} onClick={handleFocusSave}>
-                SAVE SESSION
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Discard Confirm Modal */}

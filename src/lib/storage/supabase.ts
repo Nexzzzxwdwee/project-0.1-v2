@@ -6,6 +6,7 @@
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import {
   createDefaultUserProgress,
+  createDefaultTimeLog,
   type Preset,
   type PresetId,
   type DayPlan,
@@ -16,6 +17,7 @@ import {
 import type { StorageAdapter } from './types';
 import type { JournalEntry } from '@/lib/types';
 import type { Goal } from '@/lib/types';
+import type { TimeLog, TimeLogInterval, TimeLogSlot } from '@/lib/types';
 
 /**
  * Validate and truncate a user-provided string field before writing to DB.
@@ -643,6 +645,70 @@ export function supabaseAdapter(): StorageAdapter {
 
       if (error) {
         console.error('Failed to save goals:', error);
+        throw error;
+      }
+    },
+
+    // Time Tracker operations
+    async getTimeLog(date: string): Promise<TimeLog> {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error('Supabase not configured');
+
+      const userId = await getUserId();
+      const id = `${userId}:${date}`;
+
+      const { data, error } = await supabase
+        .from('time_logs')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Failed to fetch time log:', error);
+        throw error;
+      }
+
+      if (!data) {
+        return createDefaultTimeLog(date);
+      }
+
+      const interval = (data.interval_minutes === 15 ? 15 : 60) as TimeLogInterval;
+      return {
+        date: data.date,
+        interval,
+        slots: (data.slots || {}) as Record<string, TimeLogSlot>,
+        wins: data.wins || '',
+        learnt: data.learnt || '',
+        tomorrow: data.tomorrow || '',
+        notes: data.notes || '',
+        updatedAt: Number(data.updated_at) || Date.now(),
+      };
+    },
+
+    async saveTimeLog(log: TimeLog): Promise<void> {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error('Supabase not configured');
+
+      const userId = await getUserId();
+      const id = `${userId}:${log.date}`;
+
+      const { error } = await supabase
+        .from('time_logs')
+        .upsert({
+          id,
+          user_id: userId,
+          date: log.date,
+          interval_minutes: log.interval,
+          slots: log.slots,
+          wins: validateText(log.wins, 'Wins', 5_000),
+          learnt: validateText(log.learnt, 'Learnt', 5_000),
+          tomorrow: validateText(log.tomorrow, 'Tomorrow', 5_000),
+          notes: validateText(log.notes, 'Notes', 10_000),
+          updated_at: log.updatedAt,
+        }, { onConflict: 'id' });
+
+      if (error) {
+        console.error('Failed to save time log:', error);
         throw error;
       }
     },

@@ -10,7 +10,10 @@ import {
 } from '@/lib/presets';
 import type { JournalEntry } from '@/lib/types';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import TimeTracker from './TimeTracker';
 import styles from './journal.module.css';
+
+type EditorTab = 'journal' | 'time';
 
 /**
  * Get today's date as YYYY-MM-DD
@@ -75,6 +78,7 @@ export default function JournalPage() {
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [showEntriesList, setShowEntriesList] = useState(true);
+  const [activeTab, setActiveTab] = useState<EditorTab>('journal');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -419,21 +423,52 @@ export default function JournalPage() {
                 </button>
               </header>
 
-              {/* Textarea */}
-              <textarea
-                ref={textareaRef}
-                value={activeEntry.content}
-                onChange={(e) => handleContentChange(e.target.value)}
-                className={styles.textarea}
-                spellCheck={true}
-              />
+              {/* Tabs */}
+              <div className={styles.tabBar} role="tablist" aria-label="Journal mode">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'journal'}
+                  className={`${styles.tab} ${activeTab === 'journal' ? styles.tabActive : ''}`}
+                  onClick={() => setActiveTab('journal')}
+                >
+                  Journal
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'time'}
+                  className={`${styles.tab} ${activeTab === 'time' ? styles.tabActive : ''}`}
+                  onClick={() => setActiveTab('time')}
+                >
+                  Time Tracker
+                </button>
+              </div>
 
-              {/* Footer */}
-              <footer className={styles.editorFooter}>
-                <div className={styles.wordCount}>
-                  {wordCount} {wordCount === 1 ? 'word' : 'words'}
-                </div>
-              </footer>
+              {activeTab === 'journal' ? (
+                <>
+                  {/* Textarea */}
+                  <textarea
+                    ref={textareaRef}
+                    value={activeEntry.content}
+                    onChange={(e) => handleContentChange(e.target.value)}
+                    className={styles.textarea}
+                    spellCheck={true}
+                  />
+
+                  {/* Footer */}
+                  <footer className={styles.editorFooter}>
+                    <div className={styles.wordCount}>
+                      {wordCount} {wordCount === 1 ? 'word' : 'words'}
+                    </div>
+                  </footer>
+                </>
+              ) : (
+                <TimeTracker
+                  date={activeEntry.date}
+                  onSaveStatusChange={setSaveStatus}
+                />
+              )}
             </>
           ) : (
             <div className={styles.emptyEditor}>

@@ -211,6 +211,38 @@ Stores the ID of the currently active/selected journal entry.
 
 ---
 
+## TimeLog
+
+**Storage Key (localStorage):**
+`p01:timeLog:<YYYY-MM-DD>`
+
+**Supabase table:** `time_logs` (one row per `user_id` + `date`, id = `<userId>:<date>`)
+
+**Type:**
+`TimeLog`
+
+**Fields:**
+- `date: string` - Date in YYYY-MM-DD format
+- `interval: 60 | 15` - Current grid density (minutes per row)
+- `slots: Record<string, TimeLogSlot>` - Sparse map; key is `"HH:MM"` (24h, zero-padded). Only populated slots are stored.
+- `wins: string` - "Wins of the Day" summary field
+- `learnt: string` - "What I Learnt" summary field
+- `tomorrow: string` - "Tomorrow's Focus" summary field
+- `notes: string` - Free-form side notes
+- `updatedAt: number` - Unix timestamp (milliseconds)
+
+**TimeLogSlot:**
+- `activity: string` - What was done in this slot
+- `baseline: number` - Emotional baseline rating (0 = unset, otherwise 1-10)
+
+**Written by:**
+- `/journal` (Time Tracker tab) - Edits grid rows and summary/notes fields
+
+**Read by:**
+- `/journal` (Time Tracker tab) - Displays the log for the active journal entry's date
+
+---
+
 ## Notes
 
 - All IDs are stable strings generated via `generateId()` (uses `crypto.randomUUID()` with fallback to timestamp-based ID)

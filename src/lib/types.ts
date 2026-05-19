@@ -10,6 +10,24 @@ export interface JournalEntry {
   content: string;
 }
 
+export type TimeLogInterval = 60 | 15;
+
+export interface TimeLogSlot {
+  activity: string;
+  baseline: number; // 0 = unset, otherwise 1-10
+}
+
+export interface TimeLog {
+  date: string; // YYYY-MM-DD
+  interval: TimeLogInterval;
+  slots: Record<string, TimeLogSlot>; // key "HH:MM" (24h, zero-padded)
+  wins: string;
+  learnt: string;
+  tomorrow: string;
+  notes: string;
+  updatedAt: number;
+}
+
 export interface Goal {
   id: string;
   text: string;

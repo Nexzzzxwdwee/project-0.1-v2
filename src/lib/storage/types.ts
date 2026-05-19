@@ -12,6 +12,7 @@ import type {
 } from '@/lib/presets';
 import type { JournalEntry } from '@/lib/types';
 import type { Goal } from '@/lib/types';
+import type { TimeLog } from '@/lib/types';
 
 /**
  * Storage adapter interface
@@ -49,6 +50,10 @@ export interface StorageAdapter {
   // Goal operations
   getGoals(): Promise<Goal[]>;
   saveGoals(goals: Goal[]): Promise<void>;
+
+  // Time Tracker operations
+  getTimeLog(date: string): Promise<TimeLog>;
+  saveTimeLog(log: TimeLog): Promise<void>;
 }
 
 

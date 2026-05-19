@@ -6,6 +6,7 @@
 import { P01_PREFIX, getJSON, setJSON, listKeys } from '@/lib/p01Storage';
 import {
   createDefaultUserProgress,
+  createDefaultTimeLog,
   type Preset,
   type PresetId,
   type DayPlan,
@@ -15,6 +16,7 @@ import {
 import type { StorageAdapter } from './types';
 import type { JournalEntry } from '@/lib/types';
 import type { Goal } from '@/lib/types';
+import type { TimeLog } from '@/lib/types';
 
 /**
  * localStorage adapter implementation
@@ -162,6 +164,15 @@ export function localStorageAdapter(): StorageAdapter {
     async saveGoals(goals: Goal[]): Promise<void> {
       if (typeof window === 'undefined') return;
       setJSON(`${P01_PREFIX}goals`, goals);
+    },
+
+    // Time Tracker operations
+    async getTimeLog(date: string): Promise<TimeLog> {
+      return getJSON<TimeLog>(`${P01_PREFIX}timeLog:${date}`, createDefaultTimeLog(date));
+    },
+
+    async saveTimeLog(log: TimeLog): Promise<void> {
+      setJSON(`${P01_PREFIX}timeLog:${log.date}`, log);
     },
   };
 }

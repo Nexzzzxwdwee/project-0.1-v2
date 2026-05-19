@@ -600,3 +600,30 @@ export async function saveTransactions(transactions: import('@/lib/types').Trans
   setJSON(`${P01_PREFIX}transactions`, transactions);
 }
 
+// ---------------------------------------------------------------------------
+// Time Tracker wrappers
+// ---------------------------------------------------------------------------
+
+export function createDefaultTimeLog(date: string): import('@/lib/types').TimeLog {
+  return {
+    date,
+    interval: 60,
+    slots: {},
+    wins: '',
+    learnt: '',
+    tomorrow: '',
+    notes: '',
+    updatedAt: Date.now(),
+  };
+}
+
+export async function getTimeLog(date: string): Promise<import('@/lib/types').TimeLog> {
+  const storage = getStorage();
+  return storage.getTimeLog(date);
+}
+
+export async function saveTimeLog(log: import('@/lib/types').TimeLog): Promise<void> {
+  const storage = getStorage();
+  await storage.saveTimeLog(log);
+}
+

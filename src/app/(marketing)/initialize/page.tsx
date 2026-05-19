@@ -88,7 +88,7 @@ function InitializeForm() {
           <Link href="/" className={styles.brandIcon}>
             <img
               className={styles.brandLogoImg}
-              src="/ttc-logo.svg"
+              src="/ttc-logo.png"
               alt="TTC"
             />
           </Link>

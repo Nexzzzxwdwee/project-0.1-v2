@@ -36,7 +36,7 @@ export default function AdminShellClient({
           <div className={styles.brandLogoRow}>
             <img
               className={styles.brandLogoImg}
-              src="/ttc-logo.svg"
+              src="/ttc-logo.png"
               alt="TTC"
             />
             <div className={styles.brandTextCol}>

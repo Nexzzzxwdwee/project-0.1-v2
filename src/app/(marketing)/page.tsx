@@ -16,7 +16,7 @@ export default function LandingPage() {
         <div className={styles.headerLeft}>
           <div className={styles.logoIcon}>
             <img
-              src="/ttc-logo.svg"
+              src="/ttc-logo.png"
               alt="TTC"
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />

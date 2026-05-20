@@ -108,12 +108,12 @@ export default function LandingPage() {
           <div className={`${styles.glassCard} ${styles.featureCard}`}>
             <div className={`${styles.featureIcon} ${styles.featureIconYellow}`}>
               <svg className={styles.icon} viewBox="0 0 512 512" fill="currentColor">
-                <path d="M64 64c0-17.7-14.3-32-32-32S0 46.3 0 64V400c0 44.2 35.8 80 80 80H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H80c-8.8 0-16-7.2-16-16V64zm406.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L320 210.7l-57.4-57.4c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L240 221.3l57.4 57.4c12.5 12.5 32.8 12.5 45.3 0l128-128z" />
+                <path d="M176 0c-17.7 0-32 14.3-32 32s14.3 32 32 32h16V98.4C92.3 113.8 16 200 16 304c0 114.9 93.1 208 208 208s208-93.1 208-208c0-41.8-12.3-80.7-33.5-113.3l24.1-24.1c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L355.7 143c-3.1-3.3-6.4-6.5-9.8-9.5C326.2 116.3 303.9 103.5 280 96.7V64h16c17.7 0 32-14.3 32-32s-14.3-32-32-32H176zM288 304a64 64 0 1 0 -128 0 64 64 0 1 0 128 0z" />
               </svg>
             </div>
             <div>
-              <h4 className={styles.featureTitle}>AI Pattern Analysis</h4>
-              <p className={styles.featureDescription}>Feed your data to AI. Find the habits that are building you — and the ones quietly destroying you.</p>
+              <h4 className={styles.featureTitle}>Deep Work Sessions</h4>
+              <p className={styles.featureDescription}>Run focused sprints on a live timer and log every deep-work hour toward your daily target.</p>
             </div>
           </div>
 

@@ -18,7 +18,6 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import {
   getAccounts,
   getTrades,
-  getEquityCurve,
   parseSize,
   getStreakStats,
   getPerformanceRatios,
@@ -128,12 +127,14 @@ export default function TradingDashboard() {
       if (!supabase) return;
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !mounted) return;
-      const [accts, trades, streaks, perf] = await Promise.all([
+      const [accts, trades] = await Promise.all([
         getAccounts(user.id),
         getTrades(user.id),
-        getStreakStats(user.id),
-        getPerformanceRatios(user.id),
       ]);
+      if (!mounted) return;
+      // Derived from the single trades fetch above — no extra round-trips.
+      const streaks = await getStreakStats(user.id, trades);
+      const perf = await getPerformanceRatios(user.id, trades);
       if (!mounted) return;
       setAccounts(accts);
       setAllTrades(trades);

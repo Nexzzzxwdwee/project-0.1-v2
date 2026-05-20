@@ -552,6 +552,46 @@ export function supabaseAdapter(): StorageAdapter {
       }
     },
 
+    async saveJournalEntry(entry: JournalEntry): Promise<void> {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error('Supabase not configured');
+
+      const userId = await getUserId();
+      const { error } = await supabase
+        .from('journal_entries')
+        .upsert(
+          {
+            id: entry.id,
+            user_id: userId,
+            date: entry.date,
+            content: validateText(entry.content, 'Journal content', 50_000),
+            created_at: entry.createdAt,
+            updated_at: entry.updatedAt,
+          },
+          { onConflict: 'id' },
+        );
+
+      if (error) {
+        console.error('Failed to save journal entry:', error);
+        throw error;
+      }
+    },
+
+    async deleteJournalEntry(id: string): Promise<void> {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error('Supabase not configured');
+
+      const { error } = await supabase
+        .from('journal_entries')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Failed to delete journal entry:', error);
+        throw error;
+      }
+    },
+
     async getActiveEntryId(): Promise<string | null> {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase not configured');

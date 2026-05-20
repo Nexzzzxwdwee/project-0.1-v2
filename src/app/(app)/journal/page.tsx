@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   generateId,
   getJournalEntries,
-  saveJournalEntries,
+  saveJournalEntry,
+  deleteJournalEntry,
   setActiveEntryId as persistActiveEntryId,
 } from '@/lib/presets';
 import type { JournalEntry } from '@/lib/types';
@@ -79,6 +80,7 @@ export default function JournalPage() {
   const [showEntriesList, setShowEntriesList] = useState(true);
   const [activeTab, setActiveTab] = useState<EditorTab>('journal');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingEntryRef = useRef<JournalEntry | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load data on mount (after hydration)
@@ -103,7 +105,7 @@ export default function JournalPage() {
             content: '',
           };
           loadedEntries.push(todayEntry);
-          await saveJournalEntries(loadedEntries);
+          await saveJournalEntry(todayEntry);
         }
 
         // Sort entries by updatedAt descending (newest first)
@@ -135,20 +137,15 @@ export default function JournalPage() {
   const updateEntryContent = useCallback(
     (entryId: string, newContent: string) => {
       setEntries((prev) => {
-        const updated = prev.map((entry) => {
-          if (entry.id === entryId) {
-            return {
-              ...entry,
-              content: newContent,
-              updatedAt: Date.now(),
-            };
-          }
-          return entry;
-        });
-
+        const updated = prev.map((entry) =>
+          entry.id === entryId
+            ? { ...entry, content: newContent, updatedAt: Date.now() }
+            : entry
+        );
+        // Stash the changed entry for the debounced save (avoids a stale closure).
+        pendingEntryRef.current = updated.find((e) => e.id === entryId) ?? null;
         // Re-sort by updatedAt descending
         updated.sort((a, b) => b.updatedAt - a.updatedAt);
-
         return updated;
       });
 
@@ -159,31 +156,20 @@ export default function JournalPage() {
         clearTimeout(debounceTimerRef.current);
       }
 
-      // Set new timer
+      // Persist only the changed entry — no read-all, no full-collection rewrite.
       debounceTimerRef.current = setTimeout(async () => {
-        try {
-          const currentEntries = await getJournalEntries();
-          const updated = currentEntries.map((entry) => {
-            if (entry.id === entryId) {
-              return {
-                ...entry,
-                content: newContent,
-                updatedAt: Date.now(),
-              };
-            }
-            return entry;
-          });
-
-          // Re-sort
-          updated.sort((a, b) => b.updatedAt - a.updatedAt);
-
-          await saveJournalEntries(updated);
+        debounceTimerRef.current = null;
+        const toSave = pendingEntryRef.current;
+        if (!toSave) {
           setSaveStatus('saved');
-          debounceTimerRef.current = null;
+          return;
+        }
+        try {
+          await saveJournalEntry(toSave);
         } catch (error) {
           console.error('Failed to save journal entry:', error);
-          setSaveStatus('saved'); // Reset status even on error
         }
+        setSaveStatus('saved');
       }, 600);
     },
     []
@@ -210,7 +196,7 @@ export default function JournalPage() {
       };
 
       const updated = [newEntry, ...entries];
-      await saveJournalEntries(updated);
+      await saveJournalEntry(newEntry);
       setEntries(updated);
       await persistActiveEntryId(newEntry.id);
       setActiveEntryId(newEntry.id);
@@ -237,7 +223,7 @@ export default function JournalPage() {
     try {
 
       const updated = entries.filter((e) => e.id !== activeEntryId);
-      await saveJournalEntries(updated);
+      await deleteJournalEntry(activeEntryId);
 
       // Select next entry (prefer next in list, or previous, or null)
       let nextId: string | null = null;

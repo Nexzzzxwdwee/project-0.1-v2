@@ -564,6 +564,16 @@ export async function saveJournalEntries(entries: import('@/lib/types').JournalE
   await storage.saveJournalEntries(entries);
 }
 
+export async function saveJournalEntry(entry: import('@/lib/types').JournalEntry): Promise<void> {
+  const storage = getStorage();
+  await storage.saveJournalEntry(entry);
+}
+
+export async function deleteJournalEntry(id: string): Promise<void> {
+  const storage = getStorage();
+  await storage.deleteJournalEntry(id);
+}
+
 export async function getActiveEntryId(): Promise<string | null> {
   const storage = getStorage();
   return storage.getActiveEntryId();

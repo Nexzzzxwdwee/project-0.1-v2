@@ -145,6 +145,21 @@ export function localStorageAdapter(): StorageAdapter {
       setJSON(`${P01_PREFIX}journalEntries`, entries);
     },
 
+    async saveJournalEntry(entry: JournalEntry): Promise<void> {
+      if (typeof window === 'undefined') return;
+      const all = getJSON<JournalEntry[]>(`${P01_PREFIX}journalEntries`, []);
+      const idx = all.findIndex((e) => e.id === entry.id);
+      if (idx >= 0) all[idx] = entry;
+      else all.push(entry);
+      setJSON(`${P01_PREFIX}journalEntries`, all);
+    },
+
+    async deleteJournalEntry(id: string): Promise<void> {
+      if (typeof window === 'undefined') return;
+      const all = getJSON<JournalEntry[]>(`${P01_PREFIX}journalEntries`, []);
+      setJSON(`${P01_PREFIX}journalEntries`, all.filter((e) => e.id !== id));
+    },
+
     async getActiveEntryId(): Promise<string | null> {
       if (typeof window === 'undefined') return null;
       return getJSON<string | null>(`${P01_PREFIX}journalActiveEntryId`, null);

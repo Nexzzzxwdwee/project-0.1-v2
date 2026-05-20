@@ -282,12 +282,17 @@ export default function TodayPage() {
     const loadData = async () => {
       try {
         const today = getTodayDateString();
-        const plan = await getDayPlan(today);
-        const loadedPresets = await getPresets();
+        // Parallelize independent reads — collapses ~4 sequential round-trips into one batch.
+        const [plan, loadedPresets, loadedProgress, currentStreak] = await Promise.all([
+          getDayPlan(today),
+          getPresets(),
+          getUserProgress(),
+          getStreak(),
+        ]);
         setPresets(loadedPresets);
+        setStreak(currentStreak);
 
         // Ensure UserProgress exists in storage (hook reads it separately)
-        const loadedProgress = await getUserProgress();
         if (!loadedProgress) {
           await updateUserProgress(() => createDefaultUserProgress());
         }
@@ -358,9 +363,6 @@ export default function TodayPage() {
           setDayPlan(normalizedPlan);
         }
 
-        // Calculate streak
-        const currentStreak = await getStreak();
-        setStreak(currentStreak);
       } catch (error) {
         console.error('Failed to load day plan:', error);
       }

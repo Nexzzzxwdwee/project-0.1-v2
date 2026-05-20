@@ -13,7 +13,7 @@ import {
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import {
   getTrades,
-  getEquityCurve,
+  computeEquityCurve,
   getMonthlyStats,
   getSessionStats,
   getAssetStats,
@@ -56,17 +56,18 @@ export default function TradingReports() {
       } = await supabase.auth.getUser();
       if (!user || !mounted) return;
 
-      const [c, trades, monthly, session, asset, model] = await Promise.all([
-        getEquityCurve(user.id),
-        getTrades(user.id),
-        getMonthlyStats(user.id),
-        getSessionStats(user.id),
-        getAssetStats(user.id),
-        getModelStats(user.id),
+      // Single trades fetch; every breakdown is derived from it client-side.
+      const trades = await getTrades(user.id);
+      if (!mounted) return;
+      const [monthly, session, asset, model] = await Promise.all([
+        getMonthlyStats(user.id, trades),
+        getSessionStats(user.id, trades),
+        getAssetStats(user.id, trades),
+        getModelStats(user.id, trades),
       ]);
 
       if (!mounted) return;
-      setCurve(c);
+      setCurve(computeEquityCurve(trades));
       setAllTrades(trades);
       setMonthlyStats(monthly);
       setSessionStats(session);

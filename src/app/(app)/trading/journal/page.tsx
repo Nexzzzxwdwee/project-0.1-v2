@@ -7,6 +7,7 @@ import {
   getAccounts,
   getTrades,
   createTrade,
+  createTrades,
   deleteTrade,
 } from '@/lib/trading';
 import type { TradingAccount, Trade } from '@/lib/types';
@@ -303,14 +304,11 @@ export default function TradingJournal() {
     setPasteError('');
 
     try {
-      // Compute running R from existing trades
+      // Compute running R from existing trades, then insert all rows in one round-trip.
       let runningR = trades.reduce((sum, t) => sum + t.result, 0);
-      const created: Trade[] = [];
-
-      for (const row of parsedPasteRows) {
+      const toCreate = parsedPasteRows.map((row) => {
         runningR += row.result;
-
-        const trade = await createTrade({
+        return {
           userId,
           accountIds: pasteAccountIds,
           date: row.date,
@@ -326,9 +324,10 @@ export default function TradingJournal() {
           tradingviewUrl: null,
           biasUrl: null,
           notes: null,
-        });
-        created.push(trade);
-      }
+        };
+      });
+
+      const created = await createTrades(toCreate);
 
       setTrades((prev) =>
         [...prev, ...created].sort((a, b) => a.date.localeCompare(b.date))

@@ -44,6 +44,10 @@ export interface StorageAdapter {
   // Journal operations
   getJournalEntries(): Promise<JournalEntry[]>;
   saveJournalEntries(entries: JournalEntry[]): Promise<void>;
+  /** Upsert a single entry without rewriting the whole collection. */
+  saveJournalEntry(entry: JournalEntry): Promise<void>;
+  /** Permanently remove a single entry. */
+  deleteJournalEntry(id: string): Promise<void>;
   getActiveEntryId(): Promise<string | null>;
   setActiveEntryId(id: string | null): Promise<void>;
 

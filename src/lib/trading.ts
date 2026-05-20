@@ -151,7 +151,9 @@ export async function getTrades(
   if (filters?.dateFrom) query = query.gte('date', filters.dateFrom);
   if (filters?.dateTo) query = query.lte('date', filters.dateTo);
 
-  const { data, error } = await query.order('date', { ascending: true });
+  const { data, error } = await query
+    .order('date', { ascending: true })
+    .order('created_at', { ascending: true });
 
   if (error) throw error;
   return (data || []).map(toTrade);
@@ -184,6 +186,41 @@ export async function createTrade(
 
   if (error) throw error;
   return toTrade(data);
+}
+
+/**
+ * Insert many trades in a single round-trip (e.g. paste import).
+ * Callers should pre-compute each row's rCounter before calling.
+ */
+export async function createTrades(
+  trades: Omit<Trade, 'id' | 'createdAt'>[]
+): Promise<Trade[]> {
+  if (trades.length === 0) return [];
+  const rows = trades.map((trade) => ({
+    user_id: trade.userId,
+    account_ids: trade.accountIds,
+    date: trade.date,
+    month: trade.month,
+    asset: trade.asset,
+    asset_class: trade.assetClass,
+    model: trade.model,
+    time: trade.time,
+    session: trade.session,
+    result: trade.result,
+    bias: trade.bias,
+    r_counter: trade.rCounter,
+    tradingview_url: trade.tradingviewUrl,
+    bias_url: trade.biasUrl,
+    notes: trade.notes,
+  }));
+
+  const { data, error } = await supabase()
+    .from('trades')
+    .insert(rows)
+    .select();
+
+  if (error) throw error;
+  return (data || []).map(toTrade);
 }
 
 export async function updateTrade(
@@ -255,6 +292,18 @@ export async function getEquityCurve(
   });
 }
 
+/**
+ * Build an equity curve from an already-fetched, date-ordered Trade[].
+ * Lets a page that already loaded trades avoid a second round-trip.
+ */
+export function computeEquityCurve(trades: Trade[]): REquityCurvePoint[] {
+  let cumulative = 0;
+  return trades.map((t, i) => {
+    cumulative += t.result;
+    return { date: t.date, cumulativeR: cumulative, tradeNumber: i + 1 };
+  });
+}
+
 interface StatRow {
   label: string;
   totalR: number;
@@ -280,8 +329,8 @@ function aggregateBy(trades: Trade[], keyFn: (t: Trade) => string): StatRow[] {
   return Array.from(map.values());
 }
 
-export async function getMonthlyStats(userId: string): Promise<StatRow[]> {
-  const trades = await getTrades(userId);
+export async function getMonthlyStats(userId: string, preloaded?: Trade[]): Promise<StatRow[]> {
+  const trades = preloaded ?? await getTrades(userId);
   const months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -291,18 +340,18 @@ export async function getMonthlyStats(userId: string): Promise<StatRow[]> {
   return rows;
 }
 
-export async function getSessionStats(userId: string): Promise<StatRow[]> {
-  const trades = await getTrades(userId);
+export async function getSessionStats(userId: string, preloaded?: Trade[]): Promise<StatRow[]> {
+  const trades = preloaded ?? await getTrades(userId);
   return aggregateBy(trades, (t) => t.session);
 }
 
-export async function getAssetStats(userId: string): Promise<StatRow[]> {
-  const trades = await getTrades(userId);
+export async function getAssetStats(userId: string, preloaded?: Trade[]): Promise<StatRow[]> {
+  const trades = preloaded ?? await getTrades(userId);
   return aggregateBy(trades, (t) => t.asset);
 }
 
-export async function getModelStats(userId: string): Promise<StatRow[]> {
-  const trades = await getTrades(userId);
+export async function getModelStats(userId: string, preloaded?: Trade[]): Promise<StatRow[]> {
+  const trades = preloaded ?? await getTrades(userId);
   return aggregateBy(trades, (t) => t.model);
 }
 
@@ -316,8 +365,8 @@ export interface StreakStats {
   streakBrokenDate: string | null;
 }
 
-export async function getStreakStats(userId: string): Promise<StreakStats> {
-  const trades = await getTrades(userId);
+export async function getStreakStats(userId: string, preloaded?: Trade[]): Promise<StreakStats> {
+  const trades = preloaded ?? await getTrades(userId);
   // trades are ordered by date ascending
 
   let highestWin = 0;
@@ -377,8 +426,8 @@ export interface PerformanceRatios {
   consistencyScore: number; // % of trading days profitable
 }
 
-export async function getPerformanceRatios(userId: string): Promise<PerformanceRatios> {
-  const trades = await getTrades(userId);
+export async function getPerformanceRatios(userId: string, preloaded?: Trade[]): Promise<PerformanceRatios> {
+  const trades = preloaded ?? await getTrades(userId);
 
   const wins = trades.filter((t) => t.result > 0);
   const losses = trades.filter((t) => t.result <= 0);

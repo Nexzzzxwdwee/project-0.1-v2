@@ -629,7 +629,9 @@ export default function TodayPage() {
       <div className={styles.page}>
         <header className={styles.header}>
           <div>
-            <h1 className={styles.title}>OPERATORS</h1>
+            <h1 className={styles.title}>
+              Project <span className={styles.titleGradient}>0.1</span>
+            </h1>
             <div className={styles.dateRow}>
               <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
                 <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192z" />
@@ -648,7 +650,9 @@ export default function TodayPage() {
       <header className={styles.header}>
         <div>
           <span className={styles.titleAccent}>{'// TODAY\'S PROTOCOL'}</span>
-          <h1 className={styles.title}>OPERATORS</h1>
+          <h1 className={styles.title}>
+            Project <span className={styles.titleGradient}>0.1</span>
+          </h1>
           <div className={styles.dateRow}>
             <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
               <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192z" />
@@ -663,15 +667,8 @@ export default function TodayPage() {
           </Link>
         </div>
 
-        {/* Top-right: compact rank card + quick journal access */}
+        {/* Top-right: compact rank card with quick journal access beneath */}
         <div className={styles.rankArea}>
-          <Link href="/journal" className={styles.journalQuickBtn}>
-            <svg className={styles.journalQuickIcon} viewBox="0 0 512 512" fill="currentColor">
-              <path d="M96 0C43 0 0 43 0 96V416c0 53 43 96 96 96H384h32c17.7 0 32-14.3 32-32s-14.3-32-32-32V384c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32H384 96zm0 384H352v64H96c-17.7 0-32-14.3-32-32s14.3-32 32-32zm32-240c0-8.8 7.2-16 16-16H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16zm16 48H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16s7.2-16 16-16z" />
-            </svg>
-            JOURNAL
-          </Link>
-
           {rankInfo && (
             <Link href="/rank" className={styles.rankCard}>
               <div className={styles.rankHeader}>
@@ -684,15 +681,19 @@ export default function TodayPage() {
                 )}
               </div>
               <span className={styles.rankTitle}>{rankInfo.current.name}</span>
-              <div className={styles.xpBar}>
-                <div className={styles.xpFill} style={{ width: `${rankInfo.progressPercent}%` }}></div>
-              </div>
               <div className={styles.xpText}>
                 {(userProgress?.xp ?? 0).toLocaleString()} XP /{' '}
                 {rankInfo.next ? `${rankInfo.next.xpRequired.toLocaleString()} XP` : 'MAX'}
               </div>
             </Link>
           )}
+
+          <Link href="/journal" className={styles.journalQuickBtn}>
+            <svg className={styles.journalQuickIcon} viewBox="0 0 512 512" fill="currentColor">
+              <path d="M96 0C43 0 0 43 0 96V416c0 53 43 96 96 96H384h32c17.7 0 32-14.3 32-32s-14.3-32-32-32V384c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32H384 96zm0 384H352v64H96c-17.7 0-32-14.3-32-32s14.3-32 32-32zm32-240c0-8.8 7.2-16 16-16H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16zm16 48H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16s7.2-16 16-16z" />
+            </svg>
+            JOURNAL
+          </Link>
         </div>
       </header>
 

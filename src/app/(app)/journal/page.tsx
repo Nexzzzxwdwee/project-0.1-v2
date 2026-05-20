@@ -5,7 +5,6 @@ import {
   generateId,
   getJournalEntries,
   saveJournalEntries,
-  getActiveEntryId,
   setActiveEntryId as persistActiveEntryId,
 } from '@/lib/presets';
 import type { JournalEntry } from '@/lib/types';
@@ -87,47 +86,38 @@ export default function JournalPage() {
     const loadData = async () => {
       try {
         const loadedEntries = await getJournalEntries();
-        const loadedActiveId = await getActiveEntryId();
+        const today = getTodayDateString();
 
-    // Auto-create entry if none exist
-    if (loadedEntries.length === 0) {
-      const today = getTodayDateString();
-      const now = Date.now();
-      const newEntry: JournalEntry = {
-        id: generateId(),
-        createdAt: now,
-        updatedAt: now,
-        date: today,
-        content: '',
-      };
-          loadedEntries.push(newEntry);
+        // Ensure an entry for today exists, then default to it. This keeps the
+        // journal (and its Time Tracker) opening on today, so time logged from
+        // the Today page's Time Log — which always writes to today's date —
+        // shows up here instead of being hidden behind a past-day entry.
+        let todayEntry = loadedEntries.find((e) => e.date === today);
+        if (!todayEntry) {
+          const now = Date.now();
+          todayEntry = {
+            id: generateId(),
+            createdAt: now,
+            updatedAt: now,
+            date: today,
+            content: '',
+          };
+          loadedEntries.push(todayEntry);
           await saveJournalEntries(loadedEntries);
-          await persistActiveEntryId(newEntry.id);
-          setActiveEntryId(newEntry.id);
         }
 
         // Sort entries by updatedAt descending (newest first)
         loadedEntries.sort((a, b) => b.updatedAt - a.updatedAt);
-
         setEntries(loadedEntries);
 
-        // Set active entry (prioritize loaded, fallback to first)
-        const activeId = loadedActiveId || (loadedEntries.length > 0 ? loadedEntries[0].id : null);
-        if (activeId && loadedEntries.find((e) => e.id === activeId)) {
-          await persistActiveEntryId(activeId);
-          setActiveEntryId(activeId);
-        } else if (loadedEntries.length > 0) {
-          const firstId = loadedEntries[0].id;
-          await persistActiveEntryId(firstId);
-          setActiveEntryId(firstId);
-        }
-        
-        setEntries(loadedEntries);
+        // Default the active entry to today's entry.
+        await persistActiveEntryId(todayEntry.id);
+        setActiveEntryId(todayEntry.id);
       } catch (error) {
         console.error('Failed to load journal entries:', error);
       }
     };
-    
+
     loadData();
   }, []);
 

@@ -27,7 +27,7 @@ export default function AppError({
         gap: '1rem',
       }}
     >
-      <h2 style={{ color: '#fbbf24', fontSize: '1.25rem', margin: 0 }}>
+      <h2 style={{ color: '#E0002B', fontSize: '1.25rem', margin: 0 }}>
         Something went wrong
       </h2>
       <p style={{ margin: 0, maxWidth: '400px', lineHeight: 1.5 }}>
@@ -38,7 +38,7 @@ export default function AppError({
         style={{
           marginTop: '0.5rem',
           padding: '0.5rem 1.5rem',
-          background: '#166534',
+          background: '#E0002B',
           color: '#FFB3C1',
           border: 'none',
           borderRadius: '0.5rem',

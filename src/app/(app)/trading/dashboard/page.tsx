@@ -30,7 +30,7 @@ import styles from './dashboard.module.css';
 
 type TimeFilter = 'all' | '3m' | '1m' | '1w';
 
-const PIE_COLORS = ['#22c55e', '#f59e0b', '#6366f1', '#475569', '#d97706', '#16a34a', '#334155', '#84cc16'];
+const PIE_COLORS = ['#E0002B', '#FF1744', '#6366f1', '#475569', '#8B0000', '#a00020', '#334155', '#ff708a'];
 
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAY_HEADERS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -435,11 +435,11 @@ export default function TradingDashboard() {
                 {week.map((cell, ci) => {
                   if (!cell) return <div key={`${wi}-${ci}`} className={`${styles.calendarCell} ${styles.calendarCellOutside}`} />;
                   const bgOpacity = cell.count === 0 ? 0 : cell.r > 0 ? Math.min(0.7, 0.2 + Math.abs(cell.r) * 0.15) : Math.min(0.8, 0.2 + Math.abs(cell.r) * 0.25);
-                  const bgColor = cell.count === 0 ? 'transparent' : cell.r >= 0 ? `rgba(34, 197, 94, ${bgOpacity})` : `rgba(239, 68, 68, ${bgOpacity})`;
+                  const bgColor = cell.count === 0 ? 'transparent' : cell.r >= 0 ? `rgba(224, 0, 43, ${bgOpacity})` : `rgba(239, 68, 68, ${bgOpacity})`;
                   return (
                     <div key={`${wi}-${ci}`} className={`${styles.calendarCell} ${cell.count === 0 ? styles.calendarCellEmpty : ''} ${cell.isToday ? styles.calendarCellToday : ''}`} style={{ backgroundColor: bgColor }} title={`${MONTH_NAMES[calMonth.month]} ${cell.day} — ${cell.count} trade${cell.count !== 1 ? 's' : ''}, ${cell.r >= 0 ? '+' : ''}${cell.r}R`}>
                       <span className={styles.calendarDayNum}>{cell.day}</span>
-                      {cell.count > 0 && <span className={styles.calendarCellR} style={{ color: cell.r >= 0 ? '#22c55e' : '#ef4444' }}>{cell.r >= 0 ? '+' : ''}{cell.r}R</span>}
+                      {cell.count > 0 && <span className={styles.calendarCellR} style={{ color: cell.r >= 0 ? '#E0002B' : '#ef4444' }}>{cell.r >= 0 ? '+' : ''}{cell.r}R</span>}
                     </div>
                   );
                 })}

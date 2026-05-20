@@ -540,7 +540,7 @@
 
 .primaryBtn {
   background: var(--accent, #E00030);
-  color: #052e16;
+  color: #080808;
   border: none;
   padding: 0.6rem 0.9rem;
   border-radius: 0.4rem;

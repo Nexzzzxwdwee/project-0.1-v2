@@ -20,7 +20,7 @@ export const RANK_TIERS: RankTier[] = [
   { name: 'Specialist',  xpRequired: 2500,   color: '#a78bfa', colorMuted: '#5b21b6' },
   { name: 'Tactician',  xpRequired: 5000,   color: '#3b82f6', colorMuted: '#1e40af' },
   { name: 'Sentinel',   xpRequired: 10000,  color: '#06b6d4', colorMuted: '#155e75' },
-  { name: 'Vanguard',   xpRequired: 18000,  color: '#10b981', colorMuted: '#065f46' },
+  { name: 'Vanguard',   xpRequired: 18000,  color: '#dc2626', colorMuted: '#7f1d1d' },
   { name: 'Warden',     xpRequired: 30000,  color: '#f97316', colorMuted: '#9a3412' },
   { name: 'Phantom',    xpRequired: 50000,  color: '#ec4899', colorMuted: '#9d174d' },
   { name: 'Architect',  xpRequired: 80000,  color: '#f43f5e', colorMuted: '#9f1239' },

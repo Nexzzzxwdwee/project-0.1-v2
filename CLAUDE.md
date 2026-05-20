@@ -27,9 +27,13 @@
 - Animations: use transform/opacity only (GPU composited). Spring easing: cubic-bezier(0.34, 1.56, 0.64, 1)
 
 ## Design System
-- Colors: --neon-green (#22c55e), --gold (#eab308), --bg-dark (#0c0a09)
-- Glass cards: rgba(28, 25, 23, 0.6) + backdrop-filter blur(12px) + rgba(255,255,255,0.06) border
-- Ambient: two radial glows in app shell (green top-left, gold bottom-right)
+- Strict red/black palette (single source of truth in globals.css). Core CSS vars:
+  --bg #080808, --surface #111111, --surface-raised #1a1a1a, --border #222222,
+  --accent (red) #E0002B, --accent-hover/--warning #FF1744, --text-primary #FFFFFF,
+  --text-secondary #AAAAAA (labels), --text-muted #555555, --danger #8B0000
+- Convention: black text on red accent (e.g. buttons use `color: var(--bg)` on `background: var(--accent)`)
+- Legacy `[data-theme="green"]` / `"blue"` aliases remain but both resolve to the red palette
+- Cards: solid --surface / --surface-raised with --border, subtle shadow (no glass/blur)
 - Entrance: fadeInUp animation with staggered delays (80ms increments)
 - Interactions: spring easing on hover/active, dopamine checkbox animations (ripple + glow burst + badge punch)
 - Reduced motion: @media (prefers-reduced-motion: reduce) disables all animations globally

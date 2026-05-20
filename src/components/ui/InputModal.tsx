@@ -113,7 +113,7 @@ export default function InputModal({
               type="submit"
               style={{
                 padding: '0.4rem 1rem',
-                background: '#166534',
+                background: '#E0002B',
                 color: '#FFB3C1',
                 border: 'none',
                 borderRadius: '0.5rem',

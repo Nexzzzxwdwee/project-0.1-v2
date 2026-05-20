@@ -405,37 +405,6 @@ export default function TodayPage() {
   const operatorDone = operatorItems.filter((item) => item.completed).length;
   const operatorPct = operatorTotal === 0 ? 0 : Math.round((operatorDone / operatorTotal) * 100);
 
-  // Calculate Total Score (habits 70% + tasks 30% capped at 2)
-  const totalScore = useMemo(() => {
-    const habits = dayPlan.items.filter((item) => item.kind === 'habit');
-    const tasks = dayPlan.items.filter((item) => item.kind === 'task');
-    
-    // Habits bucket (0-100 int)
-    const habitsTotal = habits.length;
-    const habitsDone = habits.filter((h) => h.completed).length;
-    const habitsPct = habitsTotal === 0 ? 0 : Math.round((habitsDone / habitsTotal) * 100);
-    
-    // Tasks bucket (capped at 2, 0-100 int)
-    const tasksTotal = tasks.length;
-    const tasksDone = tasks.filter((t) => t.completed).length;
-    const tasksDenominator = Math.min(tasksTotal, 2);
-    const tasksNumerator = Math.min(tasksDone, 2);
-    const tasksPctCapped = tasksDenominator === 0 ? 0 : Math.round((tasksNumerator / tasksDenominator) * 100);
-    
-    // Combined score (70% habits, 30% tasks, 0-100 int)
-    const totalScorePct = Math.round(habitsPct * 0.7 + tasksPctCapped * 0.3);
-    
-    return {
-      totalScorePct,
-      habitsPct,
-      tasksPctCapped,
-      habitsTotal,
-      habitsDone,
-      tasksTotal,
-      tasksDone,
-    };
-  }, [dayPlan.items]);
-
   // Calculate dynamic status
   const status = useMemo(() => {
     // If sealed, show sealed status
@@ -660,7 +629,7 @@ export default function TodayPage() {
       <div className={styles.page}>
         <header className={styles.header}>
           <div>
-            <h1 className={styles.title}>OPERATORS DASHBOARD</h1>
+            <h1 className={styles.title}>OPERATORS</h1>
             <div className={styles.dateRow}>
               <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
                 <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192z" />
@@ -679,9 +648,7 @@ export default function TodayPage() {
       <header className={styles.header}>
         <div>
           <span className={styles.titleAccent}>{'// TODAY\'S PROTOCOL'}</span>
-          <h1 className={styles.title}>
-            Project <span className={styles.titleGradient}>0.1</span>
-          </h1>
+          <h1 className={styles.title}>OPERATORS</h1>
           <div className={styles.dateRow}>
             <svg className={styles.icon} viewBox="0 0 448 512" fill="currentColor">
               <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192z" />
@@ -696,40 +663,37 @@ export default function TodayPage() {
           </Link>
         </div>
 
-        {/* Rank Badge */}
-        {rankInfo && (
-          <Link
-            href="/rank"
-            className={styles.rankCard}
-            style={{ '--rank-color': rankInfo.current.color, '--rank-muted': rankInfo.current.colorMuted } as React.CSSProperties}
-          >
-            <div className={styles.rankBadgeGlow}></div>
-            <div className={styles.rankHeader}>
-              <span className={styles.rankLabel}>Rank</span>
-              <svg className={styles.rankShield} viewBox="0 0 512 512" fill="currentColor">
-                <path d="M256 0c4.6 0 9.2 1 13.4 2.9L457.7 82.8c22 9.3 38.4 31 38.3 57.2c-.5 99.2-41.3 280.7-213.6 363.2c-16.7 8-36.1 8-52.8 0C57.3 420.7 16.5 239.2 16 140c-.1-26.2 16.3-47.9 38.3-57.2L242.7 2.9C246.8 1 251.4 0 256 0z" />
-              </svg>
-            </div>
-            <span className={styles.rankTitle}>{rankInfo.current.name}</span>
-            <div className={styles.xpBar}>
-              <div className={styles.xpFill} style={{ width: `${rankInfo.progressPercent}%` }}></div>
-            </div>
-            <div className={styles.xpText}>
-              <span>{userProgress?.xp?.toLocaleString() || 0} XP</span>
-              {rankInfo.next ? (
-                <span>{rankInfo.next.xpRequired.toLocaleString()} XP</span>
-              ) : (
-                <span>MAX</span>
-              )}
-            </div>
-            {(userProgress?.currentStreak || 0) > 0 && (
-              <div className={styles.streakPill}>
-                <span className={styles.streakFire}>&#x1F525;</span>
-                {userProgress?.currentStreak}d streak
-              </div>
-            )}
+        {/* Top-right: compact rank card + quick journal access */}
+        <div className={styles.rankArea}>
+          <Link href="/journal" className={styles.journalQuickBtn}>
+            <svg className={styles.journalQuickIcon} viewBox="0 0 512 512" fill="currentColor">
+              <path d="M96 0C43 0 0 43 0 96V416c0 53 43 96 96 96H384h32c17.7 0 32-14.3 32-32s-14.3-32-32-32V384c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32H384 96zm0 384H352v64H96c-17.7 0-32-14.3-32-32s14.3-32 32-32zm32-240c0-8.8 7.2-16 16-16H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16zm16 48H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16s7.2-16 16-16z" />
+            </svg>
+            JOURNAL
           </Link>
-        )}
+
+          {rankInfo && (
+            <Link href="/rank" className={styles.rankCard}>
+              <div className={styles.rankHeader}>
+                <span className={styles.rankLabel}>RANK</span>
+                {(userProgress?.currentStreak || 0) > 0 && (
+                  <span className={styles.streakPill}>
+                    <span className={styles.streakFire}>&#x1F525;</span>
+                    {userProgress?.currentStreak}d
+                  </span>
+                )}
+              </div>
+              <span className={styles.rankTitle}>{rankInfo.current.name}</span>
+              <div className={styles.xpBar}>
+                <div className={styles.xpFill} style={{ width: `${rankInfo.progressPercent}%` }}></div>
+              </div>
+              <div className={styles.xpText}>
+                {(userProgress?.xp ?? 0).toLocaleString()} XP /{' '}
+                {rankInfo.next ? `${rankInfo.next.xpRequired.toLocaleString()} XP` : 'MAX'}
+              </div>
+            </Link>
+          )}
+        </div>
       </header>
 
       {/* Daily Status Card */}
@@ -809,12 +773,11 @@ export default function TodayPage() {
 
             {/* Stat 3 */}
             <div className={styles.statBox}>
-              <span className={styles.statLabel}>Total Score</span>
+              <span className={styles.statLabel}>Deep Work</span>
               <div className={styles.statValueRow}>
-                <span className={styles.statValue}>{totalScore.totalScorePct}</span>
-                <span className={styles.statUnit}>XP</span>
+                <span className={styles.statValue}>{formatFocusShort(focusTodayTotal).toUpperCase()}</span>
               </div>
-              <div className={styles.scoreNote}>Habits + Tasks</div>
+              <div className={styles.scoreNote}>Today&apos;s focus time</div>
             </div>
           </div>
         </div>

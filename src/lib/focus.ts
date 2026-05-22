@@ -192,6 +192,21 @@ export async function getWeeklyTotal(userId: string): Promise<number> {
 }
 
 export async function getAllTimePR(userId: string): Promise<{ date: string; totalSeconds: number } | null> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) throw new Error('Supabase not configured');
+
+  // Prefer the DB-side aggregate so we don't pull years of sessions to the
+  // client. Falls back to a client scan if the RPC is somehow unavailable.
+  const { data, error } = await supabase.rpc('get_focus_all_time_pr');
+  if (!error && Array.isArray(data)) {
+    const row = data[0];
+    if (!row || !row.pr_date) return null;
+    return { date: String(row.pr_date), totalSeconds: Number(row.total_seconds) || 0 };
+  }
+  if (error) {
+    console.error('get_focus_all_time_pr RPC failed, falling back to client scan:', error);
+  }
+
   const totals = await getDailyTotals(userId, 3650); // ~10 years
   if (totals.length === 0) return null;
   let best = totals[0];

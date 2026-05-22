@@ -47,6 +47,7 @@ export default function TimeLogQuickEntry() {
   const [nowKey, setNowKey] = useState<string>(() => computeNowKey(60));
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [popoverAnchor, setPopoverAnchor] = useState<{ top: number; right: number } | null>(null);
+  const [saveFailed, setSaveFailed] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const activityFocusedRef = useRef(false);
   // Track only the pieces this view changed, so saving never overwrites slots
@@ -92,16 +93,18 @@ export default function TimeLogQuickEntry() {
     const meta = pendingMetaRef.current;
     pendingSlotsRef.current = new Map();
     pendingMetaRef.current = {};
-    slots.forEach((slotValue, key) => {
-      saveTimeLogSlot(today, key, slotValue).catch((error) => {
-        console.error('Failed to save time log slot:', error);
+    const writes: Promise<void>[] = [];
+    slots.forEach((slotValue, key) => writes.push(saveTimeLogSlot(today, key, slotValue)));
+    if (Object.keys(meta).length > 0) writes.push(saveTimeLogMeta(today, meta));
+    if (writes.length === 0) return;
+    Promise.all(writes)
+      .then(() => setSaveFailed(false))
+      .catch((error) => {
+        // The failed writes were already cleared from the pending refs, so
+        // editing the slot again re-queues it.
+        console.error('Failed to save time log:', error);
+        setSaveFailed(true);
       });
-    });
-    if (Object.keys(meta).length > 0) {
-      saveTimeLogMeta(today, meta).catch((error) => {
-        console.error('Failed to save time log meta:', error);
-      });
-    }
   }, [today]);
 
   const scheduleFlush = useCallback(() => {
@@ -245,6 +248,21 @@ export default function TimeLogQuickEntry() {
             {slot.baseline || '—'}
           </button>
         </div>
+        {saveFailed && (
+          <p
+            role="status"
+            style={{
+              margin: '0.5rem 0 0',
+              color: '#E0002B',
+              fontSize: '0.625rem',
+              fontFamily: 'var(--font-mono), monospace',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+          >
+            Save failed — edit again to retry
+          </p>
+        )}
       </div>
 
       {popoverOpen && popoverAnchor && (

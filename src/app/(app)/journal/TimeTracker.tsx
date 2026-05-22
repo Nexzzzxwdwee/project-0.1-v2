@@ -7,7 +7,7 @@ import styles from './journal.module.css';
 
 interface TimeTrackerProps {
   date: string; // YYYY-MM-DD
-  onSaveStatusChange?: (status: 'saved' | 'saving') => void;
+  onSaveStatusChange?: (status: 'saved' | 'saving' | 'error') => void;
 }
 
 function slotKey(hour: number, minute: number): string {
@@ -128,8 +128,14 @@ export default function TimeTracker({ date, onSaveStatusChange }: TimeTrackerPro
       return;
     }
     Promise.all(writes)
-      .catch((error) => console.error('Failed to save time log:', error))
-      .finally(() => onSaveStatusChange?.('saved'));
+      .then(() => onSaveStatusChange?.('saved'))
+      .catch((error) => {
+        // Surface the failure instead of falsely showing "saved". The failed
+        // writes were already cleared from the pending refs, so editing the
+        // slot again re-queues it.
+        console.error('Failed to save time log:', error);
+        onSaveStatusChange?.('error');
+      });
   }, [date, onSaveStatusChange]);
 
   const scheduleFlush = useCallback(() => {

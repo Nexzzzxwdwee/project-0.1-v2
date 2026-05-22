@@ -351,6 +351,11 @@
   opacity: 0.7;
 }
 
+.saveDotError {
+  background: var(--danger);
+  box-shadow: 0 0 6px var(--danger);
+}
+
 .saveText {
   font-size: 0.625rem;
   color: var(--text-muted);

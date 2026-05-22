@@ -75,7 +75,7 @@ export default function JournalPage() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [showEntriesList, setShowEntriesList] = useState(true);
   const [activeTab, setActiveTab] = useState<EditorTab>('journal');
@@ -166,10 +166,11 @@ export default function JournalPage() {
         }
         try {
           await saveJournalEntry(toSave);
+          setSaveStatus('saved');
         } catch (error) {
           console.error('Failed to save journal entry:', error);
+          setSaveStatus('error');
         }
-        setSaveStatus('saved');
       }, 600);
     },
     []
@@ -379,10 +380,20 @@ export default function JournalPage() {
                   <h2 className={styles.editorTitle}>{formatDateLong(activeEntry.date)}</h2>
                   <div className={styles.saveStatus}>
                     <div
-                      className={`${styles.saveDot} ${saveStatus === 'saving' ? styles.saveDotPulse : styles.saveDotSaved}`}
+                      className={`${styles.saveDot} ${
+                        saveStatus === 'saving'
+                          ? styles.saveDotPulse
+                          : saveStatus === 'error'
+                            ? styles.saveDotError
+                            : styles.saveDotSaved
+                      }`}
                     ></div>
                     <span className={styles.saveText}>
-                      {saveStatus === 'saving' ? 'Saving…' : 'Saved'}
+                      {saveStatus === 'saving'
+                        ? 'Saving…'
+                        : saveStatus === 'error'
+                          ? 'Save failed'
+                          : 'Saved'}
                     </span>
                   </div>
                 </div>

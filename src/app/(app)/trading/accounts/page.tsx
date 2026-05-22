@@ -1,15 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ReferenceLine,
-} from 'recharts';
+import dynamic from 'next/dynamic';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import {
   getAccounts,
@@ -21,6 +13,12 @@ import {
 } from '@/lib/trading';
 import type { TradingAccount, Trade, REquityCurvePoint } from '@/lib/types';
 import styles from './accounts.module.css';
+
+// Lazy-load the recharts-backed chart so the library stays out of First Load JS.
+const AccountEquityChart = dynamic(() => import('./AccountEquityChart'), {
+  ssr: false,
+  loading: () => <div style={{ width: '100%', height: '100%' }} />,
+});
 
 type ModalMode = 'add' | 'edit' | null;
 
@@ -326,81 +324,11 @@ export default function TradingAccounts() {
                               </div>
                             ) : (
                               <div className={styles.expandedChart}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                  <AreaChart
-                                    data={expandedCurve}
-                                    margin={{
-                                      top: 8,
-                                      right: 8,
-                                      left: -16,
-                                      bottom: 0,
-                                    }}
-                                  >
-                                    <defs>
-                                      <linearGradient
-                                        id={`grad-${a.id}`}
-                                        x1="0"
-                                        y1="0"
-                                        x2="0"
-                                        y2="1"
-                                      >
-                                        <stop
-                                          offset="5%"
-                                          stopColor={r >= 0 ? '#3b82f6' : '#ef4444'}
-                                          stopOpacity={0.2}
-                                        />
-                                        <stop
-                                          offset="95%"
-                                          stopColor={r >= 0 ? '#3b82f6' : '#ef4444'}
-                                          stopOpacity={0}
-                                        />
-                                      </linearGradient>
-                                    </defs>
-                                    <XAxis
-                                      dataKey="tradeNumber"
-                                      tick={{ fill: '#404040', fontSize: 10 }}
-                                      axisLine={{ stroke: '#1a1a1a' }}
-                                      tickLine={false}
-                                    />
-                                    <YAxis
-                                      tick={{ fill: '#404040', fontSize: 10 }}
-                                      axisLine={{ stroke: '#1a1a1a' }}
-                                      tickLine={false}
-                                      tickFormatter={(v: number) => `${v}R`}
-                                    />
-                                    <ReferenceLine
-                                      y={0}
-                                      stroke="#262626"
-                                      strokeDasharray="3 3"
-                                    />
-                                    <Tooltip
-                                      contentStyle={{
-                                        background: '#1a1a1a',
-                                        border: '1px solid #262626',
-                                        borderRadius: '0.375rem',
-                                        color: '#d4d4d4',
-                                        fontFamily:
-                                          'var(--font-mono), monospace',
-                                        fontSize: '0.6875rem',
-                                      }}
-                                      formatter={(value) => [
-                                        `${value}R`,
-                                        'Cumulative R',
-                                      ]}
-                                      labelFormatter={(label) =>
-                                        `Trade #${label}`
-                                      }
-                                    />
-                                    <Area
-                                      type="monotone"
-                                      dataKey="cumulativeR"
-                                      stroke={r >= 0 ? '#3b82f6' : '#ef4444'}
-                                      strokeWidth={2}
-                                      fill={`url(#grad-${a.id})`}
-                                      dot={false}
-                                    />
-                                  </AreaChart>
-                                </ResponsiveContainer>
+                                <AccountEquityChart
+                                  data={expandedCurve}
+                                  r={r}
+                                  gradientId={`grad-${a.id}`}
+                                />
                               </div>
                             )}
                           </div>

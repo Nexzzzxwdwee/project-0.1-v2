@@ -5,6 +5,7 @@ import type {
   ExportHabit,
   ExportHabitHistoryEntry,
   ExportDeepWorkEntry,
+  ExportJournalEntry,
 } from './types';
 
 interface RawDayPlanItem {
@@ -143,6 +144,7 @@ function assembleDailyLogs(
   dayPlans: RawDayPlan[],
   daySummaries: RawDaySummary[],
   focusSessions: RawFocusSession[],
+  timeLogs: RawTimeLog[],
 ): ExportDailyLog[] {
   const summaryByDate = new Map(daySummaries.map(s => [s.date, s] as const));
   const focusByDate = new Map<string, ExportDeepWorkEntry[]>();
@@ -155,10 +157,22 @@ function assembleDailyLogs(
     focusByDate.set(session.date, list);
   }
 
+  // Per-day hourly time-block entries from the Time Tracker (time_logs slots),
+  // keyed "HH:MM" -> { activity }. Skip slots with no typed content.
+  const journalByDate = new Map<string, ExportJournalEntry[]>();
+  for (const tl of timeLogs) {
+    const entries = Object.entries(tl.slots ?? {})
+      .map(([time, slot]) => ({ time, text: (slot.activity ?? '').trim() }))
+      .filter(e => e.text.length > 0)
+      .sort((a, b) => a.time.localeCompare(b.time));
+    if (entries.length > 0) journalByDate.set(tl.date, entries);
+  }
+
   const allDates = new Set<string>([
     ...dayPlans.map(p => p.date),
     ...daySummaries.map(s => s.date),
     ...focusSessions.map(f => f.date),
+    ...timeLogs.map(t => t.date),
   ]);
 
   const rows: ExportDailyLog[] = [];
@@ -175,6 +189,7 @@ function assembleDailyLogs(
         .filter(i => i.kind === 'task')
         .map(i => ({ name: i.text, completed: !!i.completed })),
       deepWork: focusByDate.get(date) ?? [],
+      journalEntries: journalByDate.get(date) ?? [],
       sealed: plan?.is_sealed ?? false,
     });
   }
@@ -245,7 +260,7 @@ export async function fetchExportForUser(
       currentStreak: progress.current_streak ?? 0,
       bestStreak: progress.best_streak ?? 0,
     },
-    dailyLogs: assembleDailyLogs(dayPlans, daySummaries, focusSessions),
+    dailyLogs: assembleDailyLogs(dayPlans, daySummaries, focusSessions, timeLogs),
     timeTracker: timeLogs
       .sort((a, b) => a.date.localeCompare(b.date))
       .map(tl => ({

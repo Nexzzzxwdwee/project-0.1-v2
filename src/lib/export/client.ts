@@ -51,6 +51,7 @@ export async function downloadCsvZip(payload: ExportPayload, slug: string): Prom
     habits: d.habits.map(h => `${h.completed ? '[x]' : '[ ]'} ${h.name}`).join(' | '),
     tasks: d.tasks.map(t => `${t.completed ? '[x]' : '[ ]'} ${t.name}`).join(' | '),
     deep_work: d.deepWork.map(w => `${w.activity} (${w.durationMinutes}m)`).join(' | '),
+    journal_entries: d.journalEntries.map(e => `${e.time} ${e.text}`).join(' | '),
   }));
   zip.file('daily-logs.csv', Papa.unparse(dailyLogsRows));
 

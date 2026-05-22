@@ -26,12 +26,18 @@ export interface ExportDeepWorkEntry {
   durationMinutes: number;
 }
 
+export interface ExportJournalEntry {
+  time: string;
+  text: string;
+}
+
 export interface ExportDailyLog {
   date: string;
   operatorScore: number | null;
   habits: ExportDailyLogItem[];
   tasks: ExportDailyLogItem[];
   deepWork: ExportDeepWorkEntry[];
+  journalEntries: ExportJournalEntry[];
   sealed: boolean;
 }
 

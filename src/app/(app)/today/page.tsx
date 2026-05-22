@@ -95,6 +95,10 @@ export default function TodayPage() {
   const [focusDiscardConfirm, setFocusDiscardConfirm] = useState(false);
   const focusTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sealingRef = useRef(false);
+  // Debounced day-plan saves: rapid checkbox toggles collapse into one write.
+  const dayPlanSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingDayPlanRef = useRef<DayPlan | null>(null);
+  const [dayPlanSaveFailed, setDayPlanSaveFailed] = useState(false);
   const dayPlanRef = useRef<DayPlan>({
     date: getTodayDateString(),
     activePresetId: null,
@@ -377,19 +381,60 @@ export default function TodayPage() {
     dayPlanRef.current = dayPlan;
   }, [dayPlan]);
 
-  // Save day plan whenever it changes. Read the latest plan via ref so
-  // rapid sequential calls don't clobber each other through stale closures.
-  const updateDayPlan = async (updater: (plan: DayPlan) => DayPlan) => {
+  // Persist whatever is in pendingDayPlanRef now (the live latest plan).
+  const flushDayPlanSave = useCallback(() => {
+    if (dayPlanSaveTimerRef.current) {
+      clearTimeout(dayPlanSaveTimerRef.current);
+      dayPlanSaveTimerRef.current = null;
+    }
+    const toSave = pendingDayPlanRef.current;
+    pendingDayPlanRef.current = null;
+    if (!toSave) return;
+    saveDayPlan(toSave)
+      .then(() => setDayPlanSaveFailed(false))
+      .catch((error) => {
+        console.error('Failed to save day plan:', error);
+        setDayPlanSaveFailed(true);
+      });
+  }, []);
+
+  // Discard a pending debounced save. Used before an authoritative write
+  // (seal / preset sync) so a stale toggle-save can't fire afterward and
+  // clobber it (e.g. un-seal the day).
+  const cancelDayPlanSave = useCallback(() => {
+    if (dayPlanSaveTimerRef.current) {
+      clearTimeout(dayPlanSaveTimerRef.current);
+      dayPlanSaveTimerRef.current = null;
+    }
+    pendingDayPlanRef.current = null;
+  }, []);
+
+  const scheduleDayPlanSave = useCallback(() => {
+    if (dayPlanSaveTimerRef.current) clearTimeout(dayPlanSaveTimerRef.current);
+    dayPlanSaveTimerRef.current = setTimeout(() => {
+      dayPlanSaveTimerRef.current = null;
+      flushDayPlanSave();
+    }, 600);
+  }, [flushDayPlanSave]);
+
+  // Flush any pending save on unmount / navigation so toggles made within the
+  // debounce window aren't dropped (AppShellClient remounts per route).
+  useEffect(() => {
+    return () => {
+      flushDayPlanSave();
+    };
+  }, [flushDayPlanSave]);
+
+  // Optimistic update + debounced save. Reads the latest plan via ref so rapid
+  // sequential calls build on each other instead of clobbering via stale state.
+  const updateDayPlan = (updater: (plan: DayPlan) => DayPlan) => {
     if (dayPlanRef.current.isSealed) return;
 
     const updated = updater(dayPlanRef.current);
     dayPlanRef.current = updated;
     setDayPlan(updated);
-    try {
-      await saveDayPlan(updated);
-    } catch (error) {
-      console.error('Failed to save day plan:', error);
-    }
+    pendingDayPlanRef.current = updated;
+    scheduleDayPlanSave();
   };
 
   const habits = dayPlan.items.filter((item) => item.kind === 'habit');
@@ -564,8 +609,11 @@ export default function TodayPage() {
     
     // Update activePresetId to the selected preset
     merged.activePresetId = preset.id;
-    
+
+    // Supersede any pending toggle-save with this authoritative write.
+    cancelDayPlanSave();
     setDayPlan(merged);
+    dayPlanRef.current = merged;
     try {
       await saveDayPlan(merged);
       await setActivePresetId(preset.id);
@@ -606,6 +654,10 @@ export default function TodayPage() {
     if (dayPlan.isSealed) return;
     if (sealingRef.current) return;
     sealingRef.current = true;
+    // Drop any pending toggle-save: dayPlan already holds the latest toggles,
+    // and sealDay writes the authoritative (sealed) plan. A late flush would
+    // otherwise overwrite it and un-seal the day.
+    cancelDayPlanSave();
 
     try {
       const { updatedPlan, streak: newStreak } = await sealDay(dayPlan);
@@ -713,6 +765,19 @@ export default function TodayPage() {
               {!dayPlan.isSealed && operatorPct < 100 && (
                 <p className={styles.sealHelperText}>
                   You can seal now, but it will lock the day at {operatorPct}%.
+                </p>
+              )}
+              {dayPlanSaveFailed && (
+                <p
+                  role="status"
+                  style={{
+                    margin: '0.25rem 0 0',
+                    color: '#E0002B',
+                    fontSize: '0.6875rem',
+                    fontFamily: 'var(--font-mono), monospace',
+                  }}
+                >
+                  Save failed — your last change may not be saved. Toggle again to retry.
                 </p>
               )}
             </div>

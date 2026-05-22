@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   getTimeLog,
-  saveTimeLog,
+  saveTimeLogSlot,
+  saveTimeLogMeta,
   createDefaultTimeLog,
   getTodayDateString,
 } from '@/lib/presets';
@@ -48,7 +49,10 @@ export default function TimeLogQuickEntry() {
   const [popoverAnchor, setPopoverAnchor] = useState<{ top: number; right: number } | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const activityFocusedRef = useRef(false);
-  const pendingLogRef = useRef<TimeLog | null>(null);
+  // Track only the pieces this view changed, so saving never overwrites slots
+  // the journal (or another tab) wrote to the same day.
+  const pendingSlotsRef = useRef<Map<string, TimeLogSlot | null>>(new Map());
+  const pendingMetaRef = useRef<Partial<Pick<TimeLog, 'interval'>>>({});
 
   // Load today's log
   useEffect(() => {
@@ -83,21 +87,30 @@ export default function TimeLogQuickEntry() {
     return () => clearInterval(id);
   }, [log.interval]);
 
-  const scheduleSave = useCallback((next: TimeLog) => {
-    pendingLogRef.current = next;
+  const flushPending = useCallback(() => {
+    const slots = pendingSlotsRef.current;
+    const meta = pendingMetaRef.current;
+    pendingSlotsRef.current = new Map();
+    pendingMetaRef.current = {};
+    slots.forEach((slotValue, key) => {
+      saveTimeLogSlot(today, key, slotValue).catch((error) => {
+        console.error('Failed to save time log slot:', error);
+      });
+    });
+    if (Object.keys(meta).length > 0) {
+      saveTimeLogMeta(today, meta).catch((error) => {
+        console.error('Failed to save time log meta:', error);
+      });
+    }
+  }, [today]);
+
+  const scheduleFlush = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      const toSave = pendingLogRef.current;
-      pendingLogRef.current = null;
+    debounceRef.current = setTimeout(() => {
       debounceRef.current = null;
-      if (!toSave) return;
-      try {
-        await saveTimeLog(toSave);
-      } catch (error) {
-        console.error('Failed to save time log:', error);
-      }
+      flushPending();
     }, 600);
-  }, []);
+  }, [flushPending]);
 
   // On unmount, flush any pending edit so navigating away within the
   // debounce window doesn't drop the user's text.
@@ -107,35 +120,29 @@ export default function TimeLogQuickEntry() {
         clearTimeout(debounceRef.current);
         debounceRef.current = null;
       }
-      const toSave = pendingLogRef.current;
-      pendingLogRef.current = null;
-      if (toSave) {
-        saveTimeLog(toSave).catch((error) => {
-          console.error('Failed to flush time log on unmount:', error);
-        });
-      }
+      flushPending();
     };
-  }, []);
-
-  const updateLog = (mutator: (prev: TimeLog) => TimeLog) => {
-    setLog((prev) => {
-      const next = { ...mutator(prev), updatedAt: Date.now() };
-      scheduleSave(next);
-      return next;
-    });
-  };
+  }, [flushPending]);
 
   const slot: TimeLogSlot = log.slots[nowKey] ?? { activity: '', baseline: 0 };
 
-  const handleActivityChange = (value: string) => {
-    updateLog((prev) => {
-      const existing = prev.slots[nowKey] ?? { activity: '', baseline: 0 };
-      const nextSlot: TimeLogSlot = { ...existing, activity: value };
+  // Persist a single slot (null = clear it). Optimistic local update + a
+  // per-slot write that merges with the latest server state.
+  const commitSlot = (key: string, nextSlot: TimeLogSlot | null) => {
+    setLog((prev) => {
       const slots = { ...prev.slots };
-      if (!nextSlot.activity && !nextSlot.baseline) delete slots[nowKey];
-      else slots[nowKey] = nextSlot;
-      return { ...prev, slots };
+      if (nextSlot === null) delete slots[key];
+      else slots[key] = nextSlot;
+      return { ...prev, slots, updatedAt: Date.now() };
     });
+    pendingSlotsRef.current.set(key, nextSlot);
+    scheduleFlush();
+  };
+
+  const handleActivityChange = (value: string) => {
+    const existing = log.slots[nowKey] ?? { activity: '', baseline: 0 };
+    const nextSlot: TimeLogSlot = { ...existing, activity: value };
+    commitSlot(nowKey, !nextSlot.activity && !nextSlot.baseline ? null : nextSlot);
   };
 
   const closePopover = useCallback(() => {
@@ -144,21 +151,18 @@ export default function TimeLogQuickEntry() {
   }, []);
 
   const handleBaselinePick = (n: number) => {
-    updateLog((prev) => {
-      const existing = prev.slots[nowKey] ?? { activity: '', baseline: 0 };
-      const nextBaseline = existing.baseline === n ? 0 : n;
-      const nextSlot: TimeLogSlot = { ...existing, baseline: nextBaseline };
-      const slots = { ...prev.slots };
-      if (!nextSlot.activity && !nextSlot.baseline) delete slots[nowKey];
-      else slots[nowKey] = nextSlot;
-      return { ...prev, slots };
-    });
+    const existing = log.slots[nowKey] ?? { activity: '', baseline: 0 };
+    const nextBaseline = existing.baseline === n ? 0 : n;
+    const nextSlot: TimeLogSlot = { ...existing, baseline: nextBaseline };
+    commitSlot(nowKey, !nextSlot.activity && !nextSlot.baseline ? null : nextSlot);
     closePopover();
   };
 
   const handleIntervalToggle = (interval: TimeLogInterval) => {
     if (interval === log.interval) return;
-    updateLog((prev) => ({ ...prev, interval }));
+    setLog((prev) => ({ ...prev, interval, updatedAt: Date.now() }));
+    pendingMetaRef.current.interval = interval;
+    scheduleFlush();
     setNowKey(computeNowKey(interval));
   };
 

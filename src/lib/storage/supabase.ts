@@ -753,6 +753,96 @@ export function supabaseAdapter(): StorageAdapter {
         throw error;
       }
     },
+
+    async saveTimeLogSlot(date: string, slotKey: string, slot: TimeLogSlot | null): Promise<void> {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error('Supabase not configured');
+
+      const userId = await getUserId();
+      const id = `${userId}:${date}`;
+
+      // Read the latest row immediately before writing so a slot added by
+      // another view (e.g. the journal) isn't dropped by this save.
+      const { data, error: readError } = await supabase
+        .from('time_logs')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (readError && readError.code !== 'PGRST116') {
+        console.error('Failed to read time log:', readError);
+        throw readError;
+      }
+
+      const slots: Record<string, TimeLogSlot> =
+        data?.slots && typeof data.slots === 'object'
+          ? { ...(data.slots as Record<string, TimeLogSlot>) }
+          : {};
+      if (slot === null) delete slots[slotKey];
+      else slots[slotKey] = slot;
+
+      const { error } = await supabase
+        .from('time_logs')
+        .upsert({
+          id,
+          user_id: userId,
+          date,
+          interval_minutes: data?.interval_minutes ?? 60,
+          slots,
+          wins: data?.wins ?? '',
+          learnt: data?.learnt ?? '',
+          tomorrow: data?.tomorrow ?? '',
+          notes: data?.notes ?? '',
+          updated_at: Date.now(),
+        }, { onConflict: 'id' });
+
+      if (error) {
+        console.error('Failed to save time log slot:', error);
+        throw error;
+      }
+    },
+
+    async saveTimeLogMeta(
+      date: string,
+      meta: Partial<Pick<TimeLog, 'interval' | 'wins' | 'learnt' | 'tomorrow' | 'notes'>>,
+    ): Promise<void> {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error('Supabase not configured');
+
+      const userId = await getUserId();
+      const id = `${userId}:${date}`;
+
+      const { data, error: readError } = await supabase
+        .from('time_logs')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (readError && readError.code !== 'PGRST116') {
+        console.error('Failed to read time log:', readError);
+        throw readError;
+      }
+
+      const interval = meta.interval ?? (data?.interval_minutes === 15 ? 15 : 60);
+
+      const { error } = await supabase
+        .from('time_logs')
+        .upsert({
+          id,
+          user_id: userId,
+          date,
+          interval_minutes: interval,
+          slots: data?.slots && typeof data.slots === 'object' ? data.slots : {},
+          wins: validateText(meta.wins ?? data?.wins ?? '', 'Wins', 5_000),
+          learnt: validateText(meta.learnt ?? data?.learnt ?? '', 'Learnt', 5_000),
+          tomorrow: validateText(meta.tomorrow ?? data?.tomorrow ?? '', 'Tomorrow', 5_000),
+          notes: validateText(meta.notes ?? data?.notes ?? '', 'Notes', 10_000),
+          updated_at: Date.now(),
+        }, { onConflict: 'id' });
+
+      if (error) {
+        console.error('Failed to save time log meta:', error);
+        throw error;
+      }
+    },
   };
 }
 

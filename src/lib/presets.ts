@@ -637,3 +637,20 @@ export async function saveTimeLog(log: import('@/lib/types').TimeLog): Promise<v
   await storage.saveTimeLog(log);
 }
 
+export async function saveTimeLogSlot(
+  date: string,
+  slotKey: string,
+  slot: import('@/lib/types').TimeLogSlot | null,
+): Promise<void> {
+  const storage = getStorage();
+  await storage.saveTimeLogSlot(date, slotKey, slot);
+}
+
+export async function saveTimeLogMeta(
+  date: string,
+  meta: Partial<Pick<import('@/lib/types').TimeLog, 'interval' | 'wins' | 'learnt' | 'tomorrow' | 'notes'>>,
+): Promise<void> {
+  const storage = getStorage();
+  await storage.saveTimeLogMeta(date, meta);
+}
+

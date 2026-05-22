@@ -12,7 +12,7 @@ import type {
 } from '@/lib/presets';
 import type { JournalEntry } from '@/lib/types';
 import type { Goal } from '@/lib/types';
-import type { TimeLog } from '@/lib/types';
+import type { TimeLog, TimeLogSlot } from '@/lib/types';
 
 /**
  * Storage adapter interface
@@ -58,6 +58,17 @@ export interface StorageAdapter {
   // Time Tracker operations
   getTimeLog(date: string): Promise<TimeLog>;
   saveTimeLog(log: TimeLog): Promise<void>;
+  /**
+   * Set or clear a single hour slot without overwriting the rest of the day.
+   * Pass `null` to delete the slot. Read-merge-write, so concurrent edits from
+   * another view (e.g. /today vs the journal) don't clobber each other.
+   */
+  saveTimeLogSlot(date: string, slotKey: string, slot: TimeLogSlot | null): Promise<void>;
+  /** Update only the interval / summary fields, preserving slots. */
+  saveTimeLogMeta(
+    date: string,
+    meta: Partial<Pick<TimeLog, 'interval' | 'wins' | 'learnt' | 'tomorrow' | 'notes'>>,
+  ): Promise<void>;
 }
 
 

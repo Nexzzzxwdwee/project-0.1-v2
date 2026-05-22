@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getTimeLog, saveTimeLog, createDefaultTimeLog } from '@/lib/presets';
+import { getTimeLog, saveTimeLogSlot, saveTimeLogMeta, createDefaultTimeLog } from '@/lib/presets';
 import type { TimeLog, TimeLogInterval, TimeLogSlot } from '@/lib/types';
 import styles from './journal.module.css';
 
@@ -52,7 +52,10 @@ export default function TimeTracker({ date, onSaveStatusChange }: TimeTrackerPro
   const [popoverKey, setPopoverKey] = useState<string | null>(null);
   const [popoverAnchor, setPopoverAnchor] = useState<{ top: number; right: number } | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingLogRef = useRef<TimeLog | null>(null);
+  // Only the slots/fields this view changed are queued, so saving merges with
+  // the latest server state instead of overwriting the whole day.
+  const pendingSlotsRef = useRef<Map<string, TimeLogSlot | null>>(new Map());
+  const pendingMetaRef = useRef<Partial<Pick<TimeLog, 'interval' | 'wins' | 'learnt' | 'tomorrow' | 'notes'>>>({});
   const todayHere = isToday(date);
 
   const closePopover = useCallback(() => {
@@ -112,110 +115,86 @@ export default function TimeTracker({ date, onSaveStatusChange }: TimeTrackerPro
     return () => clearInterval(id);
   }, [log.interval, todayHere]);
 
-  const scheduleSave = useCallback(
-    (next: TimeLog) => {
-      pendingLogRef.current = next;
-      onSaveStatusChange?.('saving');
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(async () => {
-        const toSave = pendingLogRef.current;
-        pendingLogRef.current = null;
-        debounceRef.current = null;
-        if (!toSave) {
-          onSaveStatusChange?.('saved');
-          return;
-        }
-        try {
-          await saveTimeLog(toSave);
-        } catch (error) {
-          console.error('Failed to save time log:', error);
-        }
-        onSaveStatusChange?.('saved');
-      }, 600);
-    },
-    [onSaveStatusChange],
-  );
+  const flushPending = useCallback(() => {
+    const slots = pendingSlotsRef.current;
+    const meta = pendingMetaRef.current;
+    pendingSlotsRef.current = new Map();
+    pendingMetaRef.current = {};
+    const writes: Promise<void>[] = [];
+    slots.forEach((slotValue, key) => writes.push(saveTimeLogSlot(date, key, slotValue)));
+    if (Object.keys(meta).length > 0) writes.push(saveTimeLogMeta(date, meta));
+    if (writes.length === 0) {
+      onSaveStatusChange?.('saved');
+      return;
+    }
+    Promise.all(writes)
+      .catch((error) => console.error('Failed to save time log:', error))
+      .finally(() => onSaveStatusChange?.('saved'));
+  }, [date, onSaveStatusChange]);
 
-  // Flush any pending edit on unmount or when switching to a different
-  // entry's date — otherwise typed text would silently drop.
+  const scheduleFlush = useCallback(() => {
+    onSaveStatusChange?.('saving');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      flushPending();
+    }, 600);
+  }, [flushPending, onSaveStatusChange]);
+
+  // Flush any pending edit on unmount or when switching to a different entry's
+  // date (flushPending closes over `date`, so the cleanup runs on date change
+  // too) — otherwise typed text for the old date would silently drop.
   useEffect(() => {
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
         debounceRef.current = null;
       }
-      const toSave = pendingLogRef.current;
-      pendingLogRef.current = null;
-      if (toSave) {
-        saveTimeLog(toSave).catch((error) => {
-          console.error('Failed to flush time log on unmount:', error);
-        });
-      }
+      flushPending();
     };
-  }, []);
+  }, [flushPending]);
 
-  // On date change, flush the in-flight write for the *old* date before
-  // the load effect resets state to the new date's log.
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-        debounceRef.current = null;
-      }
-      const toSave = pendingLogRef.current;
-      pendingLogRef.current = null;
-      if (toSave) {
-        saveTimeLog(toSave).catch((error) => {
-          console.error('Failed to flush time log on date change:', error);
-        });
-      }
-    };
-  }, [date]);
-
-  const updateLog = (mutator: (prev: TimeLog) => TimeLog) => {
+  // Persist one slot (null = clear) without touching the rest of the day, so
+  // edits here can't clobber slots written from /today (and vice versa).
+  const commitSlot = (key: string, nextSlot: TimeLogSlot | null) => {
     setLog((prev) => {
-      const next = { ...mutator(prev), updatedAt: Date.now() };
-      scheduleSave(next);
-      return next;
+      const slots = { ...prev.slots };
+      if (nextSlot === null) delete slots[key];
+      else slots[key] = nextSlot;
+      return { ...prev, slots, updatedAt: Date.now() };
     });
+    pendingSlotsRef.current.set(key, nextSlot);
+    scheduleFlush();
+  };
+
+  const commitMeta = (
+    partial: Partial<Pick<TimeLog, 'interval' | 'wins' | 'learnt' | 'tomorrow' | 'notes'>>,
+  ) => {
+    setLog((prev) => ({ ...prev, ...partial, updatedAt: Date.now() }));
+    Object.assign(pendingMetaRef.current, partial);
+    scheduleFlush();
   };
 
   const setInterval15 = (interval: TimeLogInterval) => {
     if (interval === log.interval) return;
-    updateLog((prev) => ({ ...prev, interval }));
+    commitMeta({ interval });
   };
 
   const setSlotActivity = (key: string, activity: string) => {
-    updateLog((prev) => {
-      const existing: TimeLogSlot = prev.slots[key] ?? { activity: '', baseline: 0 };
-      const nextSlot: TimeLogSlot = { ...existing, activity };
-      const slots = { ...prev.slots };
-      if (!nextSlot.activity && !nextSlot.baseline) {
-        delete slots[key];
-      } else {
-        slots[key] = nextSlot;
-      }
-      return { ...prev, slots };
-    });
+    const existing: TimeLogSlot = log.slots[key] ?? { activity: '', baseline: 0 };
+    const nextSlot: TimeLogSlot = { ...existing, activity };
+    commitSlot(key, !nextSlot.activity && !nextSlot.baseline ? null : nextSlot);
   };
 
   const setSlotBaseline = (key: string, baseline: number) => {
-    updateLog((prev) => {
-      const existing: TimeLogSlot = prev.slots[key] ?? { activity: '', baseline: 0 };
-      const nextBaseline = existing.baseline === baseline ? 0 : baseline;
-      const nextSlot: TimeLogSlot = { ...existing, baseline: nextBaseline };
-      const slots = { ...prev.slots };
-      if (!nextSlot.activity && !nextSlot.baseline) {
-        delete slots[key];
-      } else {
-        slots[key] = nextSlot;
-      }
-      return { ...prev, slots };
-    });
+    const existing: TimeLogSlot = log.slots[key] ?? { activity: '', baseline: 0 };
+    const nextBaseline = existing.baseline === baseline ? 0 : baseline;
+    const nextSlot: TimeLogSlot = { ...existing, baseline: nextBaseline };
+    commitSlot(key, !nextSlot.activity && !nextSlot.baseline ? null : nextSlot);
   };
 
   const setSummaryField = (field: 'wins' | 'learnt' | 'tomorrow' | 'notes', value: string) => {
-    updateLog((prev) => ({ ...prev, [field]: value }));
+    commitMeta({ [field]: value } as Partial<Pick<TimeLog, 'wins' | 'learnt' | 'tomorrow' | 'notes'>>);
   };
 
   const slotKeys = buildSlotKeys(log.interval);

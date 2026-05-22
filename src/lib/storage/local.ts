@@ -16,7 +16,7 @@ import {
 import type { StorageAdapter } from './types';
 import type { JournalEntry } from '@/lib/types';
 import type { Goal } from '@/lib/types';
-import type { TimeLog } from '@/lib/types';
+import type { TimeLog, TimeLogSlot } from '@/lib/types';
 
 /**
  * localStorage adapter implementation
@@ -188,6 +188,26 @@ export function localStorageAdapter(): StorageAdapter {
 
     async saveTimeLog(log: TimeLog): Promise<void> {
       setJSON(`${P01_PREFIX}timeLog:${log.date}`, log);
+    },
+
+    async saveTimeLogSlot(date: string, slotKey: string, slot: TimeLogSlot | null): Promise<void> {
+      if (typeof window === 'undefined') return;
+      const key = `${P01_PREFIX}timeLog:${date}`;
+      const log = getJSON<TimeLog>(key, createDefaultTimeLog(date));
+      const slots = { ...log.slots };
+      if (slot === null) delete slots[slotKey];
+      else slots[slotKey] = slot;
+      setJSON(key, { ...log, slots, updatedAt: Date.now() });
+    },
+
+    async saveTimeLogMeta(
+      date: string,
+      meta: Partial<Pick<TimeLog, 'interval' | 'wins' | 'learnt' | 'tomorrow' | 'notes'>>,
+    ): Promise<void> {
+      if (typeof window === 'undefined') return;
+      const key = `${P01_PREFIX}timeLog:${date}`;
+      const log = getJSON<TimeLog>(key, createDefaultTimeLog(date));
+      setJSON(key, { ...log, ...meta, updatedAt: Date.now() });
     },
   };
 }

@@ -176,7 +176,7 @@ export function supabaseAdapter(): StorageAdapter {
 
       const { error: upsertError } = await supabase
         .from('presets')
-        .upsert(rows, { onConflict: 'id' });
+        .upsert(rows, { onConflict: 'user_id,id' });
 
       if (upsertError) {
         console.error('Failed to save presets:', upsertError);
